@@ -1,0 +1,30 @@
+(.venv) C:\Users\T8543\Downloads\project-2>python pre_processed.py                                        
+Traceback (most recent call last):
+  File "C:\Users\T8543\Downloads\project-2\pre_processed.py", line 240, in <module>
+    main()
+    ~~~~^^
+  File "C:\Users\T8543\Downloads\project-2\pre_processed.py", line 204, in main
+    deduped, killed = near_dedup(merged, threshold=0.97)
+                      ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\T8543\Downloads\project-2\pre_processed.py", line 130, in near_dedup
+    sims = cosine_similarity(X[i], X[i+1:]).ravel()
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "c:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\sklearn\utils\_param_validation.py", line 218, in
+ wrapper
+    return func(*args, **kwargs)
+  File "c:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\sklearn\metrics\pairwise.py", line 1728, in cosine_similarity
+    X, Y = check_pairwise_arrays(X, Y)
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "c:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\sklearn\metrics\pairwise.py", line 209, in check_pairwise_arrays
+    Y = check_array(
+        Y,
+    ...<5 lines>...
+        ensure_2d=ensure_2d,
+    )
+  File "c:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\sklearn\utils\validation.py", line 1128, in check_array
+    raise ValueError(
+    ...<3 lines>...
+    )
+ValueError: Found array with 0 sample(s) (shape=(0, 756)) while a minimum of 1 is required by check_pairwise_arrays.
+
+(.venv) C:\Users\T8543\Downloads\project-2>
