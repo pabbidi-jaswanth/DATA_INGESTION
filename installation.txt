@@ -1,0 +1,22 @@
+# keep your current venv
+python -m pip install -U pip setuptools wheel
+
+# Chroma + pins that avoid pydantic conflicts on Windows
+pip uninstall -y pydantic pydantic-core || rem ok if not installed
+pip install "pydantic<2"
+pip install --only-binary=:all: "hnswlib==0.8.0" "chromadb==0.4.24"
+
+# LangChain (only needed if you want FAISS path or utility splitters)
+pip install "langchain==0.0.325"
+
+# Google’s Gemini SDK
+pip install google-generativeai
+
+# Optional local embeddings fallback (if Gemini Embeddings not allowed)
+pip install sentence-transformers
+
+# Optional: FAISS (Windows wheels are spotty; skip if it fails)
+pip install faiss-cpu
+
+# UI
+pip install streamlit tqdm scikit-learn joblib
