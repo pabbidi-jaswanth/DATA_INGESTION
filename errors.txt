@@ -1,2 +1,178 @@
-(.venv) (base) PS C:\Users\T8543\Downloads\project-2> python embeddings.py --chunks Data/processed/chunks_clean_final.jsonl --persist Data/index/faiss --collection vit_faq_vellore --emb gemini             
-did not find executable at 'C:\Program Files\Python313\python.exe': The system cannot find the path specified.
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe embeddings.py ` --chunks Data/processed/chunks_clean_final.jsonl ` --persist Data/index/faiss ` --collection vit_faq_vellore ` --emb st
+No sentence-transformers model found with name sentence-transformers/all-MiniLM-L6-v2. Creating a new one with mean pooling.
+Traceback (most recent call last):
+  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\urllib3\connectionpool.py", line 464, in _make_request
+    self._validate_conn(conn)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\urllib3\connectionpool.py", line 1093, in _validate_conn
+    conn.connect()
+    ~~~~~~~~~~~~^^
+  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\urllib3\connection.py", line 790, in connect
+    sock_and_verified = _ssl_wrap_socket_and_match_hostname(
+        sock=sock,
+    ...<14 lines>...
+        assert_fingerprint=self.assert_fingerprint,
+    )
+  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\urllib3\connection.py", line 969, in _ssl_wrap_socket_and_match_hostname
+    ssl_sock = ssl_wrap_socket(
+        sock=sock,
+    ...<8 lines>...
+        tls_in_tls=tls_in_tls,
+    )
+  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\urllib3\util\ssl_.py", line 480, in ssl_wrap_socket    
+    ssl_sock = _ssl_wrap_socket_impl(sock, context, tls_in_tls, server_hostname)
+  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\urllib3\util\ssl_.py", line 524, in _ssl_wrap_socket_impl
+    return ssl_context.wrap_socket(sock, server_hostname=server_hostname)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python313\Lib\ssl.py", line 455, in wrap_socket
+    return self.sslsocket_class._create(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        sock=sock,
+        ^^^^^^^^^^
+    ...<5 lines>...
+        session=session
+        ^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Program Files\Python313\Lib\ssl.py", line 1076, in _create
+    self.do_handshake()
+    ~~~~~~~~~~~~~~~~~^^
+  File "C:\Program Files\Python313\Lib\ssl.py", line 1372, in do_handshake
+    self._sslobj.do_handshake()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+ssl.SSLError: [SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1035)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\urllib3\connectionpool.py", line 787, in urlopen       
+    response = self._make_request(
+        conn,
+    ...<10 lines>...
+        **response_kw,
+    )
+  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\urllib3\connectionpool.py", line 488, in _make_request 
+    raise new_e
+urllib3.exceptions.SSLError: [SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1035)
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\requests\adapters.py", line 644, in send
+    resp = conn.urlopen(
+        method=request.method,
+    ...<9 lines>...
+        chunked=chunked,
+    )
+  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\urllib3\connectionpool.py", line 841, in urlopen       
+    retries = retries.increment(
+        method, url, error=new_e, _pool=self, _stacktrace=sys.exc_info()[2]
+    )
+  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\urllib3\util\retry.py", line 519, in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+urllib3.exceptions.MaxRetryError: HTTPSConnectionPool(host='huggingface.co', port=443): Max retries exceeded with url: /sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json (Caused by SSLError(SSLError(1, '[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1035)')))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\T8543\Downloads\project-2\embeddings.py", line 170, in <module>
+    emb = STEmbeddings()
+  File "C:\Users\T8543\Downloads\project-2\embeddings.py", line 77, in __init__
+    self.model = SentenceTransformer(model_name)
+                 ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\sentence_transformers\SentenceTransformer.py", line 339, in __init__
+    modules = self._load_auto_model(
+        model_name_or_path,
+    ...<8 lines>...
+        has_modules=has_modules,
+    )
+  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\sentence_transformers\SentenceTransformer.py", line 2060, in _load_auto_model
+    transformer_model = Transformer(
+        model_name_or_path,
+    ...<4 lines>...
+        backend=self.backend,
+    )
+  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\sentence_transformers\models\Transformer.py", line 86, in __init__
+    config, is_peft_model = self._load_config(model_name_or_path, cache_dir, backend, config_args)
+                            ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\sentence_transformers\models\Transformer.py", line 127, in _load_config
+    find_adapter_config_file(
+    ~~~~~~~~~~~~~~~~~~~~~~~~^
+        model_name_or_path,
+        ^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+        local_files_only=config_args.get("local_files_only", False),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\transformers\utils\peft_utils.py", line 88, in find_adapter_config_file
+    adapter_cached_filename = cached_file(
+        model_id,
+    ...<12 lines>...
+        _raise_exceptions_for_connection_errors=False,
+    )
+  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\transformers\utils\hub.py", line 321, in cached_file   
+    file = cached_files(path_or_repo_id=path_or_repo_id, filenames=[filename], **kwargs)
+  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\transformers\utils\hub.py", line 566, in cached_files  
+    raise e
+  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\transformers\utils\hub.py", line 478, in cached_files  
+    hf_hub_download(
+    ~~~~~~~~~~~~~~~^
+        path_or_repo_id,
+        ^^^^^^^^^^^^^^^^
+    ...<10 lines>...
+        local_files_only=local_files_only,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\huggingface_hub\utils\_validators.py", line 114, in _inner_fn
+    return fn(*args, **kwargs)
+  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\huggingface_hub\file_download.py", line 1010, in hf_hub_download
+    return _hf_hub_download_to_cache_dir(
+        # Destination
+    ...<14 lines>...
+        force_download=force_download,
+    )
+  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\huggingface_hub\file_download.py", line 1073, in _hf_hub_download_to_cache_dir
+    (url_to_download, etag, commit_hash, expected_size, xet_file_data, head_call_error) = _get_metadata_or_catch_error(   
+                                                                                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^   
+        repo_id=repo_id,
+        ^^^^^^^^^^^^^^^^
+    ...<10 lines>...
+        relative_filename=relative_filename,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\huggingface_hub\file_download.py", line 1546, in _get_metadata_or_catch_error
+    metadata = get_hf_file_metadata(
+        url=url, proxies=proxies, timeout=etag_timeout, headers=headers, token=token, endpoint=endpoint
+    )
+  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\huggingface_hub\utils\_validators.py", line 114, in _inner_fn
+    return fn(*args, **kwargs)
+  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\huggingface_hub\file_download.py", line 1463, in get_hf_file_metadata
+    r = _request_wrapper(
+        method="HEAD",
+    ...<5 lines>...
+        timeout=timeout,
+    )
+  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\huggingface_hub\file_download.py", line 286, in _request_wrapper
+    response = _request_wrapper(
+        method=method,
+    ...<2 lines>...
+        **params,
+    )
+  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\huggingface_hub\file_download.py", line 309, in _request_wrapper
+    response = http_backoff(method=method, url=url, **params, retry_on_exceptions=(), retry_on_status_codes=(429,))       
+  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\huggingface_hub\utils\_http.py", line 310, in http_backoff
+    response = session.request(method=method, url=url, **kwargs)
+  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\requests\sessions.py", line 589, in request
+    resp = self.send(prep, **send_kwargs)
+  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\requests\sessions.py", line 703, in send
+    r = adapter.send(request, **kwargs)
+  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\huggingface_hub\utils\_http.py", line 96, in send      
+    return super().send(request, *args, **kwargs)
+           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\requests\adapters.py", line 675, in send
+    raise SSLError(e, request=request)
+requests.exceptions.SSLError: (MaxRetryError("HTTPSConnectionPool(host='huggingface.co', port=443): Max retries exceeded with url: /sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json (Caused by SSLError(SSLError(1, '[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1035)')))"), '(Request ID: 3c9d397a-077d-419b-9244-bc3296c3b634)')
