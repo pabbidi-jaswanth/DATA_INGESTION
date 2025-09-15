@@ -1,30 +1,65 @@
-(.venv) C:\Users\T8543\Downloads\project-2>python pre_processed.py                                        
-Traceback (most recent call last):
-  File "C:\Users\T8543\Downloads\project-2\pre_processed.py", line 240, in <module>
-    main()
-    ~~~~^^
-  File "C:\Users\T8543\Downloads\project-2\pre_processed.py", line 204, in main
-    deduped, killed = near_dedup(merged, threshold=0.97)
-                      ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\T8543\Downloads\project-2\pre_processed.py", line 130, in near_dedup
-    sims = cosine_similarity(X[i], X[i+1:]).ravel()
-           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
-  File "c:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\sklearn\utils\_param_validation.py", line 218, in
- wrapper
-    return func(*args, **kwargs)
-  File "c:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\sklearn\metrics\pairwise.py", line 1728, in cosine_similarity
-    X, Y = check_pairwise_arrays(X, Y)
-           ~~~~~~~~~~~~~~~~~~~~~^^^^^^
-  File "c:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\sklearn\metrics\pairwise.py", line 209, in check_pairwise_arrays
-    Y = check_array(
-        Y,
-    ...<5 lines>...
-        ensure_2d=ensure_2d,
-    )
-  File "c:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\sklearn\utils\validation.py", line 1128, in check_array
-    raise ValueError(
-    ...<3 lines>...
-    )
-ValueError: Found array with 0 sample(s) (shape=(0, 756)) while a minimum of 1 is required by check_pairwise_arrays.
+python embeddings.py --chunks Data/processed/chunks_clean_final.jsonl --db faiss --persist Data/index/faiss --collection vit_faq_vellore --emb gemini
+C:\Users\T8543\Downloads\project-2\embeddings.py:29: LangChainDeprecationWarning: Importing FAISS from langchain.vectorstores is deprecated. Please replace deprecated imports:
 
-(.venv) C:\Users\T8543\Downloads\project-2>
+>> from langchain.vectorstores import FAISS
+
+with new imports of:
+
+>> from langchain_community.vectorstores import FAISS
+You can use the langchain cli to **automatically** upgrade many imports. Please see documentation here <https://python.langchain.com/docs/versions/v0_2/>
+  from langchain.vectorstores import FAISS
+C:\Users\T8543\Downloads\project-2\embeddings.py:107: LangChainDeprecationWarning: Importing FAISS from langchain.vectorstores is deprecated. Please replace deprecated imports:
+
+>> from langchain.vectorstores import FAISS
+
+with new imports of:
+
+>> from langchain_community.vectorstores import FAISS
+You can use the langchain cli to **automatically** upgrade many imports. Please see documentation here <https://python.langchain.com/docs/versions/v0_2/>
+  from langchain.vectorstores import FAISS
+[INFO] building FAISS index: 333 docs
+Traceback (most recent call last):
+  File "C:\Users\T8543\Downloads\project-2\embeddings.py", line 143, in <module>
+    build_faiss(chunks, Path(args.persist).resolve(), args.collection, emb)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\T8543\Downloads\project-2\embeddings.py", line 114, in build_faiss
+    vs = FAISS.from_texts(texts=texts, embedding=emb, metadatas=metas, ids=ids)
+  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\langchain_community\vectorstores\faiss.py", line 1043, in from_texts
+    embeddings = embedding.embed_documents(texts)
+  File "C:\Users\T8543\Downloads\project-2\embeddings.py", line 49, in embed_documents
+    r = self.genai.embed_content(model=self.model, content=t)
+  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\google\generativeai\embedding.py", line 213, in embed_content
+    embedding_response = client.embed_content(
+        embedding_request,
+        **request_options,
+    )
+  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\google\ai\generativelanguage_v1beta\services\generative_service\client.py", line 1263, in embed_content
+    response = rpc(
+        request,
+    ...<2 lines>...
+        metadata=metadata,
+    )
+  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\google\api_core\gapic_v1\method.py", line 131, in __call__
+    return wrapped_func(*args, **kwargs)
+  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\google\api_core\retry\retry_unary.py", line 294, in retry_wrapped_func
+    return retry_target(
+        target,
+    ...<3 lines>...
+        on_error=on_error,
+    )
+  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\google\api_core\retry\retry_unary.py", line 156, in retry_target
+    next_sleep = _retry_error_helper(
+        exc,
+    ...<6 lines>...
+        timeout,
+    )
+  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\google\api_core\retry\retry_base.py", line 214, in _retry_error_helper
+    raise final_exc from source_exc
+  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\google\api_core\retry\retry_unary.py", line 147, in retry_target
+    result = target()
+  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\google\api_core\timeout.py", line 130, in func_with_timeout
+    return func(*args, **kwargs)
+  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\google\api_core\grpc_helpers.py", line 78, in error_remapped_callable
+    raise exceptions.from_grpc_error(exc) from exc
+google.api_core.exceptions.NotFound: 404 models/text-embedding-001 is not found for API version v1beta, or is not supported for embedContent. Call ListModels to see the list of available models and their supported methods.
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> 
