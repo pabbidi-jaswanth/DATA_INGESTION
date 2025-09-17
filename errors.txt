@@ -1,108 +1,101 @@
-# load_sqlite.py
-import sqlite3, pathlib, re, csv, sys
-from typing import Tuple
+# sql_router.py  (import into your rag_answer.py)
+import sqlite3, pathlib, re
+from typing import Dict, Any, List
 
 DB = pathlib.Path("Data/sql/vit_vellore.db")
-STAGING = pathlib.Path("Data/staging")
 
-def infer_meta(stem: str) -> Tuple[str,str,str,str,str]:
-    s = stem.lower()
-    gender = "Male" if "mh" in s or "men" in s or "boys" in s else ("Female" if "lh" in s or "ladies" in s or "girls" in s else None)
-    level  = "First-Year" if "first-year" in s or "first_year" in s or "freshers" in s else ("Senior" if "senior" in s else None)
-    category = "NRI" if "nri" in s else ("Foreign" if "foreign" in s else ("Indian" if "indian" in s else None))
-    ay_m = re.search(r"(20\d{2})\D{0,3}(\d{2})", s)
-    ay = f"{ay_m.group(1)}-{ay_m.group(2)}" if ay_m else None
-    currency = "USD" if category in ("NRI","Foreign") else "INR"
-    return gender, level, category, ay, currency
+def detect_structured_intent(q: str) -> str:
+    ql = q.lower()
+    if any(k in ql for k in ["hostel", "room", "block", "mess", "dhobi", "laundry", "fee", "fees", "tuition"]):
+        return "tabular"
+    if any(k in ql for k in ["contact", "phone", "email", "supervisor"]):
+        return "contacts"
+    return "text"
 
-def get_block_type(stem: str):
-    s = stem.lower()
-    if "deluxe" in s: return "Deluxe"
-    if "apartment" in s or "apt" in s: return "Apartment"
-    return "Regular"
+def parse_filters(q: str) -> Dict[str, Any]:
+    ql = q.lower()
+    f = {"ay": None, "gender": None, "category": None, "level": None}
+    if re.search(r"\b(20\d{2})\b", ql):
+        yr = re.search(r"\b(20\d{2})\b", ql).group(1)
+        f["ay"] = f"{yr}-{str(int(yr[-2:])+1).zfill(2)}"
+    if any(k in ql for k in ["boy", "boys", "men", "mh"]): f["gender"] = "Male"
+    if any(k in ql for k in ["girl", "girls", "ladies", "lh", "women"]): f["gender"] = "Female"
+    if "nri" in ql: f["category"] = "NRI"
+    elif "foreign" in ql: f["category"] = "Foreign"
+    elif "indian" in ql: f["category"] = "Indian"
+    if any(k in ql for k in ["senior"]): f["level"] = "Senior"
+    if any(k in ql for k in ["first year", "fresh"]): f["level"] = "First-Year"
+    return f
 
-def upsert_block(con, block_name, display_name, gender, level, block_type):
-    cur = con.cursor()
-    cur.execute("SELECT id FROM blocks WHERE block_name=?", (block_name,))
-    row = cur.fetchone()
-    if row: return row[0]
-    cur.execute(
-      "INSERT INTO blocks(block_name, display_name, gender, level, block_type) VALUES(?,?,?,?,?)",
-      (block_name, display_name, gender, level, block_type)
-    )
-    return cur.lastrowid
+def sql_hostel_overview(f: Dict[str,Any], limit_blocks: int = 20) -> Dict[str, Any]:
+    con = sqlite3.connect(DB)
+    con.row_factory = sqlite3.Row
+    where = ["1=1"]
+    args = []
+    if f["gender"]: where.append("b.gender=?"); args.append(f["gender"])
+    if f["level"]:  where.append("b.level=?"); args.append(f["level"])
+    if f["ay"]:     where.append("hf.ay=?"); args.append(f["ay"])
+    if f["category"]: where.append("hf.category=?"); args.append(f["category"])
 
-def parse_row(row):
-    # Heuristics across different CSVs
-    txt = " | ".join([c or "" for c in row]).lower()
-    # occupancy
-    occ = None
-    m = re.search(r"(\b[1-8]\b)\s*(?:sharing|seater|bed|occupancy)", txt)
-    if m: occ = int(m.group(1))
-    # AC?
-    ac = 1 if ("ac" in txt and "non-ac" not in txt and "non ac" not in txt) else (0 if "non-ac" in txt or "non ac" in txt else None)
-    # mess type
-    mess = "Special" if "special" in txt else ("Non-Veg" if "non-veg" in txt or "non veg" in txt else ("Veg" if "veg" in txt else None))
+    sql = f"""
+    SELECT b.block_name, b.display_name, b.gender, b.level, b.block_type,
+           hf.ay, hf.category, hf.occupancy, hf.ac, hf.mess_type,
+           hf.room_mess_fee, hf.admission_fee, hf.caution_deposit, hf.other_fee, hf.total_fee, hf.currency,
+           hf.source_file
+    FROM hostel_fees hf
+    JOIN blocks b ON b.id = hf.block_id
+    WHERE {' AND '.join(where)}
+    ORDER BY b.block_type, b.block_name, hf.occupancy, hf.ac DESC, hf.mess_type
+    """
+    rows = con.execute(sql, args).fetchall()
 
-    # numeric fees: try to catch room/mess/total/admission/caution etc
-    def find_money(s):
-        s = s.replace(",", "")
-        m = re.findall(r"(?:usd|\$|inr|rs\.?|₹)?\s*([0-9]+(?:\.[0-9]+)?)", s, flags=re.I)
-        return [float(x) for x in m] if m else []
-    nums = find_money(" | ".join(row))
+    # amenities (dhobi, mess options) per block
+    am_sql = "SELECT b.block_name, a.key, a.value FROM amenities a JOIN blocks b ON b.id=a.block_id"
+    am = con.execute(am_sql).fetchall()
+    con.close()
 
-    # very rough mapping: (room+mess), admission, caution, other, total
-    room_mess = total = admission = caution = other = None
-    # look for 'total'
-    for i, cell in enumerate(row):
-        c = (cell or "").lower()
-        if "total" in c:
-            arr = find_money(cell)
-            if arr: total = arr[-1]
-        if "admission" in c:
-            arr = find_money(cell); admission = arr[-1] if arr else admission
-        if "caution" in c:
-            arr = find_money(cell); caution = arr[-1] if arr else caution
+    # build a display table
+    columns = ["Block", "Gender", "Level", "Type", "AY", "Category", "Occ", "AC", "Mess", "Room+Mess", "Admission", "Caution", "Other", "Total", "Curr", "Source"]
+    tbl = {"title": "Hostel Fee Details (Vellore)", "columns": columns, "rows": []}
+    for r in rows[:1000]:
+        tbl["rows"].append([
+            r["display_name"] or r["block_name"], r["gender"], r["level"], r["block_type"],
+            r["ay"], r["category"], r["occupancy"], "AC" if r["ac"]==1 else "Non-AC", r["mess_type"] or "",
+            r["room_mess_fee"] or "", r["admission_fee"] or "", r["caution_deposit"] or "", r["other_fee"] or "",
+            r["total_fee"] or "", r["currency"], r["source_file"]
+        ])
 
-    # fallback: guess first big number as room+mess, last as total
-    if total is None and nums: total = nums[-1]
-    if room_mess is None and nums: room_mess = nums[0] if nums else None
+    # quick bullets (for freshers): what’s available + dhobi
+    bullets = []
+    seen_blocks = {}
+    for r in rows:
+        seen_blocks.setdefault((r["gender"], r["level"], r["block_type"]), set()).add(r["block_name"])
+    for (g,l,t), names in list(seen_blocks.items())[:limit_blocks]:
+        bullets.append(f"{g} {l} {t}: {len(names)} block(s)")
 
-    return occ, ac, mess, room_mess, admission, caution, other, total
+    # attach dhobi if present
+    dhobi = [x for x in am if x["key"].lower() in ("dhobi","laundry")]
+    if dhobi:
+        bullets.append("Laundry/Dhobi: " + "; ".join({f'{d["block_name"]}: {d["value"]}' for d in dhobi}))
 
-def main():
-    if not DB.exists(): 
-        print("[ERR] DB missing. Run make_db.py first."); sys.exit(1)
+    return {"table": tbl, "bullets": bullets, "sources": list({r["source_file"] for r in rows})}
 
-    with sqlite3.connect(DB) as con:
-        for csv_path in sorted(STAGING.glob("*.csv")):
-            stem = csv_path.stem   # e.g., 'MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0'
-            pdf_stem = stem.split("__")[0]
-            gender, level, category, ay, currency = infer_meta(pdf_stem)
-            block_type = get_block_type(pdf_stem)
-            # choose a neutral block_name per file group (you can refine per row if the CSV contains block subtypes)
-            block_name = ("MH" if gender=="Male" else "LH") + "-" + (block_type or "Regular")
-            display_name = f"{block_type or 'Regular'} ({'Boys' if gender=='Male' else 'Girls'})"
-
-            block_id = upsert_block(con, block_name, display_name, gender or "Male", level or "Senior", block_type)
-
-            with csv_path.open("r", encoding="utf-8") as f:
-                rows = list(csv.reader(f))
-            # skip obvious header noise rows with too few columns
-            for r in rows[1:] if rows else []:
-                if not any(r): continue
-                occ, ac, mess, room_mess, admission, caution, other, total = parse_row(r)
-                if occ is None and ac is None and mess is None and total is None:
-                    continue
-                con.execute("""
-                  INSERT INTO hostel_fees(block_id, ay, category, occupancy, ac, mess_type,
-                                          room_mess_fee, admission_fee, caution_deposit, other_fee, total_fee,
-                                          currency, source_file, source_page)
-                  VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-                """, (block_id, ay, category, occ, ac, mess, room_mess, admission, caution, other, total,
-                      currency, pdf_stem + ".pdf", None))
-        con.commit()
-    print("[OK] Loaded staging CSVs into SQLite.")
-
-if __name__ == "__main__":
-    main()
+def sql_block_contacts(f: Dict[str,Any]) -> Dict[str,Any]:
+    con = sqlite3.connect(DB); con.row_factory = sqlite3.Row
+    where = ["1=1"]; args=[]
+    if f["gender"]: where.append("b.gender=?"); args.append(f["gender"])
+    if f["level"]: where.append("b.level=?"); args.append(f["level"])
+    sql = f"""
+    SELECT b.block_name, b.display_name, c.name, c.role, c.phone, c.email
+    FROM contacts c JOIN blocks b ON b.id=c.block_id
+    WHERE {' AND '.join(where)}
+    ORDER BY b.block_name, c.role
+    """
+    rows = con.execute(sql, args).fetchall()
+    con.close()
+    cols = ["Block","Name","Role","Phone","Email"]
+    tbl = {"title":"Hostel Contacts", "columns":cols, "rows":[
+        [r["display_name"] or r["block_name"], r["name"] or "", r["role"] or "", r["phone"] or "", r["email"] or ""]
+        for r in rows
+    ]}
+    return {"table": tbl, "bullets": [], "sources": []}
