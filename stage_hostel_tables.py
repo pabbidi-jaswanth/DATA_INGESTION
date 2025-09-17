@@ -1,0 +1,90 @@
+# stage_hostel_tables.py
+# Stages tables from PDFs to CSVs you can eyeball before loading into SQLite.
+import pathlib, re, csv, sys
+
+IN = pathlib.Path("Data/raw")          # put your fee PDFs here (LH/MH/LH-NRI/... etc)
+OUT = pathlib.Path("Data/staging")     # will hold CSVs
+OUT.mkdir(parents=True, exist_ok=True)
+
+PDFS = [
+  "MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26.pdf",
+  "MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26.pdf",
+  "LH-FEE-structure-Indian-Category-2025-26.pdf",
+  "LH-FEE-structure-NRI-Foreign-Category-2025-26.pdf",
+]
+
+def try_camelot(pdf_path: pathlib.Path):
+    try:
+        import camelot
+    except Exception:
+        return []
+    tables = []
+    try:
+        # lattice works when tables have lines; flavor='stream' if not
+        t = camelot.read_pdf(str(pdf_path), pages='all', flavor='lattice')
+        for i, table in enumerate(t):
+            df = table.df
+            tables.append(("camelot", i, df))
+    except Exception:
+        pass
+    return tables
+
+def try_pdfplumber(pdf_path: pathlib.Path):
+    import pdfplumber
+    tables = []
+    try:
+        with pdfplumber.open(str(pdf_path)) as pdf:
+            for pi, page in enumerate(pdf.pages):
+                # attempt simple table extraction
+                try:
+                    tbls = page.extract_tables()
+                except Exception:
+                    tbls = []
+                for ti, rows in enumerate(tbls or []):
+                    # rows is list[list[str]]
+                    tables.append(("pdfplumber", f"{pi}_{ti}", rows))
+    except Exception:
+        pass
+    return tables
+
+def write_csv(name: str, rows, out_csv: pathlib.Path):
+    with out_csv.open("w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f)
+        for r in rows:
+            w.writerow([c.strip() if isinstance(c, str) else c for c in r])
+
+def normalize_df(df):
+    # Convert Camelot DF -> list of rows
+    rows = [list(df.columns)]
+    for _, r in df.iterrows():
+        rows.append([str(x) for x in r.tolist()])
+    return rows
+
+def main():
+    for pdf_name in PDFS:
+        pdf_path = IN / pdf_name
+        if not pdf_path.exists():
+            print(f"[WARN] Missing {pdf_path}")
+            continue
+
+        staged_any = False
+
+        for src, tag, obj in (try_camelot(pdf_path) or []):
+            out_csv = OUT / f"{pdf_path.stem}__{src}_{tag}.csv"
+            rows = normalize_df(obj)
+            write_csv(pdf_path.stem, rows, out_csv)
+            print(f"[STAGED] {out_csv}")
+            staged_any = True
+
+        if not staged_any:
+            for src, tag, rows in (try_pdfplumber(pdf_path) or []):
+                out_csv = OUT / f"{pdf_path.stem}__{src}_{tag}.csv"
+                write_csv(pdf_path.stem, rows, out_csv)
+                print(f"[STAGED] {out_csv}")
+                staged_any = True
+
+        if not staged_any:
+            print(f"[FAIL] No tables detected in {pdf_path}")
+
+if __name__ == "__main__":
+    main()
