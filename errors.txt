@@ -1,24 +1,108 @@
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe stage_hostel_tables.py
-[STAGED] Data\staging\MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
-[STAGED] Data\staging\MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
-[STAGED] Data\staging\MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
-[STAGED] Data\staging\MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv
-[STAGED] Data\staging\MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_4.csv
-[STAGED] Data\staging\MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_5.csv
-[STAGED] Data\staging\MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
-[STAGED] Data\staging\MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
-[STAGED] Data\staging\MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv     
-[STAGED] Data\staging\MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv     
-[STAGED] Data\staging\LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
-[STAGED] Data\staging\LH-FEE-structure-NRI-Foreign-Category-2025-26__camelot_0.csv
-Exception ignored in atexit callback <function rmtree at 0x000001FF58B1D6C0>:
-Traceback (most recent call last):
-  File "C:\Program Files\Python313\Lib\shutil.py", line 790, in rmtree
-    return _rmtree_unsafe(path, onexc)
-  File "C:\Program Files\Python313\Lib\shutil.py", line 629, in _rmtree_unsafe
-    onexc(os.unlink, fullname, err)
-  File "C:\Program Files\Python313\Lib\shutil.py", line 625, in _rmtree_unsafe
-    os.unlink(fullname)
-PermissionError: [WinError 32] The process cannot access the file because it is being used by another process: 'C:\\Users\\T8543\\AppData\\Local\\Temp\\tmp5ztjlomm\\page-1.pdf'
+# load_sqlite.py
+import sqlite3, pathlib, re, csv, sys
+from typing import Tuple
 
-(.venv) C:\Users\T8543\Downloads\project-2>
+DB = pathlib.Path("Data/sql/vit_vellore.db")
+STAGING = pathlib.Path("Data/staging")
+
+def infer_meta(stem: str) -> Tuple[str,str,str,str,str]:
+    s = stem.lower()
+    gender = "Male" if "mh" in s or "men" in s or "boys" in s else ("Female" if "lh" in s or "ladies" in s or "girls" in s else None)
+    level  = "First-Year" if "first-year" in s or "first_year" in s or "freshers" in s else ("Senior" if "senior" in s else None)
+    category = "NRI" if "nri" in s else ("Foreign" if "foreign" in s else ("Indian" if "indian" in s else None))
+    ay_m = re.search(r"(20\d{2})\D{0,3}(\d{2})", s)
+    ay = f"{ay_m.group(1)}-{ay_m.group(2)}" if ay_m else None
+    currency = "USD" if category in ("NRI","Foreign") else "INR"
+    return gender, level, category, ay, currency
+
+def get_block_type(stem: str):
+    s = stem.lower()
+    if "deluxe" in s: return "Deluxe"
+    if "apartment" in s or "apt" in s: return "Apartment"
+    return "Regular"
+
+def upsert_block(con, block_name, display_name, gender, level, block_type):
+    cur = con.cursor()
+    cur.execute("SELECT id FROM blocks WHERE block_name=?", (block_name,))
+    row = cur.fetchone()
+    if row: return row[0]
+    cur.execute(
+      "INSERT INTO blocks(block_name, display_name, gender, level, block_type) VALUES(?,?,?,?,?)",
+      (block_name, display_name, gender, level, block_type)
+    )
+    return cur.lastrowid
+
+def parse_row(row):
+    # Heuristics across different CSVs
+    txt = " | ".join([c or "" for c in row]).lower()
+    # occupancy
+    occ = None
+    m = re.search(r"(\b[1-8]\b)\s*(?:sharing|seater|bed|occupancy)", txt)
+    if m: occ = int(m.group(1))
+    # AC?
+    ac = 1 if ("ac" in txt and "non-ac" not in txt and "non ac" not in txt) else (0 if "non-ac" in txt or "non ac" in txt else None)
+    # mess type
+    mess = "Special" if "special" in txt else ("Non-Veg" if "non-veg" in txt or "non veg" in txt else ("Veg" if "veg" in txt else None))
+
+    # numeric fees: try to catch room/mess/total/admission/caution etc
+    def find_money(s):
+        s = s.replace(",", "")
+        m = re.findall(r"(?:usd|\$|inr|rs\.?|₹)?\s*([0-9]+(?:\.[0-9]+)?)", s, flags=re.I)
+        return [float(x) for x in m] if m else []
+    nums = find_money(" | ".join(row))
+
+    # very rough mapping: (room+mess), admission, caution, other, total
+    room_mess = total = admission = caution = other = None
+    # look for 'total'
+    for i, cell in enumerate(row):
+        c = (cell or "").lower()
+        if "total" in c:
+            arr = find_money(cell)
+            if arr: total = arr[-1]
+        if "admission" in c:
+            arr = find_money(cell); admission = arr[-1] if arr else admission
+        if "caution" in c:
+            arr = find_money(cell); caution = arr[-1] if arr else caution
+
+    # fallback: guess first big number as room+mess, last as total
+    if total is None and nums: total = nums[-1]
+    if room_mess is None and nums: room_mess = nums[0] if nums else None
+
+    return occ, ac, mess, room_mess, admission, caution, other, total
+
+def main():
+    if not DB.exists(): 
+        print("[ERR] DB missing. Run make_db.py first."); sys.exit(1)
+
+    with sqlite3.connect(DB) as con:
+        for csv_path in sorted(STAGING.glob("*.csv")):
+            stem = csv_path.stem   # e.g., 'MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0'
+            pdf_stem = stem.split("__")[0]
+            gender, level, category, ay, currency = infer_meta(pdf_stem)
+            block_type = get_block_type(pdf_stem)
+            # choose a neutral block_name per file group (you can refine per row if the CSV contains block subtypes)
+            block_name = ("MH" if gender=="Male" else "LH") + "-" + (block_type or "Regular")
+            display_name = f"{block_type or 'Regular'} ({'Boys' if gender=='Male' else 'Girls'})"
+
+            block_id = upsert_block(con, block_name, display_name, gender or "Male", level or "Senior", block_type)
+
+            with csv_path.open("r", encoding="utf-8") as f:
+                rows = list(csv.reader(f))
+            # skip obvious header noise rows with too few columns
+            for r in rows[1:] if rows else []:
+                if not any(r): continue
+                occ, ac, mess, room_mess, admission, caution, other, total = parse_row(r)
+                if occ is None and ac is None and mess is None and total is None:
+                    continue
+                con.execute("""
+                  INSERT INTO hostel_fees(block_id, ay, category, occupancy, ac, mess_type,
+                                          room_mess_fee, admission_fee, caution_deposit, other_fee, total_fee,
+                                          currency, source_file, source_page)
+                  VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                """, (block_id, ay, category, occ, ac, mess, room_mess, admission, caution, other, total,
+                      currency, pdf_stem + ".pdf", None))
+        con.commit()
+    print("[OK] Loaded staging CSVs into SQLite.")
+
+if __name__ == "__main__":
+    main()
