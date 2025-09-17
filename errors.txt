@@ -1,74 +1,360 @@
-(base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --emb gemini --q "list out all the hostel block names of the boys"
-[DEBUG] Intent: hostel_fees, Retrieved context length: 1133
+To address the issue of scattered or incorrect information when querying fee structures, block names, hostel contacts, or other table-based data, while maintaining the reliability of non-table data (e.g., eligibility, general contacts), you need a solution that replaces or complements CSV files with a more structured, query-friendly format tailored for tabular data. The goal is to ensure precise retrieval and generation, especially for table-heavy queries, without hallucinations or missing overlaps. Below, I outline alternatives to CSVs, their benefits, and how they address the drawbacks you’ve encountered, along with mitigations for potential issues.
+Alternatives to CSV Files
 
-### Hostel — Male — 2025-26
-**Hostel Fee Details (VIT Vellore)**
-| Hostel/Block | Occupancy | AC/Non-AC | Period | Fee Amount | Mess Type | Mess Fee | Caution Deposit | Other | Total | Currency | AY | Notes |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| Hostel/Block | Occupancy | AC/Non-AC | Period | Fee Amount | Mess Type | Mess Fee | Caution Deposit | Other | Total | Currency | AY | Notes |
-| Hostel/Block | Occupancy | AC/Non-AC | Period | Fee Amount | Mess Type | Mess Fee | Caution Deposit | Other | Total | Currency | AY | Notes |
-| Hostel/Block | Occupancy | AC/Non-AC | Period | Fee Amount | Mess Type | Mess Fee | Caution Deposit | Other | Total | Currency | AY | Notes |
-| Hostel/Block | Occupancy | AC/Non-AC | Period | Fee Amount | Mess Type | Mess Fee | Caution Deposit | Other | Total | Currency | AY | Notes |
+Relational Database (e.g., SQLite, PostgreSQL)
 
+Description: Store fee structures, block names, and contacts in a relational database with tables for each category (e.g., hostels_ug_nri, hostels_mh_senior, contacts). Each table has columns like room_type, mess_type, room_mess_fee, block_name, category, year, and contact_info.
+Benefits:
 
-*Sources:* MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26.pdf
-
-*Note: Based on ingested official PDFs. For the very latest updates, verify on VIT’s website.*
-
-(base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --emb gemini --q "What facilities are available for PG students in hostels?"
-[DEBUG] Intent: hostel_fees, Retrieved context length: 1135
-
-### Hostel — 2025-26
-**Hostel Fee Details (VIT Vellore)**
-| Hostel/Block | Occupancy | AC/Non-AC | Period | Fee Amount | Mess Type | Mess Fee | Caution Deposit | Other | Total | Currency | AY | Notes |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| Hostel/Block | Occupancy | AC/Non-AC | Period | Fee Amount | Mess Type | Mess Fee | Caution Deposit | Other | Total | Currency | AY | Notes |
-| Hostel/Block | Occupancy | AC/Non-AC | Period | Fee Amount | Mess Type | Mess Fee | Caution Deposit | Other | Total | Currency | AY | Notes |
-| Hostel/Block | Occupancy | AC/Non-AC | Period | Fee Amount | Mess Type | Mess Fee | Caution Deposit | Other | Total | Currency | AY | Notes |
+Precise Queries: Use SQL for exact lookups (e.g., SELECT total_usd FROM hostels_ug_nri WHERE room_type='6 AC' AND mess_type='Special' AND year=2025).
+Relationships: Link tables (e.g., hostels to blocks to contacts) to handle queries like “hostel block contacts” without scattering data.
+No Over-Fragmentation: Centralized storage avoids missing overlaps, unlike multiple CSVs.
+Scalability: Easily update/add rows for new years or programs (e.g., MTech, MCA, VITREE).
+Validation: Enforce data integrity (e.g., unique constraints, foreign keys) to prevent errors.
 
 
-*Sources:* MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26.pdf, MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26.pdf
+Implementation:
 
-*Note: Based on ingested official PDFs. For the very latest updates, verify on VIT’s website.*
+Extract tables from PDFs using Tabula/Camelot (Python).
+Create schema: e.g., hostels table with columns id, room_type, mess_type, fee_usd, admission_usd, caution_usd, total_usd, block_type, category, gender, year.
+Use SQLite in your rag_answer.py to query specific tables based on user input (e.g., --collection vit_hostels maps to hostels table).
+For non-table data (eligibility, general info), store in a separate table (general_info) or keep as text embeddings in your FAISS index.
 
-(base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --emb gemini --q "FAQs for M.Tech fee structure in 2025-26?"                 
-[DEBUG] Intent: tuition_fees, Retrieved context length: 1119
-[DEBUG] Intent: faq, Retrieved context length: 1119
 
-### PG — M.Tech
-**Highlights:**
-- Q: Are there scholarships available for M.Tech students?
-A: Yes, VIT offers scholarships to meritorious students under the GATE/CEED Fellowship scheme
-- Q: What is the fee structure for M.Tech programs in Category-1?
-A: The provided document mentions an M.Tech Fee Structure for Category-1 but doesn't specify the amount.       
-- Q: What is the total fee per annum for M.Tech for NRI and foreign students?
-A: 6500
+Drawbacks & Mitigations:
 
-*Sources:* PG MTECH FAQS.pdf, POSTGRADUTE ADMISSIONS PROCESS.pdf
+Setup Complexity: Initial schema design and data migration take effort. Mitigate with ORMs like SQLAlchemy for easier Python integration.
+Maintenance: Updates still needed for fee escalations. Automate with scripts to scrape vit.ac.in/fees (use web_search or browse_page).
+Query Latency: SQL queries are fast but need optimization for large datasets. Use indexes on common columns (e.g., room_type, year).
 
-*Note: Based on ingested official PDFs. For the very latest updates, verify on VIT’s website.*
 
-(base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --emb gemini --q "Common questions about VITEEE exam pattern?"       
-[DEBUG] Intent: eligibility, Retrieved context length: 951
 
-**Highlights:**
-- Mode: Computer-Based Test (CBT)
-- Duration: 2 hours
-- Type: Multiple-Choice Questions (MCQs)
-- Sections: 80 questions from the core specific syllabus, 20 questions on English Communication
-- Total Marks: 100
 
-*Note: Based on ingested official PDFs. For the very latest updates, verify on VIT’s website.*
+NoSQL Database (e.g., MongoDB)
 
-(base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --emb gemini --q "how many ac and non ac rooms are there for boys?"
-[DEBUG] Intent: block_counts, Retrieved context length: 1056
+Description: Store data as JSON-like documents in collections (e.g., ug_nri_hostels, pg_mtech_nri, hostel_contacts). Each document holds a fee structure or contact info (e.g., { "room_type": "6 AC", "mess_type": "Special", "total_usd": 3440, "block": "Regular", "year": 2025 }).
+Benefits:
 
-**Highlights:**
-- AC Blocks: 0
-- Non-AC Blocks: 0
-- AC total: None rooms
-- Non-AC total: None rooms
+Flexible Schema: Easily add fields (e.g., contact_phone for block contacts) without restructuring.
+Nested Data: Store complex structures (e.g., block details within hostel records) for queries like “block names and fees.”
+Text Search: MongoDB’s text indexes complement your Gemini embeddings for hybrid retrieval.
+Non-Table Data: Store eligibility/general info as separate collections, keeping table-based queries precise.
 
-*Note: Based on ingested official PDFs. For the very latest updates, verify on VIT’s website.*
 
-(base) PS C:\Users\T8543\Downloads\project-2> 
+Implementation:
+
+Parse PDFs into JSON using pandas or custom scripts.
+Create collections per category (e.g., hostels_lh_nri, hostels_mh_first_year).
+Modify rag_answer.py to query MongoDB (use pymongo) alongside FAISS for text embeddings.
+Example query: db.hostels_lh_nri.find({"room_type": "6 AC", "year": 2025, "category": "NRI"}).
+
+
+Drawbacks & Mitigations:
+
+Less Strict Structure: Risk of inconsistent data. Mitigate with validation schemas (MongoDB supports JSON Schema).
+Learning Curve: Requires familiarity with NoSQL. Use MongoDB Atlas for easier setup.
+Updates: Automate scraping as with CSVs to keep fees fresh.
+
+
+
+
+Knowledge Graph (e.g., Neo4j)
+
+Description: Model data as nodes (e.g., Room_Type, Block, Fee, Contact) and relationships (e.g., Room_Type HAS_FEE Fee). For example, 6 AC -> HAS_FEE -> $3440 and 6 AC -> IN_BLOCK -> Regular.
+Benefits:
+
+Contextual Queries: Handles complex queries like “find fees and contacts for 6-sharing AC in ladies hostel” by traversing relationships.
+No Hallucinations: Explicit links prevent inventing data (e.g., no ₹3,870 errors).
+Unified Data: Combines table-based (fees, blocks) and non-table (eligibility) data in one graph.
+
+
+Implementation:
+
+Parse PDFs into nodes/relationships (e.g., CREATE (r:Room {type: '6 AC', mess: 'Special'})-[:HAS_FEE]->(f:Fee {total_usd: 3440})).
+Use Cypher queries in rag_answer.py to fetch precise data.
+Store eligibility as nodes (e.g., Eligibility: {text: "UG NRI requires 60% in PCM"}).
+
+
+Drawbacks & Mitigations:
+
+Complexity: Graph setup is intricate. Use tools like py2neo for easier integration.
+Scalability: Slower for simple lookups than SQL. Use for complex queries only.
+Maintenance: Automate updates via scraping as above.
+
+
+
+
+Structured JSON/YAML Files
+
+Description: Store data as JSON/YAML files instead of CSVs, with nested structures (e.g., { "hostels": { "ug_nri_ladies": [{ "room_type": "6 AC", "fees": { "total_usd": 3440 }, "block": "Regular" }] } }).
+Benefits:
+
+Hierarchy: Captures relationships (e.g., fees within room types) better than flat CSVs.
+Portability: Easy to load into Python (json.load, yaml.safe_load).
+Queryable: Combine with FAISS embeddings or simple JSON path queries (e.g., $.hostels.ug_nri_ladies[?room_type='6 AC']).
+
+
+Implementation:
+
+Convert PDFs to JSON/YAML using pandas or custom scripts.
+Store in sub-folders (e.g., data/hostels/ug_nri_ladies.json).
+Update rag_answer.py to parse JSON/YAML for table-based queries.
+
+
+Drawbacks & Mitigations:
+
+Fragmentation: Like CSVs, too many files can miss overlaps. Group by category (e.g., hostels/, tuition/) and use a master index file.
+Parsing Overhead: JSON/YAML parsing can be slower than CSV. Cache parsed data in memory.
+Updates: Automate as with CSVs.
+
+
+
+
+
+Addressing Your Specific Issues
+
+Table-Based Queries (Fees, Block Names, Contacts):
+
+Problem: Scattered/wrong info (e.g., ₹3,870 hallucination).
+Solution: Relational databases or knowledge graphs ensure exact matches. For example, SQLite query SELECT * FROM hostels WHERE room_type='6 AC' AND category='NRI' AND gender='ladies' retrieves only relevant rows, avoiding conflation with men’s hostel or Indian fees.
+Block Names: Add a block_name column (e.g., “Regular”, “MHR”, “MHS”) to tables or nodes. For contacts, create a contacts table/collection (e.g., { "block": "MHR", "phone": "+91-1234567890" }).
+Example SQL Query: SELECT h.room_type, h.total_usd, c.phone FROM hostels h JOIN contacts c ON h.block_name = c.block WHERE h.category = 'NRI' AND h.gender = 'ladies'.
+
+
+Non-Table Data (Eligibility, General Info):
+
+Problem: Already works well.
+Solution: Keep as text embeddings in FAISS for semantic search. For table queries, route to database/graph instead of embeddings to avoid mixing contexts.
+
+
+
+Recommended Approach
+SQLite + FAISS Hybrid:
+
+Use SQLite for table-based data (fees, blocks, contacts) due to its simplicity, speed, and SQL support.
+Keep FAISS for non-table data (eligibility, general info) using Gemini embeddings.
+Modify rag_answer.py to detect query type (e.g., keywords “fees”, “block”, “contact” trigger SQL; “eligibility” triggers FAISS).
+Example schema for SQLite:
+sqlCREATE TABLE hostels (
+    id INTEGER PRIMARY KEY,
+    room_type TEXT,
+    mess_type TEXT,
+    room_mess_fee REAL,
+    admission_fee REAL,
+    caution_deposit REAL,
+    total_fee REAL,
+    block_name TEXT,
+    category TEXT, -- 'Indian', 'NRI', 'Foreign'
+    gender TEXT, -- 'Men', 'Ladies'
+    year INTEGER,
+    program TEXT -- 'UG', 'PG', 'VITREE'
+);
+CREATE TABLE contacts (
+    block_name TEXT PRIMARY KEY,
+    phone TEXT,
+    email TEXT
+);
+
+Example query routing in Python:
+pythonif "fees" in user_query or "block" in user_query:
+    result = query_sqlite(f"SELECT * FROM hostels WHERE category='NRI' AND year=2025")
+else:
+    result = query_faiss(user_query, collection="vit_faq_vellore")
+
+
+Drawbacks & Mitigations for SQLite
+
+Maintenance Overhead: Automate PDF-to-SQL ingestion using Tabula and a cron job to scrape vit.ac.in/fees annually.
+Data Freshness: Use web_search or browse_page on vit.ac.in to detect updates (e.g., new fees for 2026-27). Schedule monthly checks.
+Setup Time: Invest in a one-time script to convert PDFs to SQL (e.g., pandas to SQLite). I can help with sample code if needed.
+Scalability: SQLite handles small-to-medium datasets well. For larger scale, consider PostgreSQL.
+
+Sample Conversion Script (PDF to SQLite)
+pythonimport pandas as pd
+import sqlite3
+from tabula import read_pdf
+
+# Extract table from PDF
+dfs = read_pdf("MH-Senior-FEE-structure-2025-26.pdf", pages="all", multiple_tables=True)
+
+# Connect to SQLite
+conn = sqlite3.connect("vit_fees.db")
+cursor = conn.cursor()
+
+# Create table
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS hostels (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    room_type TEXT,
+    mess_type TEXT,
+    room_mess_fee REAL,
+    admission_fee REAL,
+    caution_deposit REAL,
+    total_fee REAL,
+    block_name TEXT,
+    category TEXT,
+    gender TEXT,
+    year INTEGER
+)
+""")
+
+# Insert data (example for one table)
+for df in dfs:
+    for _, row in df.iterrows():
+        cursor.execute("""
+        INSERT INTO hostels (room_type, mess_type, room_mess_fee, admission_fee, caution_deposit, total_fee, block_name, category, gender, year)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            row["Room Type"], row["Mess"], row["Room & Mess Fee"], row["Admission fee"], 
+            row["Caution Deposit"], row["Total"], "Regular", "Indian", "Men", 2025
+        ))
+
+conn.commit()
+conn.close()
+Next Steps
+
+Try SQLite First: It’s lightweight, integrates well with Python, and solves your table-based query issues.
+Hybrid Retrieval: Combine with FAISS for non-table data.
+Share Needs: If you want sample schemas for other categories (e.g., VITREE, PG MTech) or help with specific queries, provide details, and I’ll tailor them.
+Test Queries: Share example queries (e.g., “6-sharing AC ladies hostel fees NRI 2025”) to validate the setup.
+
+This approach ensures neat, correct responses for table-based queries while preserving the quality of non-table answers, addressing your scattered/incorrect info problem effectively.49.7sso lets say i am having the 6-7 pdfs based on the tables related information
+so for every pdf we are converting into the sql and then there will be different tables inside of it
+for example MH-senior pdf we have the different tables like deluxe and appartment type rooms
+for indian and NRI
+so like this there will be 6 tables in the single pdf - so we will provide those into the sql 
+let say we have 7 files that are tables related contents and 7 and each having the 6 tables that means 42 tables total
+so if we are storing all these tables with the same name as the official website has like Deluxe blocks - MHS and MHT so for the fresher he or she dont know those names 
+if they type like hostel blocks information need to give all the tables information and mess types including the dhobi 
+after seeing that if they specifically asks about the particular block name retrive that info only
+also senior knows how to ask question because he already been in VIT so he will type boys hostel senior rooms structure
+but freshers dont know the keyword to type exactly the fresher - give me some suggestions to cover this problem
+also these many tables i dont think sqlLite wont be scatter the information - so for the boys tables will be connected through the joins , primary and foreign keys 
+vise versa for the girls also
+
+so this is my idea is there any better approach that we can rectify this problem?
+Thought for 1m 32sYour idea of extracting tables from the 6-7 PDFs into SQLite tables, using primary/foreign keys and joins to connect related data (e.g., boys' hostels across PDFs via shared keys for gender, year, category), is a strong foundation. It prevents data scattering by centralizing everything in one database file (vit_fees.db), where you can query across all 42+ tables' worth of data without duplication or loss. For example, all boys' data can be linked via a gender column or key, and joins can pull comprehensive views (e.g., fees + blocks + contacts). SQLite handles this scale easily—it's lightweight, supports millions of rows, and performs well with proper indexing (e.g., on year, gender, category).
+However, the challenge with freshers not knowing official terms (e.g., "Deluxe blocks - MHS & MHT") is valid, as general queries like "hostel blocks information" need to return broad overviews (including mess types, laundry/dhobi details, contacts), while specific ones (e.g., from seniors: "boys hostel senior rooms structure") should narrow down. Below, I'll give suggestions to cover this, then discuss if there's a better overall approach.
+Suggestions to Handle Freshers' Lack of Keyword Knowledge
+To make the system user-friendly for freshers (who might ask vaguely) while supporting precise senior queries, focus on query processing and response design. These build on your SQL setup without overcomplicating it:
+
+Add a Query Intent Detection Layer:
+
+In your rag_answer.py script, use simple NLP or keyword matching to classify queries before generating SQL.
+
+General Queries (e.g., "hostel blocks information", "tell me about VIT hostels"): Detect broad terms like "information", "overview", "all", "types". Run a comprehensive SQL query that joins tables to return an aggregated view: all block names, descriptions, mess options (Veg/Non-Veg/Special), laundry (e.g., "44 washes included"), escalation notes, and contacts. Format the response as a summary table or list, then suggest refinements like "For details on Deluxe blocks, ask 'Deluxe boys hostel fees'."
+Specific Queries (e.g., "boys hostel senior rooms structure", "MHS block fees"): Detect terms like "senior", "boys", "structure", or exact block names. Run targeted SQL with WHERE clauses (e.g., WHERE gender='Boys' AND level='Senior' AND block_name LIKE '%MHS%').
+
+
+Implementation Tip: Use Python's re module or libraries like spaCy (if available in your env) for intent detection. Example code snippet:
+pythonimport re
+
+def detect_intent(query):
+    if re.search(r'\b(information|overview|all|types|hostel blocks)\b', query, re.IGNORECASE):
+        return 'general'  # Broad query for freshers
+    elif re.search(r'\b(senior|first year|boys|girls|MHS|MHT|deluxe|apartment)\b', query, re.IGNORECASE):
+        return 'specific'  # Targeted query for seniors
+    return 'general'  # Default to broad for safety
+
+# Then route to SQL: if general, SELECT DISTINCT block_name, ... with GROUP BY; if specific, add filters.
+
+This ensures freshers get everything (e.g., all tables' info aggregated), and only drill down on follow-ups.
+
+
+Incorporate Synonyms and Metadata in the Database:
+
+Add columns for aliases/synonyms in key tables (e.g., in a blocks table, have block_name = "Deluxe blocks - MHS & MHT" and aliases = "premium boys hostel, AC senior blocks"). Use LIKE or full-text search in SQL for fuzzy matching.
+Include user-friendly descriptions: E.g., a description column like "Deluxe blocks offer air-conditioned rooms for senior students, with options for 2-6 sharing and special mess."
+For laundry (dhobi), mess, etc., store in dedicated columns (e.g., laundry_details = "Inclusive of maximum 44 washes per semester") so general queries can pull them easily via joins.
+Example: For a fresher's query "hostel blocks information", SQL could be: SELECT block_name, description, laundry_details, GROUP_CONCAT(mess_type) AS mess_types FROM blocks JOIN hostels JOIN fees WHERE year=2025 GROUP BY block_name; This aggregates mess types into one field.
+
+
+Guided and Educational Responses:
+
+For general queries, always include:
+
+A high-level summary: "VIT has Regular, Apartment, and Deluxe blocks for boys/girls. Here's an overview including mess (Veg, Non-Veg, Special), laundry, and contacts..."
+Visual aids: Use tables in responses (as per your guidelines) to list all blocks/mess/laundry.
+Suggestions: "If you mean boys' senior hostels, try 'boys senior hostel fees'. For NRI options, specify 'NRI boys hostel'."
+
+
+This "teaches" freshers terms progressively, turning vague queries into specific follow-ups.
+
+
+Handle Gender Separation with Keys:
+
+As you suggested, use primary/foreign keys to connect boys' and girls' data without scattering.
+
+E.g., a gender column in a central blocks or hostels table acts as a filter (no need for separate boys/girls databases).
+Joins ensure queries like "boys hostel" add WHERE gender='Boys', pulling only relevant tables' data.
+
+
+Index columns like gender, year, category for fast queries across all 42+ tables' data.
+
+
+Testing and Fallbacks:
+
+Test with fresher-like queries: Simulate "give me hostel info" and ensure it returns all (or paginated) without overwhelming.
+Fallback: If no match, respond "I couldn't find exact details—try specifying 'boys' or 'girls', 'senior' or 'first-year', or 'NRI'."
+
+
+
+Is There a Better Approach?
+Your SQL-based idea is efficient and scalable for 42+ tables' worth of data, especially with normalization (grouping similar data into fewer tables via joins, rather than one table per PDF/table). However, if the data has deep hierarchies (e.g., blocks > categories > levels > fees), or if queries get very fuzzy, here are refined/better alternatives to consider:
+
+Normalized SQLite Schema (Refinement of Your Idea):
+
+Instead of 42 separate tables (one per PDF/table), consolidate into 4-6 normalized tables to avoid scattering. This is better than raw per-PDF tables because it reduces redundancy and makes joins simpler.
+
+Example schema (based on your PDFs; I generated this via code_execution for accuracy):
+
+blocks: For block names/types (e.g., Deluxe - MHS & MHT), gender, contacts.
+categories: Indian, NRI/Foreign.
+levels: Senior, First-Year, UG, PG.
+hostels: Links above + year, laundry/mess policies.
+fees: Room types, mess, fee details (linked to hostels).
+
+
+Benefits: Queries span all PDFs naturally (e.g., join on gender='Boys' connects all boys' data). No scattering—total tables drop to ~5, handling all 42+ originals via rows.
+Extraction: Use Tabula to parse each PDF table, then insert into these tables with scripts (add metadata like source_pdf for traceability).
+Why Better: Freshers' general queries hit one broad SELECT with joins; specifics filter via WHERE. SQLite won't scatter info—it's all relational.
+
+
+
+
+Hybrid: SQLite + Vector Search for Fuzzy Queries:
+
+Keep SQLite for structured retrieval, but add a vector embeddings layer (e.g., via FAISS in your script) on block descriptions/aliases.
+
+Embed phrases like "deluxe boys AC rooms" and map to SQL filters.
+For freshers: Semantic search detects intent (e.g., "hostel blocks" embeds close to "overview of Regular/Deluxe"), then triggers a general SQL query.
+
+
+Why Better: Handles unknown terms semantically (e.g., "dhobi service" matches "laundry_details"), bridging freshers' gaps without manual synonyms.
+
+
+Document Database (MongoDB) Instead of SQLite:
+
+If relationships feel too rigid, switch to MongoDB: Store each PDF's tables as nested documents (e.g., { "pdf": "MH-senior", "blocks": { "deluxe": { "fees": [...], "mess_types": [...], "laundry": "44 washes" } } }).
+
+Queries use aggregation pipelines (like SQL joins) for boys/girls connections.
+Built-in text search for fuzzy matching (e.g., search "hostel info" across all docs).
+
+
+Why Better: More flexible for hierarchical data (no strict schema), easier to add freshers' aliases as fields. But if your data is tabular, SQLite is simpler/cheaper.
+
+
+Knowledge Graph (Neo4j):
+
+Model as nodes/edges: E.g., Node "Block: Deluxe MHS" -> Edge "HAS_FEES" -> Node "6 AC Special: $3440"; Node "Gender: Boys" -> Edge "APPLIES_TO" -> Block nodes.
+
+Queries traverse graphs (e.g., "find all connected to Boys and 2025").
+
+
+Why Better: Excellent for interconnected data (boys/girls links), and fuzzy queries via pattern matching. But overkill for 42 tables—stick to SQLite unless queries are very relational/complex.
+
+
+
+Recommendation
+Start with the normalized SQLite schema—it's a direct improvement on your idea, reduces table count, prevents scattering via joins/keys, and scales well. Add the query intent layer for freshers. If fuzzy searches become a big issue, layer on vector search. This rectifies the keyword problem without major changes.
+If you share a sample PDF snippet or query examples, I can refine the schema or script further!92.4sExpert
