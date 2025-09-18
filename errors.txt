@@ -1,131 +1,184 @@
-# sql_router.py
-import sqlite3, pathlib, re
-from typing import Dict, Any
+# rag_answer.py  (only change is: route "blocks" to SR.sql_list_blocks)
 
-DB = pathlib.Path("Data/sql/vit_vellore.db")
+import os, sys, re, argparse
+from pathlib import Path
+from typing import List, Dict, Any
+import sql_router as SR
 
-def detect_structured_intent(q: str) -> str:
-    ql = q.lower()
-    if any(k in ql for k in ["contact", "phone", "email", "supervisor"]):
-        return "contacts"
-    if "block" in ql and any(k in ql for k in ["name","names","list","all"]):
-        return "blocks"
-    if any(k in ql for k in ["hostel", "room", "block", "mess", "dhobi", "laundry", "fee", "fees", "tuition"]):
-        return "tabular"
-    return "text"
+from langchain_community.vectorstores import FAISS
+from langchain_core.embeddings import Embeddings as LCEmbeddings
 
-def parse_filters(q: str) -> Dict[str, Any]:
-    ql = q.lower()
-    f = {"ay": None, "gender": None, "category": None, "level": None}
-    if re.search(r"\b(20\d{2})\b", ql):
-        yr = re.search(r"\b(20\d{2})\b", ql).group(1)
-        f["ay"] = f"{yr}-{str(int(yr[-2:])+1).zfill(2)}"
-    if any(k in ql for k in ["boy", "boys", "men", "mh", "mens"]): f["gender"] = "Male"
-    if any(k in ql for k in ["girl", "girls", "ladies", "lh", "women"]): f["gender"] = "Female"
-    if "nri" in ql: f["category"] = "NRI"
-    elif "foreign" in ql: f["category"] = "Foreign"
-    elif "indian" in ql: f["category"] = "Indian"
-    if any(k in ql for k in ["senior"]): f["level"] = "Senior"
-    if any(k in ql for k in ["first year", "fresh"]): f["level"] = "First-Year"
-    return f
+class GeminiLCEmbeddings(LCEmbeddings):
+    def __init__(self, model: str = "models/text-embedding-004", api_key_env: str = "GEMINI_API_KEY"):
+        import google.generativeai as genai
+        api_key = os.getenv(api_key_env)
+        if not api_key:
+            print("[ERROR] GEMINI_API_KEY not set.")
+            sys.exit(1)
+        genai.configure(api_key=api_key)
+        self.genai = genai
+        self.model = model
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+        return [self.genai.embed_content(model=self.model, content=t)["embedding"] for t in texts]
+    def embed_query(self, text: str) -> List[float]:
+        return self.genai.embed_content(model=self.model, content=text)["embedding"]
 
-def sql_hostel_overview(f: Dict[str,Any], limit_blocks: int = 20) -> Dict[str, Any]:
-    con = sqlite3.connect(DB)
-    con.row_factory = sqlite3.Row
-    where = ["1=1"]
-    args = []
-    if f["gender"]:   where.append("IFNULL(b.gender,'')=IFNULL(?, '')");   args.append(f["gender"])
-    if f["level"]:    where.append("IFNULL(b.level,'')=IFNULL(?, '')");    args.append(f["level"])
-    if f["ay"]:       where.append("IFNULL(hf.ay,'')=IFNULL(?, '')");      args.append(f["ay"])
-    if f["category"]: where.append("IFNULL(hf.category,'')=IFNULL(?, '')");args.append(f["category"])
-    # drop junk/empty rows
-    where.append("""(
-        COALESCE(hf.total_fee,'')<>'' OR COALESCE(hf.room_mess_fee,'')<>'' OR
-        COALESCE(hf.admission_fee,'')<>'' OR COALESCE(hf.caution_deposit,'')<>'' OR
-        COALESCE(hf.occupancy,'')<>'' OR COALESCE(hf.mess_type,'')<>''
-    )""")
+def load_store(index_dir: Path, collection: str, emb: LCEmbeddings) -> FAISS:
+    return FAISS.load_local(str(index_dir), embeddings=emb, index_name=collection, allow_dangerous_deserialization=True)
 
-    sql = f"""
-    SELECT b.block_name, b.display_name, b.gender, b.level, b.block_type,
-           hf.ay, hf.category, hf.occupancy, hf.ac, hf.mess_type,
-           hf.room_mess_fee, hf.admission_fee, hf.caution_deposit, hf.other_fee, hf.total_fee, hf.currency,
-           hf.source_file
-    FROM hostel_fees hf
-    JOIN blocks b ON b.id = hf.block_id
-    WHERE {' AND '.join(where)}
-    ORDER BY b.block_type, b.block_name, hf.occupancy, hf.ac DESC, hf.mess_type
-    """
-    rows = con.execute(sql, args).fetchall()
+def retrieve(store: FAISS, query: str, k: int = 40):
+    return store.similarity_search(query, k=k)
 
-    am_sql = "SELECT b.block_name, a.key, a.value FROM amenities a JOIN blocks b ON b.id=a.block_id"
-    am = con.execute(am_sql).fetchall()
-    con.close()
+def keyword_score(text: str, q: str) -> int:
+    qwords = [w for w in re.findall(r"[a-z0-9]+", q.lower()) if len(w) > 2]
+    t = text.lower()
+    return sum(t.count(w) for w in qwords)
 
-    columns = ["Block", "Gender", "Level", "Type", "AY", "Category", "Occ", "AC", "Mess",
-               "Room+Mess", "Admission", "Caution", "Other", "Total", "Curr", "Source"]
-    tbl = {"title": "Hostel Fee Details (Vellore)", "columns": columns, "rows": []}
-    for r in rows[:1000]:
-        tbl["rows"].append([
-            r["display_name"] or r["block_name"] or "",
-            r["gender"] or "", r["level"] or "", r["block_type"] or "",
-            r["ay"] or "", r["category"] or "", r["occupancy"] or "",
-            "AC" if (r["ac"]==1) else ("Non-AC" if (r["ac"]==0) else ""),
-            r["mess_type"] or "", r["room_mess_fee"] or "", r["admission_fee"] or "",
-            r["caution_deposit"] or "", r["other_fee"] or "", r["total_fee"] or "",
-            r["currency"] or "", r["source_file"] or ""
-        ])
+def postfilter_and_rerank(docs, filt: Dict[str, Any], query: str, topn: int = 12):
+    def ok(md):
+        if "domain" in filt and md.get("domain") and md["domain"].lower()!=filt["domain"].lower():
+            return False
+        if "category" in filt and md.get("category") and md["category"].lower()!=filt["category"].lower():
+            return False
+        return True
+    docs = [d for d in docs if ok(d.metadata or {})]
+    def fn_tok(md):
+        name = (md.get("source_file") or "").lower()
+        return {
+            "lh": "lh" in name or "ladies" in name or "girls" in name or "women" in name,
+            "mh": "mh" in name or "mens" in name or "boys" in name,
+            "nri": "nri" in name,
+            "foreign": "foreign" in name,
+            "indian": "indian" in name,
+            "ay2025": "2025-26" in name or "2025_26" in name or "2025–26" in name,
+        }
+    scored = []
+    want_lh = (filt.get("gender","") or "").lower()=="female"
+    want_mh = (filt.get("gender","") or "").lower()=="male"
+    want_nri = (filt.get("audience","") or "").lower()=="nri"
+    want_foreign = (filt.get("audience","") or "").lower()=="foreign"
+    want_indian = (filt.get("audience","") or "").lower()=="indian"
+    want_ay2025 = "2025" in (filt.get("ay","") or "")
+    for d in docs:
+        md = d.metadata or {}
+        tok = fn_tok(md)
+        s = 0
+        if want_lh and tok["lh"]: s+=3
+        if want_mh and tok["mh"]: s+=3
+        if want_nri and tok["nri"]: s+=2
+        if want_foreign and tok["foreign"]: s+=2
+        if want_indian and tok["indian"]: s+=2
+        if want_ay2025 and tok["ay2025"]: s+=1
+        s += keyword_score(d.page_content, query)
+        scored.append((s,d))
+    scored.sort(key=lambda x: x[0], reverse=True)
+    return [d for s,d in scored][:topn]
 
-    bullets = []
-    seen_blocks = {}
+def llm_summary(context: str, query: str) -> List[str]:
+    try:
+        import google.generativeai as genai
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key: return []
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel("gemini-1.5-flash")
+        prompt = f"""Summarize in 3 concise bullets using only the facts below.
+STRICT: quote exact currency/amounts; no guesses.
+
+Query: {query}
+Context:
+{context[:3000]}
+"""
+        resp = model.generate_content([{"role":"user","parts":[prompt]}],
+                                      generation_config={"temperature":0.1,"max_output_tokens":220,"response_mime_type":"text/plain"})
+        txt = (resp.text or "").strip()
+        bullets = [re.sub(r"^\s*[-•]\s*","",ln).strip() for ln in txt.splitlines() if ln.strip()]
+        return bullets[:5]
+    except Exception:
+        return []
+
+def render_table_md(title: str, cols: List[str], rows: List[List[str]]) -> str:
+    out = []
+    if title: out.append(f"**{title}**")
+    out.append("| " + " | ".join(cols) + " |")
+    out.append("|" + "|".join(["---"]*len(cols)) + "|")
     for r in rows:
-        key = (r["gender"], r["level"], r["block_type"])
-        seen_blocks.setdefault(key, set()).add(r["block_name"] or r["display_name"] or "")
-    for (g,l,t), names in list(seen_blocks.items())[:limit_blocks]:
-        count = len([n for n in names if n])
-        bullets.append(f"{g or '—'} {l or '—'} {t or '—'}: {count} block(s)")
+        out.append("| " + " | ".join("" if c is None else str(c) for c in r) + " |")
+    out.append("")
+    return "\n".join(out)
 
-    dhobi = [x for x in am if (x["key"] or "").lower() in ("dhobi","laundry")]
-    if dhobi:
-        bullets.append("Laundry/Dhobi: " + "; ".join({f'{d["block_name"]}: {d["value"]}' for d in dhobi if d["block_name"]}))
+def answer_query(index_dir: Path, collection: str, query: str) -> str:
+    # ---------- Structured (SQLite) routing ----------
+    sr_intent = SR.detect_structured_intent(query)
+    if sr_intent in ("tabular", "contacts", "blocks"):
+        f = SR.parse_filters(query)
+        if sr_intent == "contacts":
+            data = SR.sql_block_contacts(f)
+        elif sr_intent == "blocks":
+            data = SR.sql_list_blocks(f)
+        else:
+            data = SR.sql_hostel_overview(f)
 
-    return {"table": tbl, "bullets": bullets, "sources": list({r["source_file"] for r in rows if r["source_file"]})}
+        cols = data["table"]["columns"][:]
+        rows = [r[:] for r in data["table"]["rows"]]
+        # hide source col if present
+        if "Source" in cols:
+            si = cols.index("Source")
+            cols = cols[:si] + cols[si+1:]
+            rows = [[c for j,c in enumerate(r) if j != si] for r in rows]
 
-def sql_block_contacts(f: Dict[str,Any]) -> Dict[str,Any]:
-    con = sqlite3.connect(DB); con.row_factory = sqlite3.Row
-    where = ["1=1"]; args=[]
-    if f["gender"]: where.append("IFNULL(b.gender,'')=IFNULL(?, '')"); args.append(f["gender"])
-    if f["level"]:  where.append("IFNULL(b.level,'')=IFNULL(?, '')");  args.append(f["level"])
-    sql = f"""
-    SELECT b.block_name, b.display_name, c.name, c.role, c.phone, c.email
-    FROM contacts c JOIN blocks b ON b.id=c.block_id
-    WHERE {' AND '.join(where)}
-    ORDER BY b.block_name, c.role
-    """
-    rows = con.execute(sql, args).fetchall()
-    con.close()
-    cols = ["Block","Name","Role","Phone","Email"]
-    tbl = {"title":"Hostel Contacts", "columns":cols, "rows":[
-        [r["display_name"] or r["block_name"] or "", r["name"] or "", r["role"] or "", r["phone"] or "", r["email"] or ""]
-        for r in rows
-    ]}
-    return {"table": tbl, "bullets": [], "sources": []}
+        seen = set(); clean_rows = []
+        for r in rows:
+            key = tuple("" if c is None else str(c).strip() for c in r)
+            if key in seen: continue
+            seen.add(key)
+            clean_rows.append(r)
 
-def sql_list_blocks(f: Dict[str,Any]) -> Dict[str,Any]:
-    con = sqlite3.connect(DB); con.row_factory = sqlite3.Row
-    where = ["1=1"]; args=[]
-    if f["gender"]: where.append("IFNULL(gender,'')=IFNULL(?, '')"); args.append(f["gender"])
-    if f["level"]:  where.append("IFNULL(level,'')=IFNULL(?, '')");  args.append(f["level"])
-    sql = f"""
-    SELECT display_name, block_name, gender, level, block_type
-    FROM blocks
-    WHERE {' AND '.join(where)}
-    ORDER BY gender, level, block_name
-    """
-    rows = con.execute(sql, args).fetchall()
-    con.close()
-    cols = ["Block","Gender","Level","Type"]
-    tbl = {"title":"Hostel Blocks", "columns":cols, "rows":[
-        [r["display_name"] or r["block_name"] or "", r["gender"] or "", r["level"] or "", r["block_type"] or ""]
-        for r in rows
-    ]}
-    return {"table": tbl, "bullets": [], "sources": []}
+        md = render_table_md(data["table"].get("title","Results"), cols, clean_rows[:60])
+        if data.get("bullets"):
+            md += "\n**Quick overview:**\n" + "\n".join(f"- {b}" for b in data["bullets"])
+        return md + "\n\n*Note: Structured answers are pulled from your SQLite DB built from official PDFs.*"
+
+    # ---------- FAISS fallback for non-tabular ----------
+    emb = GeminiLCEmbeddings()
+    store = load_store(index_dir, collection, emb)
+
+    filt = {}
+    if any(k in query.lower() for k in ["hostel","block","mess","dhobi"]):
+        filt["domain"] = "Hostel"
+    docs = retrieve(store, query, k=40)
+    docs = postfilter_and_rerank(docs, filt, query, topn=10)
+
+    ctx_lines, sources = [], []
+    for d in docs:
+        md = d.metadata or {}
+        src = md.get("source_file") or md.get("source_title") or "unknown"
+        sources.append(src)
+        head = f"[{src}] domain={md.get('domain')} category={md.get('category')} program={md.get('program')} audience={md.get('audience')} gender={md.get('gender')} ay={md.get('ay')}"
+        ctx_lines += [head, d.page_content[:500], ""]
+    context = "\n".join(ctx_lines)
+
+    bullets = llm_summary(context, query)
+    out = []
+    if bullets:
+        out.append("**Highlights:**")
+        out += [f"- {b}" for b in bullets]
+    else:
+        out.append("_Couldn’t derive a concise summary from the retrieved context._")
+
+    if sources:
+        out.append("")
+        out.append("*Sources:* " + ", ".join(list(dict.fromkeys(sources))[:5]))
+    out.append("\n*Note: Answers are generated only from your ingested official PDFs.*")
+    return "\n".join(out)
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--index_dir", required=True)
+    ap.add_argument("--collection", default="vit_faq_vellore")
+    ap.add_argument("--emb", choices=["gemini"], default="gemini")
+    ap.add_argument("--q", required=True)
+    args = ap.parse_args()
+    print("\n" + answer_query(Path(args.index_dir), args.collection, args.q) + "\n")
+
+if __name__ == "__main__":
+    main()
