@@ -1,385 +1,203 @@
-(.venv) C:\Users\T8543\Downloads\project-2>
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --emb gemini --q "hostel information boys 2025"                     
-C:\Users\T8543\Downloads\project-2\rag_answer.py:7: SyntaxWarning: invalid escape sequence '\.'
-  .\.venv\Scripts\python.exe rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --emb gemini --q "ug nri ladies hostel fees 2025"
+# rag_answer.py
+# Hybrid RAG for VIT Vellore: SQLite for structured hostel data + FAISS for everything else.
 
-**Hostel Fee Details (Vellore)**
-| Block | Gender | Level | Type | AY | Category | Occ | AC | Mess | Room+Mess | Admission | Caution | Other | Total | Curr | Source |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Non Veg |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Non Veg |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Non Veg |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Non Veg |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Non Veg |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Non Veg |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Non Veg |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Non Veg |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Non Veg |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Non Veg |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Veg |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Veg |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Veg |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Veg |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Veg |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Veg |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Veg |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Veg |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Veg |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Veg |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  | Mess |  |  |  |  |  | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  | Mess |  |  |  |  |  | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  | Mess |  |  |  |  |  | USD | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  | Mess |  |  |  |  |  | USD | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  | Non Veg |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  | Non Veg |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  | Non Veg |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  | Non Veg |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  | Non Veg |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  | Special Mess |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  | Special Mess |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  | Special Mess |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  | Special Mess |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  | Special Mess |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  | Special Mess |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  | Special Mess |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  | Special Mess |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  | Special Mess |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  | Special Mess |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  | Veg |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  | Veg |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  | Veg |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  | Veg |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  | Veg |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Non Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Non Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Non Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Non Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Non Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Non Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Non Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Non Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Non Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Non Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Non Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_4.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_4.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_4.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_5.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_5.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_5.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  | Mess |  |  |  |  |  | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  | Mess |  |  |  |  |  | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  | Mess |  |  |  |  |  | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  | Mess |  |  |  |  |  | USD | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  | Mess |  |  |  |  |  | USD | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_4.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  | Mess |  |  |  |  |  | USD | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_5.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  | Non Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  | Non Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  | Non Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  | Non Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  | Non Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  | Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  | Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  | Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  | Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  | Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
+import os, sys, re, argparse
+from pathlib import Path
+from typing import List, Dict, Any
 
-**Highlights:**
-- Male First-Year —: 1 block(s)
-- Male Senior —: 1 block(s)
+# ---- NEW: import the SQL router ----
+import sql_router as SR
 
-*Sources:* MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv, MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_4.csv, MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv, MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv, MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+from langchain_community.vectorstores import FAISS
+from langchain_core.embeddings import Embeddings as LCEmbeddings
 
-*Note: Answers are generated only from your ingested official PDFs. For the very latest updates, verify on VIT’s website.*
+# ---------------- Embeddings wrapper (Gemini) ---------------- #
+class GeminiLCEmbeddings(LCEmbeddings):
+    def __init__(self, model: str = "models/text-embedding-004", api_key_env: str = "GEMINI_API_KEY"):
+        import google.generativeai as genai
+        api_key = os.getenv(api_key_env)
+        if not api_key:
+            print("[ERROR] GEMINI_API_KEY not set.")
+            sys.exit(1)
+        genai.configure(api_key=api_key)
+        self.genai = genai
+        self.model = model
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+        return [self.genai.embed_content(model=self.model, content=t)["embedding"] for t in texts]
+    def embed_query(self, text: str) -> List[float]:
+        return self.genai.embed_content(model=self.model, content=text)["embedding"]
 
+# ---------------- Vector helpers ---------------- #
+def load_store(index_dir: Path, collection: str, emb: LCEmbeddings) -> FAISS:
+    return FAISS.load_local(
+        str(index_dir),
+        embeddings=emb,
+        index_name=collection,
+        allow_dangerous_deserialization=True
+    )
 
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --emb gemini --q "UG NRI girls hostel fees 2025"
-C:\Users\T8543\Downloads\project-2\rag_answer.py:7: SyntaxWarning: invalid escape sequence '\.'
-  .\.venv\Scripts\python.exe rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --emb gemini --q "ug nri ladies hostel fees 2025"
+def retrieve(store: FAISS, query: str, k: int = 40):
+    return store.similarity_search(query, k=k)
 
-**Hostel Fee Details (Vellore)**
-| Block | Gender | Level | Type | AY | Category | Occ | AC | Mess | Room+Mess | Admission | Caution | Other | Total | Curr | Source |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| Ladies Hostel | Female |  |  | 2025-26 | NRI |  | AC |  |  |  |  |  |  |  | LH-FEE-structure-NRI-Foreign-Category-2025-26__camelot_0.csv |
-| Ladies Hostel | Female |  |  | 2025-26 | NRI |  |  | Special
-mess |  |  |  |  |  | USD | LH-FEE-structure-NRI-Foreign-Category-2025-26__camelot_0.csv |
-| Ladies Hostel | Female |  |  | 2025-26 | NRI |  |  | mess |  |  |  |  |  |  | LH-FEE-structure-NRI-Foreign-Category-2025-26__camelot_0.csv |
+def keyword_score(text: str, q: str) -> int:
+    qwords = [w for w in re.findall(r"[a-z0-9]+", q.lower()) if len(w) > 2]
+    t = text.lower()
+    return sum(t.count(w) for w in qwords)
 
-**Highlights:**
-- Female — —: 1 block(s)
+def postfilter_and_rerank(docs, filt: Dict[str, Any], query: str, topn: int = 12):
+    def ok(md):
+        if "domain" in filt and md.get("domain") and md["domain"].lower()!=filt["domain"].lower():
+            return False
+        if "category" in filt and md.get("category") and md["category"].lower()!=filt["category"].lower():
+            return False
+        return True
+    docs = [d for d in docs if ok(d.metadata or {})]
 
-*Sources:* LH-FEE-structure-NRI-Foreign-Category-2025-26__camelot_0.csv
+    def fn_tok(md):
+        name = (md.get("source_file") or "").lower()
+        return {
+            "lh": "lh" in name or "ladies" in name or "girls" in name or "women" in name,
+            "mh": "mh" in name or "mens" in name or "boys" in name,
+            "nri": "nri" in name,
+            "foreign": "foreign" in name,
+            "indian": "indian" in name,
+            "ay2025": "2025-26" in name or "2025_26" in name or "2025–26" in name,
+        }
+    scored = []
+    want_lh = (filt.get("gender","") or "").lower()=="female"
+    want_mh = (filt.get("gender","") or "").lower()=="male"
+    want_nri = (filt.get("audience","") or "").lower()=="nri"
+    want_foreign = (filt.get("audience","") or "").lower()=="foreign"
+    want_indian = (filt.get("audience","") or "").lower()=="indian"
+    want_ay2025 = "2025" in (filt.get("ay","") or "")
+    for d in docs:
+        md = d.metadata or {}
+        tok = fn_tok(md)
+        s = 0
+        if want_lh and tok["lh"]: s+=3
+        if want_mh and tok["mh"]: s+=3
+        if want_nri and tok["nri"]: s+=2
+        if want_foreign and tok["foreign"]: s+=2
+        if want_indian and tok["indian"]: s+=2
+        if want_ay2025 and tok["ay2025"]: s+=1
+        s += keyword_score(d.page_content, query)
+        scored.append((s,d))
+    scored.sort(key=lambda x: x[0], reverse=True)
+    return [d for s,d in scored][:topn]
 
-*Note: Answers are generated only from your ingested official PDFs. For the very latest updates, verify on VIT’s website.*
+# ---------------- LLM (short summaries only) ---------------- #
+def llm_summary(context: str, query: str) -> List[str]:
+    try:
+        import google.generativeai as genai
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key: return []
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel("gemini-1.5-flash")
+        prompt = f"""Summarize in 3 concise bullets using only the facts below.
+STRICT: quote exact currency/amounts; no guesses.
 
+Query: {query}
+Context:
+{context[:3000]}
+"""
+        resp = model.generate_content([{"role":"user","parts":[prompt]}],
+                                      generation_config={"temperature":0.1,"max_output_tokens":220,"response_mime_type":"text/plain"})
+        txt = (resp.text or "").strip()
+        bullets = [re.sub(r"^\s*[-•]\s*","",ln).strip() for ln in txt.splitlines() if ln.strip()]
+        return bullets[:5]
+    except Exception:
+        return []
 
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --emb gemini --q "list all the block names of the mens hostel"
-C:\Users\T8543\Downloads\project-2\rag_answer.py:7: SyntaxWarning: invalid escape sequence '\.'
-  .\.venv\Scripts\python.exe rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --emb gemini --q "ug nri ladies hostel fees 2025"
+# ---------------- Rendering helpers ---------------- #
+def render_table_md(title: str, cols: List[str], rows: List[List[str]]) -> str:
+    out = []
+    if title: out.append(f"**{title}**")
+    out.append("| " + " | ".join(cols) + " |")
+    out.append("|" + "|".join(["---"]*len(cols)) + "|")
+    for r in rows:
+        out.append("| " + " | ".join("" if c is None else str(c) for c in r) + " |")
+    out.append("")
+    return "\n".join(out)
 
-**Hostel Fee Details (Vellore)**
-| Block | Gender | Level | Type | AY | Category | Occ | AC | Mess | Room+Mess | Admission | Caution | Other | Total | Curr | Source |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Non Veg |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Non Veg |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Non Veg |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Non Veg |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Non Veg |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Non Veg |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Non Veg |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Non Veg |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Non Veg |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Non Veg |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Veg |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Veg |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Veg |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Veg |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Veg |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Veg |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Veg |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Veg |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Veg |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | Veg |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  | Mess |  |  |  |  |  | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  | Mess |  |  |  |  |  | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  | Mess |  |  |  |  |  | USD | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  | Mess |  |  |  |  |  | USD | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  | Non Veg |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  | Non Veg |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  | Non Veg |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  | Non Veg |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  | Non Veg |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  | Special Mess |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  | Special Mess |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  | Special Mess |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  | Special Mess |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  | Special Mess |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  | Special Mess |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  | Special Mess |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  | Special Mess |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  | Special Mess |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  | Special Mess |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  | Veg |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  | Veg |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  | Veg |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  | Veg |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  | Veg |  |  |  |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Non Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Non Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Non Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Non Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Non Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Non Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Non Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Non Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Non Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Non Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Non Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_4.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_4.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_4.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_5.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_5.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_5.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC | Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  | Mess |  |  |  |  |  | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  | Mess |  |  |  |  |  | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  | Mess |  |  |  |  |  | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  | Mess |  |  |  |  |  | USD | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  | Mess |  |  |  |  |  | USD | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_4.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  | Mess |  |  |  |  |  | USD | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_5.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  | Non Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  | Non Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  | Non Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  | Non Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  | Non Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  | Special Mess |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  | Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  | Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  | Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  | Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
-| Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  | Veg |  |  |  |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv |
+# ---------------- Main pipeline ---------------- #
+def answer_query(index_dir: Path, collection: str, query: str) -> str:
+    """
+    Routing:
+      - If query is hostel/fees/blocks/contacts → SQLite via sql_router (deterministic).
+      - Otherwise → FAISS semantic RAG (your original flow).
+    """
+    # 1) Try SQLite router first for structured intents
+    sr_intent = SR.detect_structured_intent(query)
+    if sr_intent in ("tabular", "contacts"):
+        f = SR.parse_filters(query)
+        data = SR.sql_block_contacts(f) if sr_intent == "contacts" else SR.sql_hostel_overview(f)
 
-**Highlights:**
-- Male First-Year —: 1 block(s)
-- Male Senior —: 1 block(s)
+        # hide "Source" column from presentation
+        cols = data["table"]["columns"][:]
+        rows = [r[:] for r in data["table"]["rows"]]
+        if "Source" in cols:
+            si = cols.index("Source")
+            cols = cols[:si] + cols[si+1:]
+            rows = [[c for j,c in enumerate(r) if j != si] for r in rows]
 
-*Sources:* MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv, MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv, MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv, MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_4.csv, MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv
+        # de-dup rows for cleaner output
+        seen = set(); clean_rows = []
+        for r in rows:
+            key = tuple("" if c is None else str(c).strip() for c in r)
+            if key in seen: continue
+            seen.add(key)
+            clean_rows.append(r)
 
-*Note: Answers are generated only from your ingested official PDFs. For the very latest updates, verify on VIT’s website.*
+        md = render_table_md(data["table"].get("title","Results"), cols, clean_rows[:60])
+        if data.get("bullets"):
+            md += "\n**Quick overview:**\n" + "\n".join(f"- {b}" for b in data["bullets"])
+        return md + "\n\n*Note: Structured answers are pulled from your SQLite DB built from official PDFs.*"
 
+    # 2) Fall back to FAISS semantic RAG (original behavior)
+    emb = GeminiLCEmbeddings()
+    store = load_store(index_dir, collection, emb)
 
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --emb gemini --q "ladies hostel supervisor contact email phone"     
-C:\Users\T8543\Downloads\project-2\rag_answer.py:7: SyntaxWarning: invalid escape sequence '\.'
-  .\.venv\Scripts\python.exe rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --emb gemini --q "ug nri ladies hostel fees 2025"
+    # lightweight filter hints for reranking
+    filt = {}
+    if any(k in query.lower() for k in ["hostel","block","mess","dhobi"]):
+        filt["domain"] = "Hostel"
+    docs = retrieve(store, query, k=40)
+    docs = postfilter_and_rerank(docs, filt, query, topn=10)
 
-**Hostel Fee Details (Vellore)**
-| Block | Gender | Level | Type | AY | Category | Occ | AC | Mess | Room+Mess | Admission | Caution | Other | Total | Curr | Source |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| Ladies Hostel | Female |  |  | 2025-26 | NRI |  | AC |  |  |  |  |  |  |  | LH-FEE-structure-NRI-Foreign-Category-2025-26__camelot_0.csv |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | Non Veg |  |  |  |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | Non Veg |  |  |  |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | Non Veg |  |  |  |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | Non Veg |  |  |  |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | Special Mess |  |  |  |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | Special Mess |  |  |  |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | Special Mess |  |  |  |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | Special Mess |  |  |  |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | Veg |  |  |  |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | Veg |  |  |  |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | Veg |  |  |  |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | Veg |  |  |  |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  | Mess |  |  |  |  |  | INR | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  | Non Veg |  |  |  |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  | Non Veg |  |  |  |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  | Non Veg |  |  |  |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  | Non Veg |  |  |  |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  | Non Veg |  |  |  |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  | Non Veg |  |  |  |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  | Non Veg |  |  |  |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  | Non Veg |  |  |  |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  | Non Veg |  |  |  |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv |
-| Ladies Hostel | Female |  |  | 2025-26 | NRI |  |  | Special
-mess |  |  |  |  |  | USD | LH-FEE-structure-NRI-Foreign-Category-2025-26__camelot_0.csv |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  | Special Mess |  |  |  |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  | Special Mess |  |  |  |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  | Special Mess |  |  |  |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  | Special Mess |  |  |  |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  | Special Mess |  |  |  |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  | Special Mess |  |  |  |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  | Special Mess |  |  |  |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  | Special Mess |  |  |  |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  | Special Mess |  |  |  |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  | Veg |  |  |  |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  | Veg |  |  |  |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  | Veg |  |  |  |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  | Veg |  |  |  |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  | Veg |  |  |  |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  | Veg |  |  |  |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  | Veg |  |  |  |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  | Veg |  |  |  |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  | Veg |  |  |  |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  | mess |  |  |  |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv |
-| Ladies Hostel | Female |  |  | 2025-26 | NRI |  |  | mess |  |  |  |  |  |  | LH-FEE-structure-NRI-Foreign-Category-2025-26__camelot_0.csv |
+    # Build a short context for LLM summary
+    ctx_lines, sources = [], []
+    for d in docs:
+        md = d.metadata or {}
+        src = md.get("source_file") or md.get("source_title") or "unknown"
+        sources.append(src)
+        head = f"[{src}] domain={md.get('domain')} category={md.get('category')} program={md.get('program')} audience={md.get('audience')} gender={md.get('gender')} ay={md.get('ay')}"
+        ctx_lines += [head, d.page_content[:500], ""]
+    context = "\n".join(ctx_lines)
 
-**Highlights:**
-- Female — —: 1 block(s)
+    bullets = llm_summary(context, query)
+    out = []
+    if bullets:
+        out.append("**Highlights:**")
+        out += [f"- {b}" for b in bullets]
+    else:
+        out.append("_Couldn’t derive a concise summary from the retrieved context._")
 
-*Sources:* LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv, LH-FEE-structure-NRI-Foreign-Category-2025-26__camelot_0.csv
+    if sources:
+        out.append("")
+        out.append("*Sources:* " + ", ".join(list(dict.fromkeys(sources))[:5]))
+    out.append("\n*Note: Answers are generated only from your ingested official PDFs.*")
+    return "\n".join(out)
 
-*Note: Answers are generated only from your ingested official PDFs. For the very latest updates, verify on VIT’s website.*
+# ---------------- CLI ---------------- #
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--index_dir", required=True)
+    ap.add_argument("--collection", default="vit_faq_vellore")
+    ap.add_argument("--emb", choices=["gemini"], default="gemini")
+    ap.add_argument("--q", required=True)
+    args = ap.parse_args()
 
+    print("\n" + answer_query(Path(args.index_dir), args.collection, args.q) + "\n")
 
-(.venv) C:\Users\T8543\Downloads\project-2>
+if __name__ == "__main__":
+    main()
