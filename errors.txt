@@ -1,1 +1,420 @@
-.\.venv\Scripts\python.exe -c "import json,sql_router as r; f=r.parse_filters('boys hostel fees NRI 2025'); print(json.dumps(r.sql_hostel_overview(f), ensure_ascii=False, indent=2))"
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+RAG answering for VIT Vellore chatbot (hybrid retrieval + deterministic extractors).
+
+Run:
+  .\.venv\Scripts\python.exe rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --emb gemini --q "ug nri ladies hostel fees 2025"
+"""
+
+import os, sys, re, json, argparse
+from pathlib import Path
+from typing import List, Dict, Any, Tuple, Optional
+from collections import defaultdict, Counter
+
+from langchain_community.vectorstores import FAISS
+from langchain_core.embeddings import Embeddings as LCEmbeddings
+
+# ---------------- NEW: import the SQL router ---------------- #
+from sql_router import (
+    detect_structured_intent, parse_filters,
+    sql_hostel_overview, sql_block_contacts
+)
+
+# ---------------- Embeddings wrapper (Gemini) ---------------- #
+class GeminiLCEmbeddings(LCEmbeddings):
+    def __init__(self, model: str = "models/text-embedding-004", api_key_env: str = "GEMINI_API_KEY"):
+        import google.generativeai as genai
+        api_key = os.getenv(api_key_env)
+        if not api_key:
+            print("[ERROR] GEMINI_API_KEY not set.")
+            sys.exit(1)
+        genai.configure(api_key=api_key)
+        self.genai = genai
+        self.model = model
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+        return [self.genai.embed_content(model=self.model, content=t)["embedding"] for t in texts]
+    def embed_query(self, text: str) -> List[float]:
+        return self.genai.embed_content(model=self.model, content=text)["embedding"]
+
+# ---------------- Query → filter hints (kept) ---------------- #
+AUDIENCE_MAP = {"nri":"NRI","foreign":"Foreign","international":"Foreign","indian":"Indian"}
+GENDER_MAP   = {"lh":"Female","ladies":"Female","girls":"Female","women":"Female",
+                "mh":"Male","mens":"Male","men's":"Male","boys":"Male"}
+
+def build_filters_from_query(q: str) -> Dict[str, Any]:
+    ql = q.lower()
+    f: Dict[str, Any] = {"campus":"Vellore"}
+    for k,v in AUDIENCE_MAP.items():
+        if k in ql: f["audience"]=v
+    for k,v in GENDER_MAP.items():
+        if k in ql: f["gender"]=v
+    if "hostel" in ql or "mess" in ql or "block" in ql:
+        f["domain"] = "Hostel"
+    if "fee" in ql or "tuition" in ql:
+        f["category"] = "Fee Structure"
+    m = re.search(r"(20\d{2})\D{0,3}(\d{2})", ql)
+    if m: f["ay"] = f"{m.group(1)}-{m.group(2)}"
+    elif re.search(r"\b(20\d{2})\b", ql):
+        yr = re.search(r"\b(20\d{2})\b", ql).group(1)
+        f["ay"] = f"{yr}-{str(int(yr[-2:])+1).zfill(2)}"
+    occ = re.search(r"(\d+)\s*[- ]?\s*(sharing|seater|bed|occupancy)", ql)
+    if occ: f["occupancy"]=occ.group(1)
+    return f
+
+def detect_intent(q: str) -> str:
+    ql = q.lower()
+    if any(k in ql for k in ["hostel","lh","mh","block","ac","non ac","mess","bed","occupancy"]):
+        return "hostel"
+    if any(k in ql for k in ["fee","tuition","category 1","category-1","category1"]):
+        return "tuition"
+    if any(k in ql for k in ["contact","email","phone","helpline"]):
+        return "contacts"
+    if "faq" in ql or "faqs" in ql:
+        return "faq"
+    if any(k in ql for k in ["eligibility","marks","age limit","vitree","viteee","vitmee"]):
+        return "eligibility"
+    if any(k in ql for k in ["courses","programs","branches","offered"]):
+        return "courses"
+    if any(k in ql for k in ["refund","withdrawal","vacate"]):
+        return "refund"
+    return "general"
+
+# ---------------- Load store & retrieval ---------------- #
+def load_store(index_dir: Path, collection: str, emb: LCEmbeddings) -> FAISS:
+    return FAISS.load_local(
+        str(index_dir),
+        embeddings=emb,
+        index_name=collection,
+        allow_dangerous_deserialization=True
+    )
+
+def retrieve(store: FAISS, query: str, k: int = 40):
+    docs = store.similarity_search(query, k=k)
+    return docs
+
+def keyword_score(text: str, q: str) -> int:
+    qwords = [w for w in re.findall(r"[a-z0-9]+", q.lower()) if len(w) > 2]
+    t = text.lower()
+    return sum(t.count(w) for w in qwords)
+
+def postfilter_and_rerank(docs, filt: Dict[str, Any], query: str, topn: int = 12):
+    def ok(md):
+        if "domain" in filt and md.get("domain") and md["domain"].lower()!=filt["domain"].lower():
+            return False
+        if "category" in filt and md.get("category") and md["category"].lower()!=filt["category"].lower():
+            return False
+        return True
+    docs = [d for d in docs if ok(d.metadata or {})]
+
+    def fn_tok(md):
+        name = (md.get("source_file") or "").lower()
+        return {
+            "lh": "lh" in name or "ladies" in name or "girls" in name or "women" in name,
+            "mh": "mh" in name or "mens" in name or "boys" in name,
+            "nri": "nri" in name,
+            "foreign": "foreign" in name,
+            "indian": "indian" in name,
+            "ay2025": "2025-26" in name or "2025_26" in name or "2025–26" in name,
+        }
+    want_lh = (filt.get("gender","") or "").lower()=="female"
+    want_mh = (filt.get("gender","") or "").lower()=="male"
+    want_nri = (filt.get("audience","") or "").lower()=="nri"
+    want_foreign = (filt.get("audience","") or "").lower()=="foreign"
+    want_indian = (filt.get("audience","") or "").lower()=="indian"
+    want_ay2025 = "2025" in (filt.get("ay","") or "")
+
+    scored = []
+    for d in docs:
+        md = d.metadata or {}
+        tok = fn_tok(md)
+        s = 0
+        if want_lh and tok["lh"]: s+=3
+        if want_mh and tok["mh"]: s+=3
+        if want_nri and tok["nri"]: s+=2
+        if want_foreign and tok["foreign"]: s+=2
+        if want_indian and tok["indian"]: s+=2
+        if want_ay2025 and tok["ay2025"]: s+=1
+        s += keyword_score(d.page_content, query)
+        scored.append((s,d))
+    scored.sort(key=lambda x: x[0], reverse=True)
+    return [d for s,d in scored][:topn]
+
+# ---------------- Deterministic extractors (kept) ---------------- #
+MONEY = r"(?:₹|INR|USD|\$)\s*[\d,]+(?:\.\d+)?"
+OCC_WORDS = r"(?:sharing|seater|bed|occupancy)"
+AC_TAG = r"(?:AC|A/C|Non[- ]?AC|Non AC|NON[- ]?AC)"
+
+def extract_hostel_rows(text: str) -> List[List[str]]:
+    rows = []
+    lines = [l.strip() for l in text.splitlines() if l.strip()]
+    for i,l in enumerate(lines):
+        l2 = re.sub(r"\s+", " ", l)
+        if re.search(AC_TAG, l2, flags=re.I) and re.search(r"\b\d+\s*(?:/| )?\s*\d*\s*"+OCC_WORDS, l2, flags=re.I):
+            money = re.findall(MONEY, l2)
+            if not money and i+1 < len(lines):
+                money = re.findall(MONEY, lines[i+1])
+            ac = "AC" if re.search(r"\bAC\b|A/C", l2, flags=re.I) else ("Non-AC" if re.search(r"Non[- ]?AC", l2, flags=re.I) else "")
+            occ_m = re.search(r"\b(\d+)\s*(?:/| )?\s*(\d+)?\s*("+OCC_WORDS+")", l2, flags=re.I)
+            occ = ""
+            if occ_m:
+                a,b,word = occ_m.groups()
+                occ = f"{a}{('/'+b) if b else ''} {word.capitalize()}"
+            fee = ", ".join(money) if money else ""
+            window = " ".join(lines[i:i+3])[:400]
+            mess_m = re.search(r"(Special\s*Mess|Non[- ]?Veg|Veg|North|South|Mess)", window, flags=re.I)
+            mess = mess_m.group(1) if mess_m else ""
+            deposit = re.findall(r"(?:Caution\s*Deposit|Refundable\s*Deposit)\s*[:\-]?\s*("+MONEY+")", window, flags=re.I)
+            total = re.findall(r"(?:Total)\s*[:\-]?\s*("+MONEY+")", window, flags=re.I)
+            curr = "USD" if "USD" in (fee or window) else ("INR" if ("₹" in (fee or window) or "INR" in (fee or window)) else "")
+            rows.append(["", occ, ac, "", fee, mess, "", " / ".join(deposit) if deposit else "", "", " / ".join(total) if total else "", curr, "", ""])
+    uniq = []
+    seen = set()
+    for r in rows:
+        key = tuple(r[:5])
+        if key in seen: continue
+        seen.add(key); uniq.append(r)
+    return uniq
+
+def extract_block_names(text: str) -> List[str]:
+    names = set()
+    for m in re.finditer(r"\bBlock[s]?:\s*([A-Z](?:\s*,\s*[A-Z]){0,20})\b", text):
+        for b in re.split(r"\s*,\s*", m.group(1).strip()):
+            if re.fullmatch(r"[A-Z]", b): names.add(b)
+    for m in re.finditer(r"\bBlock[-\s]?([A-Z]{1,2})\b", text):
+        names.add(m.group(1))
+    return sorted(names)
+
+def extract_contacts(text: str) -> List[Tuple[str,str]]:
+    emails = re.findall(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", text)
+    phones = re.findall(r"(?:(?:\+?\d{1,3}[\s-]?)?\d{10,})", text)
+    pairs = []
+    for e in emails[:10]: pairs.append(("Email", e))
+    for p in phones[:10]: pairs.append(("Phone", p))
+    return pairs
+
+def extract_tuition_rows(text: str) -> List[List[str]]:
+    rows = []
+    lines = [l.strip() for l in text.splitlines() if l.strip()]
+    for i,l in enumerate(lines):
+        l2 = re.sub(r"\s+", " ", l)
+        m = re.search(r"\bCategory[- ]?([1-5])\b", l2, flags=re.I)
+        if m and re.search(MONEY, l2):
+            cat = f"Category {m.group(1)}"
+            amt = ", ".join(re.findall(MONEY, l2))
+            curr = "USD" if "USD" in amt else ("INR" if ("₹" in amt or "INR" in amt) else "")
+            rows.append(["", cat, "", amt, curr, "", ""])
+        elif m and i+1 < len(lines) and re.search(MONEY, lines[i+1]):
+            amt = ", ".join(re.findall(MONEY, lines[i+1]))
+            curr = "USD" if "USD" in amt else ("INR" if ("₹" in amt or "INR" in amt) else "")
+            cat = f"Category {m.group(1)}"
+            rows.append(["", cat, "", amt, curr, "", ""])
+    uniq, seen = [], set()
+    for r in rows:
+        k = tuple(r)
+        if k in seen: continue
+        seen.add(k); uniq.append(r)
+    return uniq
+
+def get_ay_from_md(md: Dict[str,Any]) -> str:
+    return md.get("ay") or ""
+
+def get_currency_hint(md: Dict[str,Any]) -> str:
+    if (md.get("currency") or "").upper() in ("INR","USD"): return md["currency"]
+    name = (md.get("source_file") or "").lower()
+    if "nri" in name or "foreign" in name: return "USD"
+    return ""
+
+# ---------------- LLM for tiny summaries (kept) ---------------- #
+def llm_summary(context: str, query: str) -> List[str]:
+    try:
+        import google.generativeai as genai
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key: return []
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel("gemini-1.5-flash")
+        prompt = f"""Summarize in 3 concise bullets, quoting exact numbers/currency from context.
+STRICTLY use only facts from context. No placeholders.
+
+Query: {query}
+Context:
+{context[:3000]}
+"""
+        resp = model.generate_content([{"role":"user","parts":[prompt]}],
+                                      generation_config={"temperature":0.1,"max_output_tokens":220,"response_mime_type":"text/plain"})
+        txt = (resp.text or "").strip()
+        bullets = [re.sub(r"^\s*[-•]\s*","",ln).strip() for ln in txt.splitlines() if ln.strip()]
+        return bullets[:5]
+    except Exception:
+        return []
+
+# ---------------- Render helpers ---------------- #
+def render_table(title: str, cols: List[str], rows: List[List[str]]) -> List[str]:
+    out = []
+    if title: out.append(f"**{title}**")
+    out.append("| " + " | ".join(cols) + " |")
+    out.append("|" + "|".join(["---"]*len(cols)) + "|")
+    for r in rows:
+        out.append("| " + " | ".join("" if c is None else str(c) for c in r) + " |")
+    out.append("")
+    return out
+
+def render_router(ans: Dict[str, Any]) -> str:
+    lines = []
+    tbl = ans.get("table")
+    if tbl:
+        lines += render_table(tbl.get("title",""), tbl["columns"], tbl["rows"])
+    bullets = ans.get("bullets") or []
+    if bullets:
+        lines.append("**Highlights:**")
+        lines += [f"- {b}" for b in bullets]
+    src = ans.get("sources") or []
+    if src:
+        lines.append("")
+        lines.append("*Sources:* " + ", ".join(src[:5]))
+    lines.append("\n*Note: Answers are generated only from your ingested official PDFs. For the very latest updates, verify on VIT’s website.*")
+    return "\n".join(lines)
+
+# ---------------- Pipeline ---------------- #
+def answer_query(index_dir: Path, collection: str, query: str) -> str:
+    # ---- SQL-first routing (exact, tabular) ----
+    s_intent = detect_structured_intent(query)
+    f = parse_filters(query)
+    if s_intent == "tabular":
+        return render_router(sql_hostel_overview(f))
+    if s_intent == "contacts":
+        return render_router(sql_block_contacts(f))
+
+    # ---- otherwise: vector RAG fallback (kept) ----
+    emb = GeminiLCEmbeddings()
+    store = load_store(index_dir, collection, emb)
+
+    filt = build_filters_from_query(query)
+    intent = detect_intent(query)
+
+    docs = retrieve(store, query, k=40)
+    docs = postfilter_and_rerank(docs, filt, query, topn=10)
+
+    ctx_lines, sources = [], []
+    for d in docs:
+        md = d.metadata or {}
+        src = md.get("source_file") or md.get("source_title") or "unknown"
+        sources.append(src)
+        head = f"[{src}] domain={md.get('domain')} category={md.get('category')} program={md.get('program')} audience={md.get('audience')} gender={md.get('gender')} ay={md.get('ay')}"
+        ctx_lines += [head, d.page_content[:500], ""]
+    context = "\n".join(ctx_lines)
+
+    out_lines = []
+
+    if intent == "hostel":
+        all_rows = []
+        all_blocks = set()
+        for d in docs:
+            rows = extract_hostel_rows(d.page_content)
+            if filt.get("occupancy"):
+                rows = [r for r in rows if r[1].startswith(filt["occupancy"])]
+            ay = get_ay_from_md(d.metadata or {})
+            cur = get_currency_hint(d.metadata or {})
+            for r in rows:
+                if not r[10]: r[10] = cur
+                if not r[11]: r[11] = ay
+            if rows: all_rows.extend(rows)
+            for b in extract_block_names(d.page_content):
+                all_blocks.add(b)
+
+        dedup, seen = [], set()
+        for r in all_rows:
+            key = tuple(r[:5]+[r[10],r[11]])
+            if key in seen: continue
+            seen.add(key); dedup.append(r)
+
+        want_counts = any(k in query.lower() for k in ["how many","number of","count","rooms","blocks"])
+        if want_counts:
+            ac_rooms = nonac_rooms = 0
+            for d in docs:
+                for m in re.finditer(r"\b(\d{1,5})\s+rooms?\s+(AC)\b", d.page_content, flags=re.I):
+                    ac_rooms += int(m.group(1))
+                for m in re.finditer(r"\b(\d{1,5})\s+rooms?\s+(Non[- ]?AC)\b", d.page_content, flags=re.I):
+                    nonac_rooms += int(m.group(1))
+            if ac_rooms or nonac_rooms:
+                out_lines.append("**Block/Room Counts (from PDFs):**")
+                out_lines.append(f"- AC rooms: **{ac_rooms}**")
+                out_lines.append(f"- Non-AC rooms: **{nonac_rooms}**")
+                out_lines.append("")
+            else:
+                out_lines.append("_The PDFs you ingested do not specify the **number** of AC/Non-AC rooms. Showing verified **AC/Non-AC fee options** instead._\n")
+
+        if all_blocks:
+            out_lines.append("**Boys’ Hostel Blocks (from PDFs):** " + ", ".join(sorted(all_blocks)))
+            out_lines.append("")
+
+        if dedup:
+            cols = ["Hostel/Block","Occupancy","AC/Non-AC","Period","Fee Amount","Mess Type","Mess Fee","Caution Deposit","Other","Total","Currency","AY","Notes"]
+            out_lines += render_table("Hostel Fee Details (VIT Vellore)", cols, dedup[:30])
+
+        bullets = llm_summary(context, query)
+        if bullets:
+            out_lines.append("**Highlights:**")
+            out_lines += [f"- {b}" for b in bullets]
+
+    elif intent == "tuition":
+        all_rows = []
+        for d in docs:
+            rows = extract_tuition_rows(d.page_content)
+            ay = get_ay_from_md(d.metadata or {})
+            cur = get_currency_hint(d.metadata or {})
+            for r in rows:
+                if not r[4]: r[4]=cur
+                if not r[5]: r[5]=ay
+            if rows: all_rows.extend(rows)
+        uniq, seen = [], set()
+        for r in all_rows:
+            k = tuple(r)
+            if k in seen: continue
+            seen.add(k); uniq.append(r)
+        if uniq:
+            cols = ["Program","Category/Quota","Year/Sem","Amount","Currency","AY","Notes"]
+            out_lines += render_table("Tuition Fee Details (VIT Vellore)", cols, uniq[:30])
+        bullets = llm_summary(context, query)
+        if bullets:
+            out_lines.append("**Highlights:**")
+            out_lines += [f"- {b}" for b in bullets]
+
+    elif intent == "contacts":
+        pairs = []
+        for d in docs:
+            pairs += extract_contacts(d.page_content)
+        if pairs:
+            cols = ["Type","Value"]
+            rows = [[t,v] for t,v in pairs]
+            out_lines += render_table("Contact Details (VIT Vellore)", cols, rows[:20])
+        else:
+            out_lines.append("_No explicit emails/phones found in retrieved PDFs._")
+
+    elif intent in ("faq","eligibility","courses","refund","general"):
+        bullets = llm_summary(context, query)
+        if bullets:
+            out_lines.append("**Highlights:**")
+            out_lines += [f"- {b}" for b in bullets]
+        else:
+            out_lines.append("_Couldn’t derive a concise summary from the retrieved context._")
+
+    if sources:
+        out_lines.append("")
+        out_lines.append("*Sources:* " + ", ".join(list(dict.fromkeys(sources))[:5]))
+    out_lines.append("\n*Note: Answers are generated only from your ingested official PDFs. For the very latest updates, verify on VIT’s website.*")
+    return "\n".join(out_lines)
+
+# ---------------- CLI ---------------- #
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--index_dir", required=True, help="Folder containing FAISS files")
+    ap.add_argument("--collection", default="vit_faq_vellore", help="FAISS index name")
+    ap.add_argument("--emb", choices=["gemini"], default="gemini", help="Embedding backend (Gemini)")
+    ap.add_argument("--q", required=True, help="User query")
+    args = ap.parse_args()
+
+    print("\n" + answer_query(Path(args.index_dir), args.collection, args.q) + "\n")
+
+if __name__ == "__main__":
+    main()
