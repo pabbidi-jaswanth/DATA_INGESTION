@@ -1,274 +1,102 @@
-# load_sqlite.py
-# Build SQLite DB from staging CSVs (created by stage_hostel_tables.py)
-# DB path: Data/sql/vit_vellore.db
+# sql_router.py
+import sqlite3, pathlib, re
+from typing import Dict, Any
 
-import sqlite3, pathlib, csv, re
-from typing import Optional, Tuple
+DB = pathlib.Path("Data/sql/vit_vellore.db")
 
-BASE = pathlib.Path("Data")
-STAGING = BASE / "staging"
-SQLDIR = BASE / "sql"
-SQLDIR.mkdir(parents=True, exist_ok=True)
-DB_PATH = SQLDIR / "vit_vellore.db"
+def detect_structured_intent(q: str) -> str:
+    ql = q.lower()
+    if any(k in ql for k in ["hostel", "room", "block", "mess", "dhobi", "laundry", "fee", "fees", "tuition"]):
+        return "tabular"
+    if any(k in ql for k in ["contact", "phone", "email", "supervisor"]):
+        return "contacts"
+    return "text"
 
-MONEY = r"(?:₹|INR|USD|\$)\s*[\d,]+(?:\.\d+)?"
+def parse_filters(q: str) -> Dict[str, Any]:
+    ql = q.lower()
+    f = {"ay": None, "gender": None, "category": None, "level": None}
+    if re.search(r"\b(20\d{2})\b", ql):
+        yr = re.search(r"\b(20\d{2})\b", ql).group(1)
+        f["ay"] = f"{yr}-{str(int(yr[-2:])+1).zfill(2)}"
+    if any(k in ql for k in ["boy", "boys", "men", "mh"]): f["gender"] = "Male"
+    if any(k in ql for k in ["girl", "girls", "ladies", "lh", "women"]): f["gender"] = "Female"
+    if "nri" in ql: f["category"] = "NRI"
+    elif "foreign" in ql: f["category"] = "Foreign"
+    elif "indian" in ql: f["category"] = "Indian"
+    if any(k in ql for k in ["senior"]): f["level"] = "Senior"
+    if any(k in ql for k in ["first year", "fresh"]): f["level"] = "First-Year"
+    return f
 
-def _mk_conn():
-    con = sqlite3.connect(DB_PATH)
-    con.execute("PRAGMA journal_mode=WAL;")
-    con.execute("PRAGMA synchronous=NORMAL;")
-    con.execute("PRAGMA foreign_keys=ON;")
-    return con
+def sql_hostel_overview(f: Dict[str,Any], limit_blocks: int = 20) -> Dict[str, Any]:
+    con = sqlite3.connect(DB)
+    con.row_factory = sqlite3.Row
+    where = ["1=1"]
+    args = []
+    if f["gender"]: where.append("b.gender=?"); args.append(f["gender"])
+    if f["level"]:  where.append("IFNULL(b.level,'')=IFNULL(?, '')"); args.append(f["level"])
+    if f["ay"]:     where.append("IFNULL(hf.ay,'')=IFNULL(?, '')"); args.append(f["ay"])
+    if f["category"]: where.append("IFNULL(hf.category,'')=IFNULL(?, '')"); args.append(f["category"])
 
-def _schema(con: sqlite3.Connection):
-    # Rebuild tables every run to avoid old NOT NULL constraints causing issues
-    con.executescript("""
-    DROP TABLE IF EXISTS contacts;
-    DROP TABLE IF EXISTS amenities;
-    DROP TABLE IF EXISTS hostel_fees;
-    DROP TABLE IF EXISTS blocks;
-
-    CREATE TABLE blocks (
-        id           INTEGER PRIMARY KEY AUTOINCREMENT,
-        block_name   TEXT,          -- internal code if known (MHS, MHR, etc.)
-        display_name TEXT,          -- friendly name, or same as block_name
-        gender       TEXT,          -- Male | Female | ''
-        level        TEXT,          -- First-Year | Senior | ''
-        block_type   TEXT           -- Regular | Apartment | Deluxe | ''
-    );
-
-    CREATE TABLE hostel_fees (
-        id               INTEGER PRIMARY KEY AUTOINCREMENT,
-        block_id         INTEGER NOT NULL,
-        ay               TEXT,      -- 2025-26
-        category         TEXT,      -- Indian | NRI | Foreign
-        occupancy        TEXT,      -- "2 Sharing" / "6 Sharing" / "2 Bed" etc
-        ac               INTEGER,   -- 1=AC, 0=Non-AC, NULL=unknown
-        mess_type        TEXT,      -- Special / Non-Veg / Veg / ...
-        room_mess_fee    TEXT,
-        admission_fee    TEXT,
-        caution_deposit  TEXT,
-        other_fee        TEXT,
-        total_fee        TEXT,
-        currency         TEXT,      -- INR | USD
-        source_file      TEXT,
-        FOREIGN KEY(block_id) REFERENCES blocks(id)
-    );
-
-    CREATE TABLE amenities (
-        id        INTEGER PRIMARY KEY AUTOINCREMENT,
-        block_id  INTEGER NOT NULL,
-        key       TEXT,     -- 'Laundry','Mess','Note'
-        value     TEXT,
-        FOREIGN KEY(block_id) REFERENCES blocks(id)
-    );
-
-    CREATE TABLE contacts (
-        id        INTEGER PRIMARY KEY AUTOINCREMENT,
-        block_id  INTEGER NOT NULL,
-        name      TEXT,
-        role      TEXT,
-        phone     TEXT,
-        email     TEXT,
-        FOREIGN KEY(block_id) REFERENCES blocks(id)
-    );
-    """)
-
-def _get_or_create_block(con: sqlite3.Connection, block_name: str, display: Optional[str],
-                         gender: str, level: Optional[str], btype: Optional[str]) -> int:
-    # Coerce None -> '' so we never violate NOT NULL or mismatched comparisons
-    level = level or ""
-    btype = btype or ""
-    gender = gender or ""
-    display = display or block_name
-
-    row = con.execute(
-        "SELECT id FROM blocks WHERE block_name=? AND IFNULL(level,'')=IFNULL(?, '') "
-        "AND IFNULL(block_type,'')=IFNULL(?, '') AND IFNULL(gender,'')=IFNULL(?, '')",
-        (block_name, level, btype, gender)
-    ).fetchone()
-    if row:
-        return row[0]
-
-    con.execute(
-        "INSERT INTO blocks(block_name, display_name, gender, level, block_type) VALUES(?,?,?,?,?)",
-        (block_name, display, gender, level, btype)
-    )
-    return con.execute("SELECT last_insert_rowid()").fetchone()[0]
-
-def _guess_meta_from_filename(name: str) -> Tuple[str, Optional[str], str, str]:
+    sql = f"""
+    SELECT b.block_name, b.display_name, b.gender, b.level, b.block_type,
+           hf.ay, hf.category, hf.occupancy, hf.ac, hf.mess_type,
+           hf.room_mess_fee, hf.admission_fee, hf.caution_deposit, hf.other_fee, hf.total_fee, hf.currency,
+           hf.source_file
+    FROM hostel_fees hf
+    JOIN blocks b ON b.id = hf.block_id
+    WHERE {' AND '.join(where)}
+    ORDER BY b.block_type, b.block_name, hf.occupancy, hf.ac DESC, hf.mess_type
     """
-    Returns: gender, level, ay, category_hint
-    """
-    n = name.lower()
-    gender = "Male" if n.startswith("mh") else ("Female" if n.startswith("lh") else "")
-    level = "Senior" if "senior" in n else ("First-Year" if ("first-year" in n or "first year" in n) else "")
-    # AY like 2025-26
-    ay = ""
-    m = re.search(r"(20\d{2})\D{0,3}(\d{2})", n)
-    if m:
-        ay = f"{m.group(1)}-{m.group(2)}"
-    # category hint
-    if "nri" in n or "foreign" in n:
-        cat = "NRI"
-    elif "indian" in n:
-        cat = "Indian"
-    else:
-        cat = ""
-    return gender, level, ay, cat
+    rows = con.execute(sql, args).fetchall()
 
-def _parse_row_text(cells) -> str:
-    parts = []
-    for c in cells:
-        c = (c or "").strip()
-        if c:
-            parts.append(c)
-    return " ".join(parts)
-
-def _detect_occupancy(line: str) -> Optional[str]:
-    m = re.search(r"\b(\d+)\s*(?:sharing|seater|bed|occupancy)\b", line, flags=re.I)
-    if not m:
-        return None
-    word = re.search(r"(sharing|seater|bed|occupancy)", line, flags=re.I).group(1).title()
-    return f"{m.group(1)} {word}"
-
-def _detect_ac(line: str) -> Optional[int]:
-    if re.search(r"\bNon[- ]?AC\b", line, flags=re.I):
-        return 0
-    if re.search(r"\bAC\b|\bA/C\b", line, flags=re.I):
-        return 1
-    return None
-
-def _detect_mess(line: str) -> Optional[str]:
-    m = re.search(r"(Special\s*Mess|Non[- ]?Veg|Veg|North\s*Indian|South\s*Indian|Mess)", line, flags=re.I)
-    return m.group(1) if m else None
-
-def _detect_amounts(line: str) -> Tuple[str,str,str,str,str,str]:
-    """
-    Returns: room_mess, admission, caution, other, total, currency
-    """
-    currency = "USD" if ("USD" in line or "$" in line) else ("INR" if ("INR" in line or "₹" in line) else "")
-    room_mess = ""
-    total = ""
-    mt = re.search(r"(?:Total|Grand\s*Total)\s*[:\-]?\s*("+MONEY+")", line, flags=re.I)
-    if mt:
-        total = mt.group(1)
-    ma = re.search(r"(Admission|Admission\s*fee).{0,20}("+MONEY+")", line, flags=re.I)
-    mc = re.search(r"(Caution|Refundable\s*Deposit).{0,25}("+MONEY+")", line, flags=re.I)
-    mo = re.search(r"(Other|Utility|Electricity).{0,25}("+MONEY+")", line, flags=re.I)
-    mr = re.findall(MONEY, line)
-    if mr and not total:
-        if len(mr) == 1:
-            room_mess = mr[0]
-        else:
-            room_mess = mr[0]
-            if not total and len(mr) >= 2:
-                total = mr[-1]
-    admission = ma.group(2) if ma else ""
-    caution   = mc.group(2) if mc else ""
-    other     = mo.group(2) if mo else ""
-    return room_mess, admission, caution, other, total, currency
-
-def _insert_fee_row(con, block_id: int, ay: str, category: str, occ: str, ac: Optional[int],
-                    mess: str, room_mess: str, admission: str, caution: str, other: str,
-                    total: str, currency: str, source_file: str):
-    con.execute("""
-        INSERT INTO hostel_fees(block_id, ay, category, occupancy, ac, mess_type,
-                                room_mess_fee, admission_fee, caution_deposit, other_fee, total_fee,
-                                currency, source_file)
-        VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)
-    """, (block_id, ay, category, occ, ac, mess, room_mess, admission, caution, other, total, currency, source_file))
-
-def load_staging_csvs(con: sqlite3.Connection):
-    files = sorted(STAGING.glob("*.csv"))
-    if not files:
-        print(f"[WARN] No CSVs found in {STAGING}")
-        return
-
-    for path in files:
-        gender, level, ay, cat_hint = _guess_meta_from_filename(path.stem)
-
-        # generic block per gender+level; refine with real block codes later if needed
-        title_base = "Men Hostel" if gender == "Male" else ("Ladies Hostel" if gender == "Female" else "Hostel")
-        block_title = f"{title_base}{(' ' + level) if level else ''}"
-
-        block_id = _get_or_create_block(
-            con,
-            block_name=block_title,
-            display=block_title,
-            gender=gender,
-            level=level,
-            btype=""
-        )
-
-        with path.open("r", encoding="utf-8") as f:
-            reader = csv.reader(f)
-            rows = list(reader)
-
-        for row in rows:
-            line = _parse_row_text(row)
-            if not line or len(line) < 3:
-                continue
-
-            occ = _detect_occupancy(line) or ""
-            ac  = _detect_ac(line)
-            mess= _detect_mess(line) or ""
-            room_mess, admission, caution, other, total, currency = _detect_amounts(line)
-
-            # Category fallback: USD => NRI, INR => Indian
-            category = cat_hint or ("NRI" if currency == "USD" else ("Indian" if currency == "INR" else ""))
-
-            if any([occ, ac is not None, mess, room_mess, admission, caution, other, total]):
-                _insert_fee_row(
-                    con, block_id, ay, category, occ, ac, mess,
-                    room_mess, admission, caution, other, total, currency, path.name
-                )
-
-    print("[OK] Loaded staging CSVs into SQLITE.")
-
-def try_load_hostel_info(con: sqlite3.Connection):
-    """
-    Optional: scrape block codes & contacts from Data/raw/HOSTEL/Hostel_info.pdf
-    If not present, this step is skipped.
-    """
-    info_pdf = BASE / "raw" / "HOSTEL" / "Hostel_info.pdf"
-    if not info_pdf.exists():
-        return
-    try:
-        import pdfplumber
-        with pdfplumber.open(str(info_pdf)) as pdf:
-            text = "\n\n".join([(p.extract_text() or "") for p in pdf.pages])
-
-        codes = sorted(set(re.findall(r"\b(MH[A-Z]{1,2}|LH[A-Z]{1,2})\b", text)))
-        for code in codes:
-            gender = "Male" if code.startswith("MH") else "Female"
-            _get_or_create_block(con, block_name=code, display=code, gender=gender, level="", btype="")
-
-        # Attach office-level contacts to a generic office node
-        office_id = _get_or_create_block(con, "Hostel Office", "Hostel Office", "", "", "")
-        emails = sorted(set(re.findall(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", text)))
-        phones = sorted(set(re.findall(r"(?:(?:\+?\d{1,3}[\s-]?)?\d{10,})", text)))
-        for e in emails[:20]:
-            con.execute("INSERT INTO contacts(block_id, name, role, phone, email) VALUES(?,?,?,?,?)",
-                        (office_id, "", "Office", "", e))
-        for p in phones[:20]:
-            con.execute("INSERT INTO contacts(block_id, name, role, phone, email) VALUES(?,?,?,?,?)",
-                        (office_id, "", "Office", p, ""))
-
-        if re.search(r"44\s*washes", text, flags=re.I):
-            con.execute("INSERT INTO amenities(block_id, key, value) VALUES(?,?,?)",
-                        (office_id, "Laundry", "Laundry inclusive (max 44 washes/semester)"))
-    except Exception as e:
-        print("[WARN] Could not parse Hostel_info.pdf:", e)
-
-def main():
-    con = _mk_conn()
-    _schema(con)                 # rebuilds schema each run
-    load_staging_csvs(con)
-    try_load_hostel_info(con)    # optional
-    con.commit()
+    am_sql = "SELECT b.block_name, a.key, a.value FROM amenities a JOIN blocks b ON b.id=a.block_id"
+    am = con.execute(am_sql).fetchall()
     con.close()
-    print(f"[DONE] SQLite DB ready at: {DB_PATH}")
 
-if __name__ == "__main__":
-    main()
+    columns = ["Block", "Gender", "Level", "Type", "AY", "Category", "Occ", "AC", "Mess", "Room+Mess", "Admission", "Caution", "Other", "Total", "Curr", "Source"]
+    tbl = {"title": "Hostel Fee Details (Vellore)", "columns": columns, "rows": []}
+    for r in rows[:1000]:
+        tbl["rows"].append([
+            r["display_name"] or r["block_name"] or "",
+            r["gender"] or "", r["level"] or "", r["block_type"] or "",
+            r["ay"] or "", r["category"] or "", r["occupancy"] or "",
+            "AC" if (r["ac"]==1) else ("Non-AC" if (r["ac"]==0) else ""),
+            r["mess_type"] or "", r["room_mess_fee"] or "", r["admission_fee"] or "",
+            r["caution_deposit"] or "", r["other_fee"] or "", r["total_fee"] or "",
+            r["currency"] or "", r["source_file"] or ""
+        ])
+
+    bullets = []
+    seen_blocks = {}
+    for r in rows:
+        key = (r["gender"], r["level"], r["block_type"])
+        seen_blocks.setdefault(key, set()).add(r["block_name"] or r["display_name"] or "")
+    for (g,l,t), names in list(seen_blocks.items())[:limit_blocks]:
+        count = len([n for n in names if n])
+        bullets.append(f"{g or '—'} {l or '—'} {t or '—'}: {count} block(s)")
+
+    dhobi = [x for x in am if (x["key"] or "").lower() in ("dhobi","laundry")]
+    if dhobi:
+        bullets.append("Laundry/Dhobi: " + "; ".join({f'{d["block_name"]}: {d["value"]}' for d in dhobi if d["block_name"]}))
+
+    return {"table": tbl, "bullets": bullets, "sources": list({r["source_file"] for r in rows if r["source_file"]})}
+
+def sql_block_contacts(f: Dict[str,Any]) -> Dict[str,Any]:
+    con = sqlite3.connect(DB); con.row_factory = sqlite3.Row
+    where = ["1=1"]; args=[]
+    if f["gender"]: where.append("IFNULL(b.gender,'')=IFNULL(?, '')"); args.append(f["gender"])
+    if f["level"]: where.append("IFNULL(b.level,'')=IFNULL(?, '')"); args.append(f["level"])
+    sql = f"""
+    SELECT b.block_name, b.display_name, c.name, c.role, c.phone, c.email
+    FROM contacts c JOIN blocks b ON b.id=c.block_id
+    WHERE {' AND '.join(where)}
+    ORDER BY b.block_name, c.role
+    """
+    rows = con.execute(sql, args).fetchall()
+    con.close()
+    cols = ["Block","Name","Role","Phone","Email"]
+    tbl = {"title":"Hostel Contacts", "columns":cols, "rows":[
+        [r["display_name"] or r["block_name"] or "", r["name"] or "", r["role"] or "", r["phone"] or "", r["email"] or ""]
+        for r in rows
+    ]}
+    return {"table": tbl, "bullets": [], "sources": []}
