@@ -1,326 +1,175 @@
-# rag_answer.py  — chatty + hybrid fallback + direct SQLite routes for blocks/contacts
+Microsoft Windows [Version 10.0.26100.6584]
+(c) Microsoft Corporation. All rights reserved.
 
-import os, sys, re, argparse, sqlite3
-from pathlib import Path
-from typing import List, Dict, Any, Tuple
-import pandas as pd
-import sql_router as SR
+C:\Users\T8543\Downloads\project-2>C:/Users/T8543/Downloads/project-2/.venv/Scripts/activate.bat
 
-from langchain_community.vectorstores import FAISS
-from langchain_core.embeddings import Embeddings as LCEmbeddings
+(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe stage_hostel_tables.py             
+[STAGED] Data\staging\MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+[STAGED] Data\staging\MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
+[STAGED] Data\staging\MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
+[STAGED] Data\staging\MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv
+[STAGED] Data\staging\MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_4.csv
+[STAGED] Data\staging\MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_5.csv
+[STAGED] Data\staging\MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+[STAGED] Data\staging\MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
+[STAGED] Data\staging\MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
+[STAGED] Data\staging\MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv
+[STAGED] Data\staging\LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
+[STAGED] Data\staging\LH-FEE-structure-NRI-Foreign-Category-2025-26__camelot_0.csv
+[STAGED] Data\staging\Hostel_info__camelot_0.csv
+[STAGED] Data\staging\Hostel_info__camelot_1.csv
+[STAGED] Data\staging\Hostel_info__camelot_2.csv
+[STAGED] Data\staging\Hostel_info__camelot_3.csv
+[STAGED] Data\staging\Hostel_info__camelot_4.csv
+[STAGED] Data\staging\Hostel-joint-Affidavit-2025__camelot_0.csv
+Exception ignored in atexit callback <function rmtree at 0x000001E192A9D6C0>:
+Traceback (most recent call last):
+  File "C:\Program Files\Python313\Lib\shutil.py", line 790, in rmtree
+    return _rmtree_unsafe(path, onexc)
+  File "C:\Program Files\Python313\Lib\shutil.py", line 629, in _rmtree_unsafe
+    onexc(os.unlink, fullname, err)
+  File "C:\Program Files\Python313\Lib\shutil.py", line 625, in _rmtree_unsafe
+    os.unlink(fullname)
+PermissionError: [WinError 32] The process cannot access the file because it is being used by another process: 'C:\\Users\\T8543\\AppData\\Local\\Temp\\tmpvxb9c7vo\\page-2.pdf'
 
-DB_PATH = Path("Data/sql/vit_vellore.db")
+(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe load_sqlite.pyl;'     
+.\.venv\Scripts\python.exe: can't open file "C:\\Users\\T8543\\Downloads\\project-2\\load_sqlite.pyl;'": [Errno 2] No such file or directory
 
-# ---------------- Embeddings ----------------
-class GeminiLCEmbeddings(LCEmbeddings):
-    def __init__(self, model: str = "models/text-embedding-004", api_key_env: str = "GEMINI_API_KEY"):
-        import google.generativeai as genai
-        api_key = os.getenv(api_key_env)
-        if not api_key:
-            print("[ERROR] GEMINI_API_KEY not set.")
-            sys.exit(1)
-        genai.configure(api_key=api_key)
-        self.genai = genai
-        self.model = model
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        return [self.genai.embed_content(model=self.model, content=t)["embedding"] for t in texts]
-    def embed_query(self, text: str) -> List[float]:
-        return self.genai.embed_content(model=self.model, content=text)["embedding"]
+(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe load_sqlite.pyl       
+.\.venv\Scripts\python.exe: can't open file 'C:\\Users\\T8543\\Downloads\\project-2\\load_sqlite.pyl': [Errno 2] No such file or directory
 
-# ---------------- Vector load/search ----------------
-def load_store(index_dir: Path, collection: str, emb: LCEmbeddings) -> FAISS:
-    return FAISS.load_local(
-        str(index_dir),
-        embeddings=emb,
-        index_name=collection,
-        allow_dangerous_deserialization=True
-    )
+(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe load_sqlite.py 
+[OK] Loaded staging CSVs into SQLITE.
+C:\Users\T8543\Downloads\project-2\load_sqlite.py:303: FutureWarning: Possible set difference at position 36
+  pat_mh = re.compile(
+[OK] Loaded Hostel Info (blocks + contacts) into SQLITE.
+[DONE] SQLite DB ready at: Data\sql\vit_vellore.db
 
-def retrieve(store: FAISS, query: str, k: int = 40):
-    return store.similarity_search(query, k=k)
+(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe rag_answer.py --index_dir Data/inde
+x/faiss --collection vit_faq_vellore --emb gemini --q "list all block names of the boys hostel"
 
-def _keyword_score(text: str, q: str) -> int:
-    qwords = [w for w in re.findall(r"[a-z0-9]+", q.lower()) if len(w) > 2]
-    t = text.lower()
-    return sum(t.count(w) for w in qwords)
+**Men’s Hostel Blocks**
+- MH A — Albert Einstein
+- MH B — Swami Vivekananda
+- MH C — Rabindranath Tagore
+- MH E — Sir C.V.Raman
+- MH F — R Amanujam
+- MH G — Socrates
+- MH J — John F Kennedy
+- MH R — Muthamizh Arignar Kalaignar M.Karunanidhi
+- MH T — Mens Hostel T Block
 
-def _postfilter_and_rerank(docs, query: str, want_hostel: bool = False, topn: int = 12):
-    def tok(md):
-        name = (md.get("source_file") or "").lower()
-        return {
-            "lh": "lh" in name or "ladies" in name or "girls" in name or "women" in name,
-            "mh": "mh" in name or "mens" in name or "boys" in name,
-            "hostel": "hostel" in name,
-        }
-    scored = []
-    for d in docs:
-        md = d.metadata or {}
-        t = tok(md)
-        s = 0
-        if want_hostel and t["hostel"]: s += 2
-        s += _keyword_score(d.page_content or "", query)
-        scored.append((s, d))
-    scored.sort(key=lambda x: x[0], reverse=True)
-    return [d for s, d in scored][:topn]
 
-def _faiss_context(index_dir: Path, collection: str, query: str, k: int = 20) -> Tuple[str, List[str]]:
-    emb = GeminiLCEmbeddings()
-    store = load_store(index_dir, collection, emb)
-    docs = retrieve(store, query, k=k)
-    docs = _postfilter_and_rerank(docs, query, want_hostel=True, topn=min(k, 15))
-    ctx_lines, sources = [], []
-    for d in docs:
-        md = d.metadata or {}
-        src = md.get("source_file") or md.get("source_title") or "unknown"
-        sources.append(src)
-        ctx_lines += [d.page_content[:1200] if d.page_content else ""]
-    return "\n\n".join(ctx_lines), list(dict.fromkeys(sources))
+(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --emb gemini --q "list all block codes of the boys hostel"
 
-# ---------------- Extraction helpers ----------------
-def _money_to_float(s: str) -> float:
-    if not s: return float("nan")
-    t = re.sub(r"[^\d.]", "", s.replace(",", ""))
-    return float(t) if t else float("nan")
+**Men’s Hostel Blocks**
+- MH A — Albert Einstein
+- MH B — Swami Vivekananda
+- MH C — Rabindranath Tagore
+- MH E — Sir C.V.Raman
+- MH F — R Amanujam
+- MH G — Socrates
+- MH J — John F Kennedy
+- MH R — Muthamizh Arignar Kalaignar M.Karunanidhi
+- MH T — Mens Hostel T Block
 
-def _summarize_rows(cols: List[str], rows: List[List[str]], filters: Dict[str, Any]) -> List[str]:
-    if not rows: return []
-    # locate columns
-    def idx(name): return cols.index(name) if name in cols else -1
-    i_total = idx("Total")
-    i_rm    = idx("Room+Mess")
-    i_curr  = idx("Curr")
-    # choose amount prefer total>room+mess
-    amounts: Dict[str, List[float]] = {}
-    for r in rows:
-        curr = (r[i_curr] if i_curr >= 0 else "").strip() or "INR"
-        amount_cell = r[i_total] if (i_total >= 0 and r[i_total]) else (r[i_rm] if i_rm >= 0 else "")
-        val = _money_to_float(amount_cell)
-        if not (val != val):  # not NaN
-            amounts.setdefault(curr, []).append(val)
 
-    bullets = []
-    who = []
-    if filters.get("gender"):  who.append(filters["gender"])
-    if filters.get("level"):   who.append(filters["level"])
-    if filters.get("category"):who.append(filters["category"])
-    if filters.get("ay"):      who.append(filters["ay"])
-    who_txt = " ".join(w for w in who if w)
+(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --emb gemini --q "list all landline numbers for boys hostel"
 
-    for curr, arr in amounts.items():
-        if not arr: continue
-        low, high = min(arr), max(arr)
-        if curr.upper()=="INR":
-            bullets.append(f"{who_txt or 'Overall'}: ₹{int(low):,} – ₹{int(high):,} (Total).")
-        else:
-            bullets.append(f"{who_txt or 'Overall'}: {curr} {low:,.0f} – {high:,.0f} (Total).")
-    if not bullets and len(rows)>0:
-        bullets.append(f"{len(rows)} matching fee rows.")
-    return bullets[:4]
+**Answer (quick summary):**
+- Male: ₹142,400 – ₹275,000 (Total).
+- Male: USD 2,940 – 5,770 (Total).
 
-def _extract_blocks(text: str) -> List[str]:
-    if not text: return []
-    codes = re.findall(r"\b(?:MH|LH)[A-Z0-9\-]{1,3}\b", text)  # e.g., MH-A, MHA, LH1
-    named = re.findall(r"(?i)\b(?:Men|Ladies)\s+Hostel\s*(?:[A-Za-z0-9\-]+)?", text)
-    out = sorted(set(codes + named))
-    return out[:40]
+**Hostel Fee Details (Vellore)**
+| Block | Gender | Level | Type | AY | Category | Occ | AC | Mess | Room+Mess | Admission | Caution | Other | Total | Curr |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 136,800 | 15,000 | 15,000 |  | 166,800 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 146,300 | 15,000 | 15,000 |  | 176,300 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 158,200 | 15,000 | 15,000 |  | 188,200 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 145,300 | 15,000 | 15,000 |  | 175,300 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 154,800 | 15,000 | 15,000 |  | 184,800 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 166,700 | 15,000 | 15,000 |  | 196,700 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 167,700 | 15,000 | 15,000 |  | 197,700 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 179,600 | 15,000 | 15,000 |  | 209,600 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 165,000 | 15,000 | 15,000 |  | 195,000 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 174,500 | 15,000 | 15,000 |  | 204,500 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 186,400 | 15,000 | 15,000 |  | 216,400 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 198,900 | 15,000 | 15,000 |  | 228,900 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 208,400 | 15,000 | 15,000 |  | 238,400 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 220,300 | 15,000 | 15,000 |  | 250,300 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 146,700 | 15,000 | 15,000 |  | 176,700 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 156,200 | 15,000 | 15,000 |  | 186,200 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 168,100 | 15,000 | 15,000 |  | 198,100 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 156,400 | 15,000 | 15,000 |  | 186,400 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 165,900 | 15,000 | 15,000 |  | 195,900 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 177,800 | 15,000 | 15,000 |  | 207,800 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 167,300 | 15,000 | 15,000 |  | 197,300 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 176,800 | 15,000 | 15,000 |  | 206,800 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 188,700 | 15,000 | 15,000 |  | 218,700 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 182,600 | 15,000 | 15,000 |  | 212,600 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 192,100 | 15,000 | 15,000 |  | 222,100 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 204,000 | 15,000 | 15,000 |  | 234,000 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 196,800 | 15,000 | 15,000 |  | 226,800 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 206,300 | 15,000 | 15,000 |  | 236,300 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 218,200 | 15,000 | 15,000 |  | 248,200 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 2,790 | 250 | 400 |  | 3,440 | USD |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 3,060 | 250 | 400 |  | 3,710 | USD |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 3,430 | 250 | 400 |  | 4,080 | USD |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 3,720 | 250 | 400 |  | 4,370 | USD |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 4,270 | 250 | 400 |  | 4,920 | USD |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 3,070 | 250 | 400 |  | 3,720 | USD |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 3,220 | 250 | 400 |  | 3,870 | USD |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 3,660 | 250 | 400 |  | 4,310 | USD |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 4,020 | 250 | 400 |  | 4,670 | USD |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 4,550 | 250 | 400 |  | 5,200 | USD |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 136,800 | 136,800 | 15,000 | 15,000 |  | 166,800 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 145,300 | 145,300 | 15,000 | 15,000 |  | 175,300 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 146,300 | 146,300 | 15,000 | 15,000 |  | 176,300 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 146,700 | 146,700 | 15,000 | 15,000 |  | 176,700 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 154,800 | 154,800 | 15,000 | 15,000 |  | 184,800 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 156,200 | 156,200 | 15,000 | 15,000 |  | 186,200 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 156,400 | 156,400 | 15,000 | 15,000 |  | 186,400 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 158,200 | 158,200 | 15,000 | 15,000 |  | 188,200 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 165,000 | 165,000 | 15,000 | 15,000 |  | 195,000 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 165,900 | 165,900 | 15,000 | 15,000 |  | 195,900 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 166,700 | 166,700 | 15,000 | 15,000 |  | 196,700 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 167,300 | 167,300 | 15,000 | 15,000 |  | 197,300 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 167,700 | 167,700 | 15,000 | 15,000 |  | 197,700 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 168,100 | 168,100 | 15,000 | 15,000 |  | 198,100 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 174,500 | 174,500 | 15,000 | 15,000 |  | 204,500 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 176,800 | 176,800 | 15,000 | 15,000 |  | 206,800 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 177,800 | 177,800 | 15,000 | 15,000 |  | 207,800 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 179,600 | 179,600 | 15,000 | 15,000 |  | 209,600 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 182,600 | 182,600 | 15,000 | 15,000 |  | 212,600 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 186,400 | 186,400 | 15,000 | 15,000 |  | 216,400 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 188,700 | 188,700 | 15,000 | 15,000 |  | 218,700 | INR |
 
-def _extract_contacts(text: str) -> List[Tuple[str, str, str]]:
-    if not text: return []
-    phones = re.findall(r"(?:(?:\+?\d{1,3}[-\s]?)?\d{10,})", text)
-    emails = re.findall(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", text)
-    # Try to pick role hints around the numbers
-    triples = []
-    for ph in phones[:20]:
-        # look for a nearby role keyword within 40 chars
-        m = re.search(r"(?i)(warden|supervisor|superintendent|hostel office|admin|care taker).{0,40}?" + re.escape(ph), text)
-        role = (m.group(1).title() if m else "Contact")
-        triples.append(("", role, ph))
-    for em in emails[:20]:
-        m = re.search(r"(?i)(warden|supervisor|superintendent|hostel office|admin|care taker).{0,40}?" + re.escape(em), text)
-        role = (m.group(1).title() if m else "Email")
-        triples.append(("", role, em))
-    # de-dup by value
-    seen, out = set(), []
-    for name, role, val in triples:
-        if val in seen: continue
-        seen.add(val)
-        out.append((name, role, val))
-    return out[:40]
+**Quick overview:**
+- Male First-Year —: 1 block(s)
+- Male Senior —: 1 block(s)
 
-def _render_table_md(title: str, cols: List[str], rows: List[List[str]]) -> str:
-    out = []
-    if title: out.append(f"**{title}**")
-    out.append("| " + " | ".join(cols) + " |")
-    out.append("|" + "|".join(["---"]*len(cols)) + "|")
-    for r in rows:
-        out.append("| " + " | ".join("" if c is None else str(c) for c in r) + " |")
-    out.append("")
-    return "\n".join(out)
+*Note: Structured answers come from your SQLite DB built from official PDFs.*
 
-# ---------------- Direct SQLite helpers for new tables ----------------
-def _rows(conn: sqlite3.Connection, sql: str, params=()):
-    try:
-        return pd.read_sql_query(sql, conn, params=params)
-    except Exception:
-        return pd.DataFrame()
 
-def handle_mh_block_names(conn: sqlite3.Connection):
-    df = _rows(conn, "SELECT block_code, block_name FROM mh_blocks ORDER BY block_code")
-    if df.empty:
-        return None
-    names = [f"{r.block_code} — {r.block_name}" for _, r in df.iterrows()]
-    return "**Men’s Hostel Blocks**\n" + "\n".join(f"- {n}" for n in names)
+(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --emb gemini --q "list all landline numbers mens block wise"        
 
-def handle_supervisor_contacts(conn: sqlite3.Connection, which: str):
-    if which == "ladies":
-        df = _rows(conn, "SELECT role,name,phone,email FROM hostel_contacts WHERE role LIKE '%(LH)%' OR role LIKE '%Residential Block Supervisor%'", ())
-    else:
-        df = _rows(conn, "SELECT role,name,phone,email FROM hostel_contacts WHERE role LIKE '%(MH)%' OR role LIKE '%Senior Supervisors%'", ())
-    if df.empty:
-        return None
-    lines = [f"- {r.role}: {r.name} — {r.phone} — {r.email}" for _, r in df.iterrows()]
-    return "**Hostel Contacts**\n" + "\n".join(lines)
+**Men’s Hostel Blocks**
+- MH A — Albert Einstein
+- MH B — Swami Vivekananda
+- MH C — Rabindranath Tagore
+- MH E — Sir C.V.Raman
+- MH F — R Amanujam
+- MH G — Socrates
+- MH J — John F Kennedy
+- MH R — Muthamizh Arignar Kalaignar M.Karunanidhi
+- MH T — Mens Hostel T Block
 
-# ---------------- Main answer logic ----------------
-def answer_query(index_dir: Path, collection: str, query: str) -> str:
-    sr_intent = SR.detect_structured_intent(query)
-    f = SR.parse_filters(query)
-    q_low = query.lower()
 
-    # open DB once for direct lookups
-    conn = None
-    if DB_PATH.exists():
-        try:
-            conn = sqlite3.connect(str(DB_PATH))
-        except Exception:
-            conn = None
+(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --emb gemini --q "ladies hostel supervisor contact email phone"     
 
-    # Priority routes: explicit block names / supervisor contacts
-    if conn:
-        if ("block" in q_low and "name" in q_low and any(w in q_low for w in ("boy","boys","men","male"))):
-            out = handle_mh_block_names(conn)
-            if out: 
-                conn.close()
-                return out
-        if ("supervisor" in q_low and any(w in q_low for w in ("ladies","girls","female","women"))):
-            out = handle_supervisor_contacts(conn, "ladies")
-            if out: 
-                conn.close()
-                return out
-        if ("supervisor" in q_low and any(w in q_low for w in ("boys","men","male"))):
-            out = handle_supervisor_contacts(conn, "men")
-            if out: 
-                conn.close()
-                return out
+**Hostel Contacts**
+- Section Supervisor (LH): 0 — 0416-220-2711 — gsubbulakshmi@vit.ac.in
+- Residential Block Supervisor (LH, Transport): 1 — 9488839864, 9791297375 — mythily.a@vit.ac.in
 
-    # ---------- Structured SQL routes via existing router ----------
-    if sr_intent in ("tabular", "contacts", "blocks"):
-        if sr_intent == "contacts":
-            data = SR.sql_block_contacts(f)
-            rows = data["table"]["rows"]
-            if not rows:
-                # Hybrid fallback: scrape FAISS for contacts
-                ctx, sources = _faiss_context(index_dir, collection, query, k=12)
-                contacts = _extract_contacts(ctx)
-                if contacts:
-                    cols = ["Name/Block", "Role", "Phone/Email"]
-                    rows = [[n or "", r, v] for (n, r, v) in contacts]
-                    md = _render_table_md("Hostel Contacts (from PDFs)", cols, rows)
-                    if sources:
-                        md += "\n*Sources:* " + ", ".join(sources[:5])
-                    if conn: conn.close()
-                    return md + "\n\n*Note: Mixed from SQLite and retrieved PDFs.*"
-                if conn: conn.close()
-                return "**Hostel Contacts**\n\n_No contact details found in SQLite or PDFs._"
 
-        elif sr_intent == "blocks":
-            # Try our new mh_blocks first if user likely wants men's blocks
-            if conn and any(w in q_low for w in ("boy","boys","men","male")):
-                out = handle_mh_block_names(conn)
-                if out: 
-                    conn.close()
-                    return out
-
-            data = SR.sql_list_blocks(f)
-            rows = data["table"]["rows"]
-            if not rows:
-                # Hybrid fallback: look for block codes/names in PDFs
-                ctx, sources = _faiss_context(index_dir, collection, "hostel block names MH LH blocks", k=15)
-                blocks = _extract_blocks(ctx)
-                if blocks:
-                    md = "**Hostel Blocks (from PDFs)**\n" + "\n".join(f"- {b}" for b in blocks)
-                    if sources:
-                        md += "\n\n*Sources:* " + ", ".join(sources[:5])
-                    if conn: conn.close()
-                    return md + "\n\n*Note: Mixed from SQLite and retrieved PDFs.*"
-                if conn: conn.close()
-                return "**Hostel Blocks**\n\n_No block names found in SQLite or PDFs._"
-
-        else:
-            data = SR.sql_hostel_overview(f)
-
-        # Dedup + hide "Source"
-        cols = data["table"]["columns"][:]
-        rows = [r[:] for r in data["table"]["rows"]]
-        if "Source" in cols:
-            si = cols.index("Source")
-            cols = cols[:si] + cols[si+1:]
-            rows = [[c for j, c in enumerate(r) if j != si] for r in rows]
-
-        # Deduplicate identical rows
-        seen = set(); clean_rows = []
-        for r in rows:
-            key = tuple("" if c is None else str(c).strip() for c in r)
-            if key in seen: continue
-            seen.add(key)
-            clean_rows.append(r)
-
-        # Chatty summary (top)
-        bullets = _summarize_rows(cols, clean_rows, f)
-        intro = ""
-        if bullets:
-            intro = "**Answer (quick summary):**\n" + "\n".join(f"- {b}" for b in bullets) + "\n\n"
-
-        md = _render_table_md(data["table"].get("title","Results"), cols, clean_rows[:60])
-        quick = ""
-        if data.get("bullets"):
-            quick = "\n**Quick overview:**\n" + "\n".join(f"- {b}" for b in data["bullets"])
-        if conn: conn.close()
-        return intro + md + quick + "\n\n*Note: Structured answers come from your SQLite DB built from official PDFs.*"
-
-    # ---------- Non-structured: FAISS fallback ----------
-    emb = GeminiLCEmbeddings()
-    store = load_store(index_dir, collection, emb)
-    docs = retrieve(store, query, k=40)
-    docs = _postfilter_and_rerank(docs, query, want_hostel=True, topn=10)
-
-    ctx_lines, sources = [], []
-    for d in docs:
-        md = d.metadata or {}
-        src = md.get("source_file") or md.get("source_title") or "unknown"
-        sources.append(src)
-        ctx_lines += [d.page_content[:600] if d.page_content else ""]
-
-    # Minimal “chatty” summary using the retrieved text only
-    text = "\n\n".join(ctx_lines)
-    snippet = (text[:600] + "…") if len(text) > 600 else text
-    out = []
-    out.append("**Answer (from PDFs):**")
-    out.append(snippet if snippet else "_Couldn’t derive a concise summary from the retrieved context._")
-    if sources:
-        out.append("\n*Sources:* " + ", ".join(list(dict.fromkeys(sources))[:5]))
-    out.append("\n*Note: Answers are generated only from your ingested official PDFs.*")
-    return "\n".join(out)
-
-def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--index_dir", required=True)
-    ap.add_argument("--collection", default="vit_faq_vellore")
-    ap.add_argument("--emb", choices=["gemini"], default="gemini")
-    ap.add_argument("--q", required=True)
-    args = ap.parse_args()
-    print("\n" + answer_query(Path(args.index_dir), args.collection, args.q) + "\n")
-
-if __name__ == "__main__":
-    main()
-
+(.venv) C:\Users\T8543\Downloads\project-2>
