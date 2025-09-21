@@ -1,152 +1,92 @@
-# rag_answer.py — SQL-first campus-wide QA (Academics + Hostel + Rules + VITREE) with FAISS fallback
-# - Priorities:
-#   1) Exact hostel reverse lookups (phone/email) from DB
-#   2) Academics (programs/eligibility/documents/academic fees/scholarships) — SQL
-#   3) Rules (refund/attendance/discipline/anti-ragging/exam) — SQL
-#   4) VITREE (process/fees/stipend) — SQL
-#   5) Hostel (blocks/landlines/contacts/fees) — SQL (keeps your existing pipeline)
-#   6) FAISS RAG fallback over PDFs (Gemini embeddings)
-#
-# Usage:
-#   python rag_answer.py --index_dir Data/FAISS --collection vit_faq_vellore --q "UG eligibility 2025-26"
-#   GEMINI_API_KEY must be set for FAISS fallback.
+# stage_hostel_tables.py
+# Stages tables from PDFs to CSVs you can eyeball before loading into SQLite.
+import pathlib, re, csv, sys
 
-import os, re, sys, argparse, sqlite3
-from pathlib import Path
-from typing import List, Dict, Any, Optional
+IN = pathlib.Path("Data/Raw/HOSTEL")          # put your fee PDFs here (LH/MH/LH-NRI/... etc)
+OUT = pathlib.Path("Data/staging")     # will hold CSVs
+OUT.mkdir(parents=True, exist_ok=True)
 
-# ---------------- Local SQL-first handlers ----------------
-from app.handlers.academics import (
-    is_academic_like, detect_academics_intent, answer_academics_sql
-)
-from app.handlers.rules     import detect_rules_intent, answer_rules_sql
-from app.handlers.vitree    import detect_vitree_intent, answer_vitree_sql
-from app.handlers.hostels   import detect_hostel_intent, reverse_lookup_bundle, answer_hostel_sqlfirst
+PDFS = [
+  "MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26.pdf",
+  "MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26.pdf",
+  "LH-FEE-structure-Indian-Category-2025-26.pdf",
+  "LH-FEE-structure-NRI-Foreign-Category-2025-26.pdf",
+  "Hostel_info.pdf",
+  "Hostel-joint-Affidavit-2025.pdf",
+]
 
-# ---------------- FAISS + Gemini embeddings (fallback only) ----------------
-from langchain_community.vectorstores import FAISS
-from langchain_core.embeddings import Embeddings as LCEmbeddings
-
-class GeminiLCEmbeddings(LCEmbeddings):
-    def __init__(self, model: str = "models/text-embedding-004", api_key_env: str = "GEMINI_API_KEY"):
-        import google.generativeai as genai
-        api_key = os.getenv(api_key_env)
-        if not api_key:
-            print("[ERROR] GEMINI_API_KEY not set. FAISS fallback will not work.")
-            sys.exit(1)
-        genai.configure(api_key=api_key)
-        self.genai = genai
-        self.model = model
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        return [self.genai.embed_content(model=self.model, content=t)["embedding"] for t in texts]
-    def embed_query(self, text: str) -> List[float]:
-        return self.genai.embed_content(model=self.model, content=text)["embedding"]
-
-def _load_store(index_dir: Path, collection: str, emb: LCEmbeddings) -> FAISS:
-    return FAISS.load_local(
-        str(index_dir), embeddings=emb, index_name=collection,
-        allow_dangerous_deserialization=True
-    )
-
-def _retrieve(store: FAISS, query: str, k: int = 40):
-    return store.similarity_search(query, k=k)
-
-def _keyword_score(text: str, q: str) -> int:
-    qwords = [w for w in re.findall(r"[a-z0-9]+", q.lower()) if len(w) > 2]
-    t = (text or "").lower()
-    return sum(t.count(w) for w in qwords)
-
-def _rerank(docs, query: str, topn: int = 12):
-    scored = []
-    for d in docs:
-        s = _keyword_score(d.page_content or "", query)
-        scored.append((s, d))
-    scored.sort(key=lambda x: x[0], reverse=True)
-    return [d for s, d in scored][:topn]
-
-def _summarize(text: str) -> str:
-    blob = re.sub(r"\s+", " ", text or "").strip()
-    if not blob: return ""
-    parts = re.split(r"(?<=[.!?])\s+", blob)
-    return " ".join(parts[:8])
-
-def _faiss_fallback(index_dir: Path, collection: str, query: str) -> str:
-    emb = GeminiLCEmbeddings()
-    store = _load_store(index_dir, collection, emb)
-    docs = _retrieve(store, query, k=40)
-    docs = _rerank(docs, query, topn=12)
-    if not docs:
-        return "_I couldn’t find enough context to answer that from your PDFs._"
-    ctx, srcs = [], []
-    for d in docs:
-        md = d.metadata or {}
-        src = md.get("source_file") or md.get("source_title") or "unknown"
-        if src not in srcs and len(srcs) < 5:
-            srcs.append(src)
-        ctx.append(d.page_content or "")
-    return f"**Answer (from your PDFs):** {_summarize(' '.join(ctx))}\n\n*Sources:* {', '.join(srcs)}"
-
-# ---------------- SQLite conn ----------------
-DB_PATH = Path("Data/sql/vit_vellore.db")
-def _conn() -> Optional[sqlite3.Connection]:
+def try_camelot(pdf_path: pathlib.Path):
     try:
-        con = sqlite3.connect(str(DB_PATH))
-        con.row_factory = sqlite3.Row
-        return con
+        import camelot
     except Exception:
-        return None
+        return []
+    tables = []
+    try:
+        # lattice works when tables have lines; flavor='stream' if not
+        t = camelot.read_pdf(str(pdf_path), pages='all', flavor='lattice')
+        for i, table in enumerate(t):
+            df = table.df
+            tables.append(("camelot", i, df))
+    except Exception:
+        pass
+    return tables
 
-# ---------------- Orchestrator ----------------
-def _is_smalltalk(q: str) -> bool:
-    ql = q.lower().strip()
-    return ql in ("hi","hello","hey") or any(ql.startswith(x) for x in ["hi ", "hello ", "hey "])
+def try_pdfplumber(pdf_path: pathlib.Path):
+    import pdfplumber
+    tables = []
+    try:
+        with pdfplumber.open(str(pdf_path)) as pdf:
+            for pi, page in enumerate(pdf.pages):
+                # attempt simple table extraction
+                try:
+                    tbls = page.extract_tables()
+                except Exception:
+                    tbls = []
+                for ti, rows in enumerate(tbls or []):
+                    # rows is list[list[str]]
+                    tables.append(("pdfplumber", f"{pi}_{ti}", rows))
+    except Exception:
+        pass
+    return tables
 
-def answer_query(index_dir: Path, collection: str, query: str) -> str:
-    q = query.strip()
-    if not q:
-        return "_Please type a question._"
-    if _is_smalltalk(q):
-        return ("Hi! I can answer about **UG/PG/MCA/MSc programs, eligibility, documents to submit, "
-                "academic fees, scholarships, rules (refund/attendance/discipline), VITREE, and hostels "
-                "(blocks, landlines, fees, contacts)**. What would you like to know?")
+def write_csv(name: str, rows, out_csv: pathlib.Path):
+    with out_csv.open("w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f)
+        for r in rows:
+            w.writerow([c.strip() if isinstance(c, str) else c for c in r])
 
-    con = _conn()
-
-    # 1) Exact hostel reverse lookups (phone/email) — zero-ambiguity wins
-    hos = detect_hostel_intent(q)
-    if hos["reverse_phone"] or hos["reverse_mail"]:
-        return reverse_lookup_bundle(con, hos)
-
-    # 2) Academics — SQL-first (programs / eligibility / documents / academic_fees / scholarships)
-    if is_academic_like(q):
-        out = answer_academics_sql(con, q)
-        if out: return out
-
-    # 3) Rules — SQL-first
-    if detect_rules_intent(q):
-        out = answer_rules_sql(con, q)
-        if out: return out
-
-    # 4) VITREE — SQL-first
-    if detect_vitree_intent(q):
-        out = answer_vitree_sql(con, q)
-        if out: return out
-
-    # 5) Hostel (lists/contacts/fees) — SQL-first
-    if hos["hostelish"] or hos["landlines"] or hos["blocks"] or hos["contacts"] or hos["specific_block"]:
-        out = answer_hostel_sqlfirst(con, q, hos)
-        if out: return out
-
-    # 6) FAISS fallback over all ingested PDFs
-    return _faiss_fallback(index_dir, collection, q)
+def normalize_df(df):
+    # Convert Camelot DF -> list of rows
+    rows = [list(df.columns)]
+    for _, r in df.iterrows():
+        rows.append([str(x) for x in r.tolist()])
+    return rows
 
 def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--index_dir", required=True)
-    ap.add_argument("--collection", default="vit_faq_vellore")
-    ap.add_argument("--q", required=True)
-    args = ap.parse_args()
-    print("\n" + answer_query(Path(args.index_dir), args.collection, args.q) + "\n")
+    for pdf_name in PDFS:
+        pdf_path = IN / pdf_name
+        if not pdf_path.exists():
+            print(f"[WARN] Missing {pdf_path}")
+            continue
+
+        staged_any = False
+
+        for src, tag, obj in (try_camelot(pdf_path) or []):
+            out_csv = OUT / f"{pdf_path.stem}__{src}_{tag}.csv"
+            rows = normalize_df(obj)
+            write_csv(pdf_path.stem, rows, out_csv)
+            print(f"[STAGED] {out_csv}")
+            staged_any = True
+
+        if not staged_any:
+            for src, tag, rows in (try_pdfplumber(pdf_path) or []):
+                out_csv = OUT / f"{pdf_path.stem}__{src}_{tag}.csv"
+                write_csv(pdf_path.stem, rows, out_csv)
+                print(f"[STAGED] {out_csv}")
+                staged_any = True
+
+        if not staged_any:
+            print(f"[FAIL] No tables detected in {pdf_path}")
 
 if __name__ == "__main__":
     main()
