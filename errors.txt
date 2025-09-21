@@ -1,99 +1,63 @@
-# app/handlers/rules.py — refund/attendance/discipline/exam etc.
+# app/utils/fallback_rag.py — FAISS retrieval + Gemini embeddings + simple summaries
 
-import re, sqlite3
-from typing import Optional
-from app.utils.render import md_table, bullets
+import os, sys, re
+from pathlib import Path
+from typing import List, Tuple
+from langchain_community.vectorstores import FAISS
+from langchain_core.embeddings import Embeddings as LCEmbeddings
 
-RULE_KEYS = ["refund","attendance","discipline","anti-ragging","anti ragging","exam","examination"]
+class GeminiLCEmbeddings(LCEmbeddings):
+    def __init__(self, model: str = "models/text-embedding-004", api_key_env: str = "GEMINI_API_KEY"):
+        import google.generativeai as genai
+        api_key = os.getenv(api_key_env)
+        if not api_key:
+            print("[ERROR] GEMINI_API_KEY not set.")
+            sys.exit(1)
+        genai.configure(api_key=api_key)
+        self.genai = genai
+        self.model = model
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+        return [self.genai.embed_content(model=self.model, content=t)["embedding"] for t in texts]
+    def embed_query(self, text: str) -> List[float]:
+        return self.genai.embed_content(model=self.model, content=text)["embedding"]
 
-def detect_rules_intent(q: str) -> bool:
-    ql = q.lower()
-    return any(k in ql for k in RULE_KEYS)
+def _keyword_score(text: str, q: str) -> int:
+    qwords = [w for w in re.findall(r"[a-z0-9]+", q.lower()) if len(w) > 2]
+    t = text.lower()
+    return sum(t.count(w) for w in qwords)
 
-def answer_rules_sql(con: sqlite3.Connection, q: str) -> Optional[str]:
-    if not con: return None
-    ql = q.lower()
-    cat = None
-    for k in RULE_KEYS:
-        if k in ql:
-            cat = "anti-ragging" if k in ("anti ragging","anti-ragging") else k
-            break
-    sql = "SELECT category, title, text, IFNULL(ay,'') as ay, source_file FROM rules"
-    args = []
-    if cat:
-        sql += " WHERE LOWER(category)=LOWER(?)"
-        args.append(cat)
-    sql += " ORDER BY ay DESC, title"
-    rows = con.execute(sql, args).fetchall()
-    if not rows:
-        return None
-    lines = [f"**{r['title']}** — {r['text']} *(AY: {r['ay']} | src: {r['source_file']})*" for r in rows]
-    return bullets(lines, f"Rules — {cat.title() if cat else 'All'}")
+def _postfilter_and_rerank(docs, query: str, topn: int = 12):
+    scored = []
+    for d in docs:
+        s = _keyword_score(d.page_content or "", query)
+        scored.append((s, d))
+    scored.sort(key=lambda x: x[0], reverse=True)
+    return [d for s, d in scored][:topn]
 
+def _summarize(text: str) -> str:
+    blob = re.sub(r"\s+", " ", text or "").strip()
+    if not blob: return ""
+    parts = re.split(r"(?<=[.!?])\s+", blob)
+    return " ".join(parts[:8])
 
-
-
-
-
-# app/utils/aliases.py — simple normalizers and token→canonical maps
-
-import re
-
-def norm(s: str) -> str:
-    return re.sub(r"[^a-z0-9]+","", (s or "").lower())
-
-def level_alias(txt: str) -> str:
-    if not txt: return ""
-    t = txt.lower()
-    if t in ("ug","undergrad","undergraduate","btech","b.tech","bsc","bca","bba"): return "UG"
-    if t in ("pg","postgrad","postgraduate","mtech","m.tech","msc","m.sc","mca","mba"): return "PG"
-    return txt
-
-def category_alias(txt: str) -> str:
-    if not txt: return ""
-    t = txt.lower()
-    if "nri" in t: return "NRI"
-    if "foreign" in t: return "Foreign"
-    if "indian" in t: return "Indian"
-    return txt
-
-
-
-
-# app/utils/render.py — consistent markdown output
-
-from typing import List, Optional
-
-def md_table(title: str, cols: List[str], rows: List[List[str]]) -> str:
-    seen=set(); uniq=[]
-    for r in rows:
-        tup=tuple("" if c is None else str(c) for c in r)
-        if tup in seen: continue
-        seen.add(tup); uniq.append(list(tup))
-    out = []
-    if title: out.append(f"**{title}**")
-    out.append("| " + " | ".join(cols) + " |")
-    out.append("|" + "|".join(["---"]*len(cols)) + "|")
-    for r in uniq:
-        out.append("| " + " | ".join("" if c is None else str(c) for c in r) + " |")
-    return "\n".join(out)
-
-def bullets(lines: List[str], title: Optional[str]=None) -> str:
-    if not lines: return ""
-    seen=set(); out_lines=[]
-    for ln in lines:
-        if ln in seen: continue
-        seen.add(ln); out_lines.append(ln)
-    out = [f"**{title}**" if title else ""]
-    out += [f"- {ln}" for ln in out_lines]
-    return "\n".join([x for x in out if x])
-
-def join_sources(srcs: List[str], maxn: int = 5) -> str:
-    if not srcs: return ""
-    uniq = []
+def faiss_answer_or_summary(index_dir: Path, collection: str, q: str) -> str:
+    emb = GeminiLCEmbeddings()
+    store = FAISS.load_local(str(index_dir), embeddings=emb, index_name=collection, allow_dangerous_deserialization=True)
+    docs = store.similarity_search(q, k=40)
+    docs = _postfilter_and_rerank(docs, q, topn=12)
+    if not docs:
+        return "_I couldn’t find enough context to answer that from your PDFs._"
+    ctx, sources = [], []
+    for d in docs:
+        md = d.metadata or {}
+        src = md.get("source_file") or md.get("source_title") or "unknown"
+        sources.append(src); ctx.append(d.page_content or "")
+    text = "\n\n".join(ctx)
+    para = _summarize(text)
+    srcs = []
     seen = set()
-    for s in srcs:
-        if not s or s in seen: continue
-        seen.add(s); uniq.append(s)
-        if len(uniq) >= maxn: break
-    return ", ".join(uniq)
+    for s in sources:
+        if s and s not in seen:
+            seen.add(s); srcs.append(s)
+            if len(srcs) >= 5: break
+    return f"**Answer (from your PDFs):** {para}\n\n*Sources:* {', '.join(srcs)}"
