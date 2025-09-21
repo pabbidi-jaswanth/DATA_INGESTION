@@ -1,46 +1,36 @@
-# app/utils/aliases.py
-# token → canonical mappings + simple slot extraction
+# app/utils/render.py
+# consistent, compact markdown renderers
 
-import re
-from typing import Optional, Dict
+from typing import List, Optional
 
-ALIAS_MAP = {
-    # hostel
-    "mens": "Boys", "boys": "Boys", "mh": "Boys",
-    "ladies": "Girls", "girls": "Girls", "lh": "Girls",
-    "deluxe": "Deluxe", "premium": "Deluxe",
-    "apartment": "Apartment", "regular": "Regular",
-    "firstyear": "First-Year", "freshers": "First-Year", "senior": "Senior",
-    "foreign": "NRI", "nri": "NRI", "indian": "Indian",
-    # academics levels
-    "ug": "UG", "undergrad": "UG", "btech": "UG", "b.sc": "UG", "bca": "UG", "bba": "UG",
-    "pg": "PG", "postgrad": "PG", "mtech": "PG", "m.sc": "MSC", "msc": "MSC", "mca": "MCA"
-}
+def md_table(title: str, cols: List[str], rows: List[List[object]], max_rows: int = 60) -> str:
+    if not rows:
+        return "_No data found._"
+    rows = rows[:max_rows]
+    out=[]
+    if title: out.append(f"**{title}**")
+    out.append("| " + " | ".join(cols) + " |")
+    out.append("|" + "|".join(["---"]*len(cols)) + "|")
+    for r in rows:
+        out.append("| " + " | ".join("" if v is None else str(v) for v in r) + " |")
+    return "\n".join(out)
 
-def normalize_token(tok: str) -> str:
-    return re.sub(r"[^a-z0-9]+","", tok.lower())
+def bullets(title: str, items: List[str], max_items: int = 20) -> str:
+    if not items:
+        return "_No data found._"
+    seen=set(); out=[]
+    for it in items:
+        k = "".join(ch for ch in it.lower() if ch.isalnum())
+        if k in seen: continue
+        seen.add(k); out.append(it)
+        if len(out) >= max_items: break
+    return "**" + title + "**\n" + "\n".join("- " + it for it in out)
 
-def map_alias(tok: str) -> Optional[str]:
-    return ALIAS_MAP.get(normalize_token(tok))
-
-def detect_gender(q: str) -> Optional[str]:
-    s = normalize_token(q)
-    if "boys" in s or "mens" in s or "mh" in s: return "Boys"
-    if "girls" in s or "ladies" in s or "lh" in s: return "Girls"
-    return None
-
-def detect_category(q: str) -> Optional[str]:
-    s = q.lower()
-    if "nri" in s or "foreign" in s: return "NRI"
-    if "indian" in s: return "Indian"
-    return None
-
-def detect_level(q: str) -> Optional[str]:
-    s = q.lower()
-    if any(w in s for w in ["first year","fresher","freshmen"]): return "First-Year"
-    if "senior" in s: return "Senior"
-    return None
-
-def detect_year(q: str) -> Optional[int]:
-    m = re.search(r"\b(20\d{2})\b", q)
-    return int(m.group(1)) if m else None
+def provenance(note: Optional[str], src: Optional[str], verified: Optional[str]) -> str:
+    parts=[]
+    if note: parts.append(note)
+    meta=[]
+    if src: meta.append(src)
+    if verified: meta.append(f"Verified: {verified}")
+    if meta: parts.append("Source: " + " · ".join(meta))
+    return ("\n\n" + " ".join(parts)) if parts else ""
