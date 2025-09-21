@@ -1,11 +1,11 @@
-# app/handlers/vitree.py
-# VITREE: process / fees / stipend / scholarships
+# app/handlers/rules.py
+# refund / attendance / discipline / anti-ragging
 
 from __future__ import annotations
 import sqlite3
 from pathlib import Path
-from typing import Optional, List
-from app.utils.render import md_table, bullets, provenance
+from typing import Optional
+from app.utils.render import bullets, provenance
 
 DB_PATH = Path("Data/sql/vit_vellore.db")
 
@@ -16,42 +16,24 @@ def _c():
 
 def _has(con, t): return con.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?",(t,)).fetchone() is not None
 
-def process() -> str:
+def rules(category: Optional[str]=None) -> str:
     with _c() as con:
-        if _has(con,"vitree_process"):
-            rs = con.execute("SELECT step, detail, source_file, last_verified_on FROM vitree_process ORDER BY step_no").fetchall()
-            items = [f"{r['step']}: {r['detail']}" for r in rs]
-            return bullets("VITREE — Process", items) + provenance(None, rs[0]["source_file"] if rs else None, rs[0]["last_verified_on"] if rs else None)
-        return "_VITREE process table not found._"
+        if not _has(con,"rules"):
+            return "_Rules table not found._"
+        if category:
+            rs = con.execute("SELECT category, title, description, source_file, last_verified_on FROM rules WHERE LOWER(category)=? ORDER BY rowid",(category.lower(),)).fetchall()
+        else:
+            rs = con.execute("SELECT category, title, description, source_file, last_verified_on FROM rules ORDER BY category, rowid").fetchall()
+        groups={}
+        for r in rs:
+            groups.setdefault(r["category"], []).append(f"{r['title']}: {r['description']}")
+        parts=[]
+        any_row = rs[0] if rs else None
+        for cat, items in groups.items():
+            parts.append(bullets(f"{cat.title()} — Key Points", items))
+        return ("\n\n".join(parts) if parts else "_No rules available._") + provenance(None, any_row["source_file"] if any_row else None, any_row["last_verified_on"] if any_row else None)
 
-def fees(year: Optional[int]=None, category: Optional[str]=None) -> str:
-    with _c() as con:
-        if not _has(con,"vitree_fees"):
-            return "_VITREE fees table not found._"
-        sql = "SELECT year, category, tuition, application_fee, other_charges, currency, source_file, last_verified_on FROM vitree_fees WHERE 1=1"
-        args=[]
-        if year: sql += " AND year=?"; args.append(year)
-        if category: sql += " AND LOWER(category)=?"; args.append(category.lower())
-        sql += " ORDER BY year, category"
-        rs = con.execute(sql, tuple(args)).fetchall()
-        rows = [[r["year"], r["category"], r["tuition"], r["application_fee"], r["other_charges"], r["currency"]] for r in rs]
-        out = md_table("VITREE — Fees", ["Year","Category","Tuition","Application Fee","Other","Curr"], rows)
-        if rs: out += provenance(None, rs[0]["source_file"], rs[0]["last_verified_on"])
-        return out
-
-def stipend() -> str:
-    with _c() as con:
-        # either a vitree_stipend table or a scholarships table with level='PhD'
-        if _has(con,"vitree_stipend"):
-            rs = con.execute("SELECT title, amount, period, conditions, source_file, last_verified_on FROM vitree_stipend ORDER BY rowid").fetchall()
-            rows = [[r["title"], r["amount"], r["period"], r["conditions"]] for r in rs]
-            out = md_table("VITREE — Stipend", ["Title","Amount","Period","Conditions"], rows)
-            if rs: out += provenance(None, rs[0]["source_file"], rs[0]["last_verified_on"])
-            return out
-        if _has(con,"scholarships"):
-            rs = con.execute("SELECT name, amount, criteria, source_file, last_verified_on FROM scholarships WHERE UPPER(level)='PHD' ORDER BY name").fetchall()
-            rows = [[r["name"], r["amount"], r["criteria"]] for r in rs]
-            out = md_table("VITREE — Scholarships/Stipend", ["Name","Amount","Criteria"], rows)
-            if rs: out += provenance(None, rs[0]["source_file"], rs[0]["last_verified_on"])
-            return out
-        return "_No stipend/scholarship data found for VITREE._"
+def attendance() -> str:   return rules("attendance")
+def refund() -> str:       return rules("refund")
+def discipline() -> str:   return rules("discipline")
+def anti_ragging() -> str: return rules("anti-ragging")
