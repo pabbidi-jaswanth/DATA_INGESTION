@@ -1,8 +1,29 @@
-# app/utils/fallback_rag.py — FAISS retrieval + Gemini embeddings + simple summaries
+# rag_answer.py — SQL-first campus-wide QA (Academics + Hostel + Rules + VITREE) with FAISS fallback
+# - Priorities:
+#   1) Exact hostel reverse lookups (phone/email) from DB
+#   2) Academics (programs/eligibility/documents/academic fees/scholarships) — SQL
+#   3) Rules (refund/attendance/discipline/anti-ragging/exam) — SQL
+#   4) VITREE (process/fees/stipend) — SQL
+#   5) Hostel (blocks/landlines/contacts/fees) — SQL (keeps your existing pipeline)
+#   6) FAISS RAG fallback over PDFs (Gemini embeddings)
+#
+# Usage:
+#   python rag_answer.py --index_dir Data/FAISS --collection vit_faq_vellore --q "UG eligibility 2025-26"
+#   GEMINI_API_KEY must be set for FAISS fallback.
 
-import os, sys, re
+import os, re, sys, argparse, sqlite3
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Dict, Any, Optional
+
+# ---------------- Local SQL-first handlers ----------------
+from app.handlers.academics import (
+    is_academic_like, detect_academics_intent, answer_academics_sql
+)
+from app.handlers.rules     import detect_rules_intent, answer_rules_sql
+from app.handlers.vitree    import detect_vitree_intent, answer_vitree_sql
+from app.handlers.hostels   import detect_hostel_intent, reverse_lookup_bundle, answer_hostel_sqlfirst
+
+# ---------------- FAISS + Gemini embeddings (fallback only) ----------------
 from langchain_community.vectorstores import FAISS
 from langchain_core.embeddings import Embeddings as LCEmbeddings
 
@@ -11,7 +32,7 @@ class GeminiLCEmbeddings(LCEmbeddings):
         import google.generativeai as genai
         api_key = os.getenv(api_key_env)
         if not api_key:
-            print("[ERROR] GEMINI_API_KEY not set.")
+            print("[ERROR] GEMINI_API_KEY not set. FAISS fallback will not work.")
             sys.exit(1)
         genai.configure(api_key=api_key)
         self.genai = genai
@@ -21,12 +42,21 @@ class GeminiLCEmbeddings(LCEmbeddings):
     def embed_query(self, text: str) -> List[float]:
         return self.genai.embed_content(model=self.model, content=text)["embedding"]
 
+def _load_store(index_dir: Path, collection: str, emb: LCEmbeddings) -> FAISS:
+    return FAISS.load_local(
+        str(index_dir), embeddings=emb, index_name=collection,
+        allow_dangerous_deserialization=True
+    )
+
+def _retrieve(store: FAISS, query: str, k: int = 40):
+    return store.similarity_search(query, k=k)
+
 def _keyword_score(text: str, q: str) -> int:
     qwords = [w for w in re.findall(r"[a-z0-9]+", q.lower()) if len(w) > 2]
-    t = text.lower()
+    t = (text or "").lower()
     return sum(t.count(w) for w in qwords)
 
-def _postfilter_and_rerank(docs, query: str, topn: int = 12):
+def _rerank(docs, query: str, topn: int = 12):
     scored = []
     for d in docs:
         s = _keyword_score(d.page_content or "", query)
@@ -40,24 +70,83 @@ def _summarize(text: str) -> str:
     parts = re.split(r"(?<=[.!?])\s+", blob)
     return " ".join(parts[:8])
 
-def faiss_answer_or_summary(index_dir: Path, collection: str, q: str) -> str:
+def _faiss_fallback(index_dir: Path, collection: str, query: str) -> str:
     emb = GeminiLCEmbeddings()
-    store = FAISS.load_local(str(index_dir), embeddings=emb, index_name=collection, allow_dangerous_deserialization=True)
-    docs = store.similarity_search(q, k=40)
-    docs = _postfilter_and_rerank(docs, q, topn=12)
+    store = _load_store(index_dir, collection, emb)
+    docs = _retrieve(store, query, k=40)
+    docs = _rerank(docs, query, topn=12)
     if not docs:
         return "_I couldn’t find enough context to answer that from your PDFs._"
-    ctx, sources = [], []
+    ctx, srcs = [], []
     for d in docs:
         md = d.metadata or {}
         src = md.get("source_file") or md.get("source_title") or "unknown"
-        sources.append(src); ctx.append(d.page_content or "")
-    text = "\n\n".join(ctx)
-    para = _summarize(text)
-    srcs = []
-    seen = set()
-    for s in sources:
-        if s and s not in seen:
-            seen.add(s); srcs.append(s)
-            if len(srcs) >= 5: break
-    return f"**Answer (from your PDFs):** {para}\n\n*Sources:* {', '.join(srcs)}"
+        if src not in srcs and len(srcs) < 5:
+            srcs.append(src)
+        ctx.append(d.page_content or "")
+    return f"**Answer (from your PDFs):** {_summarize(' '.join(ctx))}\n\n*Sources:* {', '.join(srcs)}"
+
+# ---------------- SQLite conn ----------------
+DB_PATH = Path("Data/sql/vit_vellore.db")
+def _conn() -> Optional[sqlite3.Connection]:
+    try:
+        con = sqlite3.connect(str(DB_PATH))
+        con.row_factory = sqlite3.Row
+        return con
+    except Exception:
+        return None
+
+# ---------------- Orchestrator ----------------
+def _is_smalltalk(q: str) -> bool:
+    ql = q.lower().strip()
+    return ql in ("hi","hello","hey") or any(ql.startswith(x) for x in ["hi ", "hello ", "hey "])
+
+def answer_query(index_dir: Path, collection: str, query: str) -> str:
+    q = query.strip()
+    if not q:
+        return "_Please type a question._"
+    if _is_smalltalk(q):
+        return ("Hi! I can answer about **UG/PG/MCA/MSc programs, eligibility, documents to submit, "
+                "academic fees, scholarships, rules (refund/attendance/discipline), VITREE, and hostels "
+                "(blocks, landlines, fees, contacts)**. What would you like to know?")
+
+    con = _conn()
+
+    # 1) Exact hostel reverse lookups (phone/email) — zero-ambiguity wins
+    hos = detect_hostel_intent(q)
+    if hos["reverse_phone"] or hos["reverse_mail"]:
+        return reverse_lookup_bundle(con, hos)
+
+    # 2) Academics — SQL-first (programs / eligibility / documents / academic_fees / scholarships)
+    if is_academic_like(q):
+        out = answer_academics_sql(con, q)
+        if out: return out
+
+    # 3) Rules — SQL-first
+    if detect_rules_intent(q):
+        out = answer_rules_sql(con, q)
+        if out: return out
+
+    # 4) VITREE — SQL-first
+    if detect_vitree_intent(q):
+        out = answer_vitree_sql(con, q)
+        if out: return out
+
+    # 5) Hostel (lists/contacts/fees) — SQL-first
+    if hos["hostelish"] or hos["landlines"] or hos["blocks"] or hos["contacts"] or hos["specific_block"]:
+        out = answer_hostel_sqlfirst(con, q, hos)
+        if out: return out
+
+    # 6) FAISS fallback over all ingested PDFs
+    return _faiss_fallback(index_dir, collection, q)
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--index_dir", required=True)
+    ap.add_argument("--collection", default="vit_faq_vellore")
+    ap.add_argument("--q", required=True)
+    args = ap.parse_args()
+    print("\n" + answer_query(Path(args.index_dir), args.collection, args.q) + "\n")
+
+if __name__ == "__main__":
+    main()
