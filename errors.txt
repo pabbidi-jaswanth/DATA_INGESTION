@@ -1,39 +1,46 @@
-# app/handlers/rules.py
-# refund / attendance / discipline / anti-ragging
+# app/utils/aliases.py
+# token → canonical mappings + simple slot extraction
 
-from __future__ import annotations
-import sqlite3
-from pathlib import Path
-from typing import Optional
-from app.utils.render import bullets, provenance
+import re
+from typing import Optional, Dict
 
-DB_PATH = Path("Data/sql/vit_vellore.db")
+ALIAS_MAP = {
+    # hostel
+    "mens": "Boys", "boys": "Boys", "mh": "Boys",
+    "ladies": "Girls", "girls": "Girls", "lh": "Girls",
+    "deluxe": "Deluxe", "premium": "Deluxe",
+    "apartment": "Apartment", "regular": "Regular",
+    "firstyear": "First-Year", "freshers": "First-Year", "senior": "Senior",
+    "foreign": "NRI", "nri": "NRI", "indian": "Indian",
+    # academics levels
+    "ug": "UG", "undergrad": "UG", "btech": "UG", "b.sc": "UG", "bca": "UG", "bba": "UG",
+    "pg": "PG", "postgrad": "PG", "mtech": "PG", "m.sc": "MSC", "msc": "MSC", "mca": "MCA"
+}
 
-def _c():
-    con = sqlite3.connect(str(DB_PATH))
-    con.row_factory = sqlite3.Row
-    return con
+def normalize_token(tok: str) -> str:
+    return re.sub(r"[^a-z0-9]+","", tok.lower())
 
-def _has(con, t): return con.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?",(t,)).fetchone() is not None
+def map_alias(tok: str) -> Optional[str]:
+    return ALIAS_MAP.get(normalize_token(tok))
 
-def rules(category: Optional[str]=None) -> str:
-    with _c() as con:
-        if not _has(con,"rules"):
-            return "_Rules table not found._"
-        if category:
-            rs = con.execute("SELECT category, title, description, source_file, last_verified_on FROM rules WHERE LOWER(category)=? ORDER BY rowid",(category.lower(),)).fetchall()
-        else:
-            rs = con.execute("SELECT category, title, description, source_file, last_verified_on FROM rules ORDER BY category, rowid").fetchall()
-        groups={}
-        for r in rs:
-            groups.setdefault(r["category"], []).append(f"{r['title']}: {r['description']}")
-        parts=[]
-        any_row = rs[0] if rs else None
-        for cat, items in groups.items():
-            parts.append(bullets(f"{cat.title()} — Key Points", items))
-        return ("\n\n".join(parts) if parts else "_No rules available._") + provenance(None, any_row["source_file"] if any_row else None, any_row["last_verified_on"] if any_row else None)
+def detect_gender(q: str) -> Optional[str]:
+    s = normalize_token(q)
+    if "boys" in s or "mens" in s or "mh" in s: return "Boys"
+    if "girls" in s or "ladies" in s or "lh" in s: return "Girls"
+    return None
 
-def attendance() -> str:   return rules("attendance")
-def refund() -> str:       return rules("refund")
-def discipline() -> str:   return rules("discipline")
-def anti_ragging() -> str: return rules("anti-ragging")
+def detect_category(q: str) -> Optional[str]:
+    s = q.lower()
+    if "nri" in s or "foreign" in s: return "NRI"
+    if "indian" in s: return "Indian"
+    return None
+
+def detect_level(q: str) -> Optional[str]:
+    s = q.lower()
+    if any(w in s for w in ["first year","fresher","freshmen"]): return "First-Year"
+    if "senior" in s: return "Senior"
+    return None
+
+def detect_year(q: str) -> Optional[int]:
+    m = re.search(r"\b(20\d{2})\b", q)
+    return int(m.group(1)) if m else None
