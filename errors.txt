@@ -1,36 +1,84 @@
-# app/utils/render.py
-# consistent, compact markdown renderers
+# app/utils/fallback_rag.py
+# FAISS + Gemini fallback (clean summary + bullets + sources)
 
-from typing import List, Optional
+import os, re
+from pathlib import Path
+from typing import Tuple, List
+from langchain_community.vectorstores import FAISS
+from langchain_core.embeddings import Embeddings as LCEmbeddings
 
-def md_table(title: str, cols: List[str], rows: List[List[object]], max_rows: int = 60) -> str:
-    if not rows:
-        return "_No data found._"
-    rows = rows[:max_rows]
-    out=[]
-    if title: out.append(f"**{title}**")
-    out.append("| " + " | ".join(cols) + " |")
-    out.append("|" + "|".join(["---"]*len(cols)) + "|")
-    for r in rows:
-        out.append("| " + " | ".join("" if v is None else str(v) for v in r) + " |")
-    return "\n".join(out)
+class GeminiLCEmbeddings(LCEmbeddings):
+    def __init__(self, model: str = "models/text-embedding-004", api_key_env: str = "GEMINI_API_KEY"):
+        import google.generativeai as genai
+        api_key = os.getenv(api_key_env)
+        if not api_key:
+            raise RuntimeError("GEMINI_API_KEY not set")
+        genai.configure(api_key=api_key)
+        self.genai = genai
+        self.model = model
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+        return [self.genai.embed_content(model=self.model, content=t)["embedding"] for t in texts]
+    def embed_query(self, text: str) -> List[float]:
+        return self.genai.embed_content(model=self.model, content=text)["embedding"]
 
-def bullets(title: str, items: List[str], max_items: int = 20) -> str:
-    if not items:
-        return "_No data found._"
-    seen=set(); out=[]
-    for it in items:
-        k = "".join(ch for ch in it.lower() if ch.isalnum())
+def _load_store(index_dir: Path, collection: str) -> FAISS:
+    emb = GeminiLCEmbeddings()
+    return FAISS.load_local(str(index_dir), embeddings=emb, index_name=collection, allow_dangerous_deserialization=True)
+
+def _score(text: str, q: str) -> int:
+    t = text.lower(); qws = [w for w in re.findall(r"[a-z0-9]+", q.lower()) if len(w)>2]
+    return sum(t.count(w) for w in qws)
+
+def _postfilter(docs, q: str, want_hostel=False, topn=12):
+    scored=[]
+    for d in docs:
+        md = d.metadata or {}
+        name=(md.get("source_file") or "").lower()
+        bias = 2 if (want_hostel and "hostel" in name) else 0
+        scored.append((bias + _score(d.page_content or "", q), d))
+    scored.sort(key=lambda x: x[0], reverse=True)
+    return [d for _,d in scored][:topn]
+
+def rag_fallback(index_dir: Path, collection: str, query: str, want_hostel_bias=False) -> str:
+    store = _load_store(index_dir, collection)
+    # simple augmentation: keywords + HyDE-ish variant
+    variants = [query]
+    if "fee" in query.lower(): variants.append(query + " tuition breakdown table amounts currency")
+    if "document" in query.lower(): variants.append(query + " checklist list itemized")
+    docs=[]
+    for v in variants:
+        docs += store.similarity_search(v, k=20)
+    # re-rank
+    docs = _postfilter(docs, query, want_hostel_bias, topn=12)
+    if not docs:
+        return "_I couldn’t find enough context to answer that from your PDFs._"
+    # compose
+    texts=[(d.page_content or "").strip() for d in docs]
+    srcs=[]
+    for d in docs:
+        md = d.metadata or {}
+        src = md.get("source_file") or md.get("source_title") or "unknown"
+        if src not in srcs: srcs.append(src)
+    blob = re.sub(r"\s+"," "," ".join(texts))[:2000]
+    # break into sentences
+    parts = re.split(r"(?<=[.!?])\s+", blob)
+    para = " ".join(parts[:6])
+    # pull bullety lines
+    lines=[]
+    for t in texts:
+        for ln in re.split(r"[\r\n]+", t):
+            ln = ln.strip(" -•\u2022\t")
+            if 3 <= len(ln) <= 160 and any(k in ln.lower() for k in ["fee","document","eligib","rule","norm","hostel","program","course","tuition"]):
+                lines.append(ln)
+    # dedupe
+    seen=set(); bullets=[]
+    for ln in lines:
+        k = re.sub(r"\W+","", ln.lower())
         if k in seen: continue
-        seen.add(k); out.append(it)
-        if len(out) >= max_items: break
-    return "**" + title + "**\n" + "\n".join("- " + it for it in out)
-
-def provenance(note: Optional[str], src: Optional[str], verified: Optional[str]) -> str:
-    parts=[]
-    if note: parts.append(note)
-    meta=[]
-    if src: meta.append(src)
-    if verified: meta.append(f"Verified: {verified}")
-    if meta: parts.append("Source: " + " · ".join(meta))
-    return ("\n\n" + " ".join(parts)) if parts else ""
+        seen.add(k); bullets.append(ln)
+        if len(bullets)>=8: break
+    out = f"**Answer (from your PDFs):** {para}\n"
+    if bullets:
+        out += "\n" + "\n".join("- " + b for b in bullets)
+    out += "\n\n*Sources:* " + ", ".join(srcs[:5])
+    return out
