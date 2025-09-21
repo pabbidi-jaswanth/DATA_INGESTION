@@ -1,4 +1,274 @@
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe .\app\rag_answer.py --index_dir Data/index/fai
-ss --collection vit_faq_vellore --emb gemini --q "UG programs list"
-usage: rag_answer.py [-h] --index_dir INDEX_DIR [--collection COLLECTION] --q Q
-rag_answer.py: error: unrecognized arguments: --emb gemini
+
+(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe .\app\rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --q "UG programs list"             
+
+**Programs Offered**
+| Level | Program | School | Duration |
+|---|---|---|---|
+
+
+(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe .\app\rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --q "Boys hostel first year indian fee table 2025-26"
+
+**Hostel Fee Details (Vellore)**
+| Block | Gender | Level | Type | AY | Category | Occ | AC | Mess | Room+Mess | Admission | Caution | Other | Total | Curr |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+
+
+(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe .\app\rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --q "what is the eligibility criteria for UG?"       
+
+**Eligibility**
+| Level | Program | Criteria |
+|---|---|---|
+
+
+(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe .\app\rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --q "ug faqs"                                 
+
+**Answer (from your PDFs):** FOREIGN FAQS: 1. Who is considered a "Foreign" nationals for admissions? Any foreign national holding a valid foreign passport is eligible to apply under this category. For Nepal and Bhutan nationals , passport is not mandatory What documents are required to prove foreign nationality? You'll need to provide a copy of your valid passport or National ID as proof of your foreign nationality UG NRI: What are the basic academic requirements? You'll need to have completed 12 years of schooling (equivalent to the 10+2 system in India) with Physics, Chemistry, and Mathematics / Biology (Biotechnology) as core subjects. A minimum aggregate of 60% in PCM or PCB, as per the case may be programmes only) - Community Certificate (only for SC/ST categories) - Conduct Certificate (Original) - Admission letter and a photocopy of the programme fee receipt - Four copies of recent passport size colour photograph - An undertaking for good conduct and behavior in a prescribed form (to be issued by the University/Institute at the time of admission) - University Registration Number/ID will be generated to the candidates those who have 11. What documents are required for admission?
+
+*Sources:* UG FOREIGN FAQ.pdf, UG NRI_FAQS.pdf, POSTGRADUTE ADMISSIONS PROCESS.pdf, PG MTECH FAQS.pdf, M.SC PROCESS.pdf
+
+
+(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe .\app\rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --q "mca admission process"
+
+**Answer (from your PDFs):** What documents are required for MCA admission? At the time of admission, you will need: - VITMEE scorecard. - Academic certificates (10th, 12th, and undergraduate mark sheets). - Mathematics proof (if required). - Transfer Certificate (TC). - Migration Certificate. - Valid photo ID proof. Is VITMEE mandatory for MCA admission?
+
+*Sources:* VITMEE MCA FAQS.pdf, UG NRI PROCESS.pdf, MCA 2 Years PG Program.pdf, POSTGRADUTE ADMISSIONS PROCESS.pdf, VITREE PROCESS.pdf
+
+
+(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe .\app\rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --q "fee structure for mens hostel"
+
+**Hostel Fee Details (Vellore)**
+| Block | Gender | Level | Type | AY | Category | Occ | AC | Mess | Room+Mess | Admission | Caution | Other | Total | Curr |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 136,800 | 15,000 | 15,000 |  | 166,800 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 146,300 | 15,000 | 15,000 |  | 176,300 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 158,200 | 15,000 | 15,000 |  | 188,200 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 145,300 | 15,000 | 15,000 |  | 175,300 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 154,800 | 15,000 | 15,000 |  | 184,800 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 166,700 | 15,000 | 15,000 |  | 196,700 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 158,200 | 15,000 | 15,000 |  | 188,200 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 167,700 | 15,000 | 15,000 |  | 197,700 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 179,600 | 15,000 | 15,000 |  | 209,600 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 165,000 | 15,000 | 15,000 |  | 195,000 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 174,500 | 15,000 | 15,000 |  | 204,500 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 186,400 | 15,000 | 15,000 |  | 216,400 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 198,900 | 15,000 | 15,000 |  | 228,900 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 208,400 | 15,000 | 15,000 |  | 238,400 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 220,300 | 15,000 | 15,000 |  | 250,300 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 146,700 | 15,000 | 15,000 |  | 176,700 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 156,200 | 15,000 | 15,000 |  | 186,200 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 168,100 | 15,000 | 15,000 |  | 198,100 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 156,400 | 15,000 | 15,000 |  | 186,400 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 165,900 | 15,000 | 15,000 |  | 195,900 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 177,800 | 15,000 | 15,000 |  | 207,800 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 167,300 | 15,000 | 15,000 |  | 197,300 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 176,800 | 15,000 | 15,000 |  | 206,800 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 188,700 | 15,000 | 15,000 |  | 218,700 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 182,600 | 15,000 | 15,000 |  | 212,600 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 192,100 | 15,000 | 15,000 |  | 222,100 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 204,000 | 15,000 | 15,000 |  | 234,000 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 196,800 | 15,000 | 15,000 |  | 226,800 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 206,300 | 15,000 | 15,000 |  | 236,300 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 218,200 | 15,000 | 15,000 |  | 248,200 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 2,790 | 250 | 400 |  | 3,440 | USD |    
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 3,060 | 250 | 400 |  | 3,710 | USD |    
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 3,430 | 250 | 400 |  | 4,080 | USD |    
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 3,720 | 250 | 400 |  | 4,370 | USD |    
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 4,270 | 250 | 400 |  | 4,920 | USD |    
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 3,070 | 250 | 400 |  | 3,720 | USD |    
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 3,220 | 250 | 400 |  | 3,870 | USD |    
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 3,660 | 250 | 400 |  | 4,310 | USD |    
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 4,020 | 250 | 400 |  | 4,670 | USD |    
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 4,550 | 250 | 400 |  | 5,200 | USD |    
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 136,800 | 15,000 | 15,000 |  | 166,800 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 146,300 | 15,000 | 15,000 |  | 176,300 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 158,200 | 15,000 | 15,000 |  | 188,200 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 145,300 | 15,000 | 15,000 |  | 175,300 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 154,800 | 15,000 | 15,000 |  | 184,800 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 166,700 | 15,000 | 15,000 |  | 196,700 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 158,200 | 15,000 | 15,000 |  | 188,200 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 167,700 | 15,000 | 15,000 |  | 197,700 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 179,600 | 15,000 | 15,000 |  | 209,600 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 165,000 | 15,000 | 15,000 |  | 195,000 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 174,500 | 15,000 | 15,000 |  | 204,500 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 186,400 | 15,000 | 15,000 |  | 216,400 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 198,900 | 15,000 | 15,000 |  | 228,900 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 208,400 | 15,000 | 15,000 |  | 238,400 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 220,300 | 15,000 | 15,000 |  | 250,300 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 146,700 | 15,000 | 15,000 |  | 176,700 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 156,200 | 15,000 | 15,000 |  | 186,200 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 168,100 | 15,000 | 15,000 |  | 198,100 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 156,400 | 15,000 | 15,000 |  | 186,400 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 165,900 | 15,000 | 15,000 |  | 195,900 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 177,800 | 15,000 | 15,000 |  | 207,800 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 167,300 | 15,000 | 15,000 |  | 197,300 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 176,800 | 15,000 | 15,000 |  | 206,800 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 188,700 | 15,000 | 15,000 |  | 218,700 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 182,600 | 15,000 | 15,000 |  | 212,600 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 192,100 | 15,000 | 15,000 |  | 222,100 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 204,000 | 15,000 | 15,000 |  | 234,000 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 196,800 | 15,000 | 15,000 |  | 226,800 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 206,300 | 15,000 | 15,000 |  | 236,300 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 218,200 | 15,000 | 15,000 |  | 248,200 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 2,790 | 250 | 400 |  | 3,440 | USD |    
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 3,060 | 250 | 400 |  | 3,710 | USD |    
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 3,430 | 250 | 400 |  | 4,080 | USD |    
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 3,720 | 250 | 400 |  | 4,370 | USD |    
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 4,270 | 250 | 400 |  | 4,920 | USD |    
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 3,070 | 250 | 400 |  | 3,720 | USD |    
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 3,220 | 250 | 400 |  | 3,870 | USD |    
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 3,660 | 250 | 400 |  | 4,310 | USD |    
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 4,020 | 250 | 400 |  | 4,670 | USD |    
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 4,550 | 250 | 400 |  | 5,200 | USD |    
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 136,800 | 15,000 | 15,000 |  | 166,800 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 146,300 | 15,000 | 15,000 |  | 176,300 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 158,200 | 15,000 | 15,000 |  | 188,200 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 145,300 | 15,000 | 15,000 |  | 175,300 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 154,800 | 15,000 | 15,000 |  | 184,800 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 166,700 | 15,000 | 15,000 |  | 196,700 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 158,200 | 15,000 | 15,000 |  | 188,200 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 167,700 | 15,000 | 15,000 |  | 197,700 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 179,600 | 15,000 | 15,000 |  | 209,600 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 165,000 | 15,000 | 15,000 |  | 195,000 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 174,500 | 15,000 | 15,000 |  | 204,500 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 186,400 | 15,000 | 15,000 |  | 216,400 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 198,900 | 15,000 | 15,000 |  | 228,900 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 208,400 | 15,000 | 15,000 |  | 238,400 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 220,300 | 15,000 | 15,000 |  | 250,300 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 146,700 | 15,000 | 15,000 |  | 176,700 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 156,200 | 15,000 | 15,000 |  | 186,200 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 168,100 | 15,000 | 15,000 |  | 198,100 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 156,400 | 15,000 | 15,000 |  | 186,400 | INR |
+| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 165,900 | 15,000 | 15,000 |  | 195,900 | INR |
+
+
+(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe .\app\rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --q "mens director details"        
+
+**Answer (from your PDFs):** MENS HOSTEL: Director Dr. Mohanasundaram R Email-id : director.mh@vit.ac.in Phone No : 0416 - 220 2520 Chief Warden Dr. Sathiavelu A Email-id : cw.mh@vit.ac.in Phone No : 0416 - 220 2521 Associate Chief Wardens Dr. Dinesh Kumar S Email-id : acw.mh@vit.ac.in Phone No : 0416 - 220 2522 Dr. Hemadri Reddy Reganti Email-id : acw1.mh@vit.ac.in Phone No : 0416 - 220 2522 Warden - Discipline Dr Ladies hostel: Director Ladies Hostels Dr. Nirmala G S Email-id : director.lh@vit.ac.in Phone No : 0416 - 220 2712 Chief Warden, Ladies Hostels Dr. Mythili S Email-id : cw.lh@vit.ac.in Phone No :0416 - 220 2713 Associate Chief Warden Dr. Jagatheswari S Email-id : acw.lh@vit.ac.in Phone No : 0416 - 220 2896 Manager Ms.
+
+*Sources:* Hostel_info.pdf, UG NRI PROCESS.pdf, VITREE PROCESS.pdf, M.SC PROCESS.pdf, Fresher's-Hostel-Admission-Information-Vellore-Campus-2025-26.pdf
+
+
+(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe .\app\rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --q "ladies hostel supervisor number?"
+
+**Hostel Contacts**
+| Block | Name | Role | Phone | Email |
+|---|---|---|---|---|
+
+
+(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe .\app\rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --q "list out all block names of boys hostels"
+
+**Hostel Blocks**
+| Block | Gender | Level | Type |
+|---|---|---|---|
+| Men Hostel First-Year | Male | First-Year |  |
+| Men Hostel Senior | Male | Senior |  |
+
+
+(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe .\app\rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --q "ladies hostel fee structure?"            
+
+**Hostel Fee Details (Vellore)**
+| Block | Gender | Level | Type | AY | Category | Occ | AC | Mess | Room+Mess | Admission | Caution | Other | Total | Curr |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,36,800 | 15,000 | 15,000 |  | 1,66,800 | INR |     
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,46,300 | 15,000 | 15,000 |  | 1,76,300 | INR |     
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,58,200 | 15,000 | 15,000 |  | 1,88,200 | INR |     
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,45,300 | 15,000 | 15,000 |  | 1,75,300 | INR |     
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,54,800 | 15,000 | 15,000 |  | 1,84,800 | INR |     
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,66,700 | 15,000 | 15,000 |  | 1,96,700 | INR |     
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,65,000 | 15,000 | 15,000 |  | 1,95,000 | INR |     
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,74,500 | 15,000 | 15,000 |  | 2,04,500 | INR |     
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,86,400 | 15,000 | 15,000 |  | 2,16,400 | INR |     
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,98,900 | 15,000 | 15,000 |  | 2,28,900 | INR |     
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 2,08,400 | 15,000 | 15,000 |  | 2,38,400 | INR |     
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 2,20,300 | 15,000 | 15,000 |  | 2,50,300 | INR |     
+| Ladies Hostel | Female |  |  | 2025-26 | NRI |  | AC |  |  | 250 | 400 |  | 3,710 | USD |
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,36,800 | 15,000 | 15,000 |  | 1,66,800 | INR |     
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,46,300 | 15,000 | 15,000 |  | 1,76,300 | INR |     
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,58,200 | 15,000 | 15,000 |  | 1,88,200 | INR |     
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,45,300 | 15,000 | 15,000 |  | 1,75,300 | INR |     
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,54,800 | 15,000 | 15,000 |  | 1,84,800 | INR |     
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,66,700 | 15,000 | 15,000 |  | 1,96,700 | INR |     
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,65,000 | 15,000 | 15,000 |  | 1,95,000 | INR |     
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,74,500 | 15,000 | 15,000 |  | 2,04,500 | INR |     
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,86,400 | 15,000 | 15,000 |  | 2,16,400 | INR |     
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,98,900 | 15,000 | 15,000 |  | 2,28,900 | INR |     
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 2,08,400 | 15,000 | 15,000 |  | 2,38,400 | INR |     
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 2,20,300 | 15,000 | 15,000 |  | 2,50,300 | INR |     
+| Ladies Hostel | Female |  |  | 2025-26 | NRI |  | AC |  |  | 250 | 400 |  | 3,710 | USD |
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,36,800 | 15,000 | 15,000 |  | 1,66,800 | INR |     
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,46,300 | 15,000 | 15,000 |  | 1,76,300 | INR |     
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,58,200 | 15,000 | 15,000 |  | 1,88,200 | INR |     
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,45,300 | 15,000 | 15,000 |  | 1,75,300 | INR |     
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,54,800 | 15,000 | 15,000 |  | 1,84,800 | INR |     
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,66,700 | 15,000 | 15,000 |  | 1,96,700 | INR |     
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,65,000 | 15,000 | 15,000 |  | 1,95,000 | INR |     
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,74,500 | 15,000 | 15,000 |  | 2,04,500 | INR |     
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,86,400 | 15,000 | 15,000 |  | 2,16,400 | INR |     
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,98,900 | 15,000 | 15,000 |  | 2,28,900 | INR |     
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 2,08,400 | 15,000 | 15,000 |  | 2,38,400 | INR |     
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 2,20,300 | 15,000 | 15,000 |  | 2,50,300 | INR |     
+| Ladies Hostel | Female |  |  | 2025-26 | NRI |  | AC |  |  | 250 | 400 |  | 3,710 | USD |
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,36,800 | 15,000 | 15,000 |  | 1,66,800 | INR |     
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,46,300 | 15,000 | 15,000 |  | 1,76,300 | INR |     
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,58,200 | 15,000 | 15,000 |  | 1,88,200 | INR |     
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,45,300 | 15,000 | 15,000 |  | 1,75,300 | INR |     
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,54,800 | 15,000 | 15,000 |  | 1,84,800 | INR |     
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,66,700 | 15,000 | 15,000 |  | 1,96,700 | INR |     
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,65,000 | 15,000 | 15,000 |  | 1,95,000 | INR |     
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,74,500 | 15,000 | 15,000 |  | 2,04,500 | INR |     
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,86,400 | 15,000 | 15,000 |  | 2,16,400 | INR |     
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,98,900 | 15,000 | 15,000 |  | 2,28,900 | INR |     
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 2,08,400 | 15,000 | 15,000 |  | 2,38,400 | INR |     
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 2,20,300 | 15,000 | 15,000 |  | 2,50,300 | INR |     
+| Ladies Hostel | Female |  |  | 2025-26 | NRI |  | AC |  |  | 250 | 400 |  | 3,710 | USD |
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | 1,36,800 | 1,36,800 | 15,000 | 15,000 |  | 1,66,800 | INR |
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | 1,45,300 | 1,45,300 | 15,000 | 15,000 |  | 1,75,300 | INR |
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | 1,46,300 | 1,46,300 | 15,000 | 15,000 |  | 1,76,300 | INR |
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | 1,54,800 | 1,54,800 | 15,000 | 15,000 |  | 1,84,800 | INR |
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | 1,58,200 | 1,58,200 | 15,000 | 15,000 |  | 1,88,200 | INR |
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | 1,65,000 | 1,65,000 | 15,000 | 15,000 |  | 1,95,000 | INR |
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | 1,66,700 | 1,66,700 | 15,000 | 15,000 |  | 1,96,700 | INR |
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | 1,74,500 | 1,74,500 | 15,000 | 15,000 |  | 2,04,500 | INR |
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | 1,86,400 | 1,86,400 | 15,000 | 15,000 |  | 2,16,400 | INR |
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | 1,98,900 | 1,98,900 | 15,000 | 15,000 |  | 2,28,900 | INR |
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | 2,08,400 | 2,08,400 | 15,000 | 15,000 |  | 2,38,400 | INR |
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | 2,20,300 | 2,20,300 | 15,000 | 15,000 |  | 2,50,300 | INR |
+| Ladies Hostel | Female |  |  | 2025-26 | NRI |  | AC | 3,060 |  | 250 | 400 |  | 3,710 | USD |
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | Non Veg |  |  |  |  |  |  |
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | Non Veg |  |  |  |  |  |  |
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | Non Veg |  |  |  |  |  |  |
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | Non Veg |  |  |  |  |  |  |
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | Special Mess |  |  |  |  |  |  |
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | Special Mess |  |  |  |  |  |  |
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | Special Mess |  |  |  |  |  |  |
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | Special Mess |  |  |  |  |  |  |
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | Veg |  |  |  |  |  |  |
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | Veg |  |  |  |  |  |  |
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | Veg |  |  |  |  |  |  |
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | Veg |  |  |  |  |  |  |
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,12,400 | 15,000 | 15,000 |  | 1,42,400 | INR |       
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,21,900 | 15,000 | 15,000 |  | 1,51,900 | INR |       
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,33,800 | 15,000 | 15,000 |  | 1,63,800 | INR |       
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,17,500 | 15,000 | 15,000 |  | 1,47,500 | INR |       
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,27,000 | 15,000 | 15,000 |  | 1,57,000 | INR |       
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,38,900 | 15,000 | 15,000 |  | 1,68,900 | INR |       
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,31,100 | 15,000 | 15,000 |  | 1,61,100 | INR |       
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,40,600 | 15,000 | 15,000 |  | 1,70,600 | INR |       
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,52,500 | 15,000 | 15,000 |  | 1,82,500 | INR |       
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,49,100 | 15,000 | 15,000 |  | 1,79,100 | INR |       
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,58,600 | 15,000 | 15,000 |  | 1,88,600 | INR |       
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,70,500 | 15,000 | 15,000 |  | 2,00,500 | INR |       
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,79,500 | 15,000 | 15,000 |  | 2,09,500 | INR |       
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,89,000 | 15,000 | 15,000 |  | 2,19,000 | INR |       
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 2,00,900 | 15,000 | 15,000 |  | 2,30,900 | INR |       
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,91,100 | 15,000 | 15,000 |  | 2,21,100 | INR |       
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 2,00,600 | 15,000 | 15,000 |  | 2,30,600 | INR |       
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 2,12,500 | 15,000 | 15,000 |  | 2,42,500 | INR |       
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 2,03,800 | 15,000 | 15,000 |  | 2,33,800 | INR |       
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 2,13,300 | 15,000 | 15,000 |  | 2,43,300 | INR |       
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 2,25,200 | 15,000 | 15,000 |  | 2,55,200 | INR |       
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,99,900 | 15,000 | 15,000 |  | 2,29,900 | INR |       
+| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 2,09,400 | 15,000 | 15,000 |  | 2,39,400 | INR |       
+
+
+(.venv) C:\Users\T8543\Downloads\project-2>
