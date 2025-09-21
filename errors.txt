@@ -1,264 +1,201 @@
-# app/handlers/academics.py
-# Unified academic handlers for UG / PG / MCA / MSc
-# Works with either:
-#   A) unified tables with a `level` column  (level in ['UG','PG','MCA','MSC'])
-#   B) split tables: ug_programs/pg_programs/...; ug_fees/pg_fees/...
+# app/handlers/hostels.py
+# contacts / landlines / blocks / hostel fees / reverse lookups
 
 from __future__ import annotations
-import sqlite3
-import re
+import re, sqlite3
 from pathlib import Path
-from typing import Optional, List
+from typing import Optional, List, Dict
+from app.utils.render import md_table, bullets, provenance
 
 DB_PATH = Path("Data/sql/vit_vellore.db")
 
-# ---------- small helpers ----------
+PHONE_RE = r"(?:(?:\+?\d{1,3}[-\s]?)?\d{6,})"
+EMAIL_RE = r"[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}"
 
-def _connect() -> sqlite3.Connection:
+def _c():
     con = sqlite3.connect(str(DB_PATH))
     con.row_factory = sqlite3.Row
     return con
 
-def _table_exists(con: sqlite3.Connection, name: str) -> bool:
-    q = "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?"
-    return con.execute(q, (name,)).fetchone() is not None
+def _exists(con, name: str) -> bool:
+    return con.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?",(name,)).fetchone() is not None
 
-def _md_table(title: str, cols: List[str], rows: List[List[str]]) -> str:
-    if not rows:
-        return "_No data found._"
-    out = []
-    if title:
-        out.append(f"**{title}**")
-    out.append("| " + " | ".join(cols) + " |")
-    out.append("|" + "|".join(["---"] * len(cols)) + "|")
-    for r in rows:
-        out.append("| " + " | ".join("" if v is None else str(v) for v in r) + " |")
-    return "\n".join(out)
-
-def _bullets(title: str, items: List[str]) -> str:
-    if not items:
-        return "_No data found._"
-    dedup, seen = [], set()
-    for it in items:
-        k = re.sub(r"\W+", "", (it or "").lower())
-        if k in seen:
-            continue
-        seen.add(k)
-        dedup.append(it)
-    lines = [f"**{title}**"] + [f"- {x}" for x in dedup]
-    return "\n".join(lines)
-
-def _provenance(note: Optional[str], src: Optional[str], dt: Optional[str]) -> str:
-    parts = []
-    if note:
-        parts.append(note)
-    src_bits = []
-    if src:
-        src_bits.append(src)
-    if dt:
-        src_bits.append(f"Verified: {dt}")
-    if src_bits:
-        parts.append("Source: " + " · ".join(src_bits))
-    return ("\n\n" + " ".join(parts)) if parts else ""
-
-# ---------- programs ----------
-
-def list_programs(level: str, school: Optional[str] = None) -> str:
-    """
-    level: 'UG' | 'PG' | 'MCA' | 'MSC'
-    """
-    level = level.upper()
-    with _connect() as con:
+# ----- Landlines (block-wise) -----
+def landlines(gender: Optional[str] = None) -> str:
+    """gender: 'Boys'|'Girls'|None"""
+    with _c() as con:
         rows = []
-        # unified table
-        if _table_exists(con, "programs"):
-            sql = "SELECT program, school, duration, campus, source_file, last_verified_on FROM programs WHERE level=?"
-            args = [level]
-            if school:
-                sql += " AND LOWER(school)=?"
-                args.append(school.lower())
-            sql += " ORDER BY program"
-            rs = con.execute(sql, args).fetchall()
-            for r in rs:
-                rows.append([r["program"], r["duration"], r["school"], r["campus"]])
-            note = _provenance("Programs list.", rs[0]["source_file"] if rs else None,
-                               rs[0]["last_verified_on"] if rs else None)
-            return _md_table(f"{level} Programmes Offered", ["Program", "Duration", "School", "Campus"], rows) + note
+        if gender in (None, "Boys"):
+            if _exists(con, "mh_blocks"):
+                rs = con.execute("""SELECT block_code AS 'Block Code',
+                                           COALESCE(block_name, block_code) AS 'Block Name',
+                                           landline AS 'Landline',
+                                           COALESCE(email,'') AS 'Email'
+                                    FROM mh_blocks ORDER BY block_code""").fetchall()
+                rows += [[r[0], r[1], r[2], r[3]] for r in rs]
+        if gender in (None, "Girls"):
+            if _exists(con, "lh_blocks"):
+                rs = con.execute("""SELECT block_code AS 'Block Code',
+                                           block_code  AS 'Block Name',
+                                           landline    AS 'Landline',
+                                           ''          AS 'Email'
+                                    FROM lh_blocks ORDER BY block_code""").fetchall()
+                rows += [[r[0], r[1], r[2], r[3]] for r in rs]
+        title = "Hostel — Block-wise Landlines" if gender is None else ("Men’s Hostel — Block-wise Landlines" if gender=="Boys" else "Ladies’ Hostel — Block-wise Landlines")
+        return md_table(title, ["Block Code","Block Name","Landline","Email"], rows)
 
-        # split tables fallback
-        tbl = "ug_programs" if level == "UG" else "pg_programs"
-        if not _table_exists(con, tbl):
-            return "_Programs table not found._"
-        sql = f"SELECT program, school, duration, campus, source_file, last_verified_on FROM {tbl}"
-        if school:
-            sql += " WHERE LOWER(school)=?"
-            rs = con.execute(sql, (school.lower(),)).fetchall()
-        else:
-            rs = con.execute(sql).fetchall()
+# ----- Blocks list / details -----
+def blocks_list(gender: Optional[str]=None) -> str:
+    with _c() as con:
+        items=[]
+        if gender in (None,"Boys") and _exists(con,"mh_blocks"):
+            rs = con.execute("SELECT block_code, COALESCE(block_name, block_code) AS nm FROM mh_blocks ORDER BY block_code").fetchall()
+            items += [f"{r['block_code']} — {r['nm']}" for r in rs]
+        if gender in (None,"Girls") and _exists(con,"lh_blocks"):
+            rs = con.execute("SELECT block_code FROM lh_blocks ORDER BY block_code").fetchall()
+            items += [f"{r['block_code']} — {r['block_code']}" for r in rs]
+        title = "Hostel Blocks" if gender is None else ("Men’s Hostel Blocks" if gender=="Boys" else "Ladies’ Hostel Blocks")
+        return bullets(title, items)
+
+def block_detail(text: str, gender_hint: Optional[str]=None) -> str:
+    t = text.upper()
+    # capture MH J, MHJ, LH GH, ANNEX, famous names
+    codes = re.findall(r"\b(?:MH|LH)\s*[A-Z]{1,2}(?:\s*ANNEX)?\b|\bLH GH\b", t)
+    if "KENNEDY" in t or "JOHN F KENNEDY" in t:
+        codes += ["MH H", "MH J", "MH J ANNEX"]
+    codes = list(dict.fromkeys([re.sub(r"\s+"," ",c.strip()) for c in codes]))
+    rows=[]
+    with _c() as con:
+        for c in codes:
+            if c.startswith("MH") and (gender_hint in (None,"Boys")) and _exists(con,"mh_blocks"):
+                r = con.execute("""SELECT 'Boys' AS Hostel,
+                                          block_code AS 'Block Code',
+                                          COALESCE(block_name, block_code) AS 'Block Name',
+                                          landline AS 'Landline',
+                                          COALESCE(email,'') AS 'Email'
+                                   FROM mh_blocks WHERE UPPER(block_code)=?""",(c.upper(),)).fetchall()
+                rows += [[rr[x] for x in ("Hostel","Block Code","Block Name","Landline","Email")] for rr in r]
+            if c.startswith("LH") and (gender_hint in (None,"Girls")) and _exists(con,"lh_blocks"):
+                r = con.execute("""SELECT 'Girls' AS Hostel,
+                                          block_code AS 'Block Code',
+                                          block_code AS 'Block Name',
+                                          landline AS 'Landline',
+                                          '' AS 'Email'
+                                   FROM lh_blocks WHERE UPPER(block_code)=?""",(c.upper(),)).fetchall()
+                rows += [[rr[x] for x in ("Hostel","Block Code","Block Name","Landline","Email")] for rr in r]
+    return md_table("Block Details", ["Hostel","Block Code","Block Name","Landline","Email"], rows) if rows else "_No matching block found._"
+
+# ----- Contacts -----
+def contacts(gender: str, role_filter: Optional[str]=None, name_hint: Optional[str]=None) -> str:
+    """gender: 'Boys' or 'Girls'"""
+    with _c() as con:
+        if not _exists(con,"hostel_contacts"):
+            return "_No contacts table found._"
+        sql = "SELECT role,name,phone,email,source_file,last_verified_on FROM hostel_contacts"
+        rs = con.execute(sql).fetchall()
+        rows=[]
         for r in rs:
-            rows.append([r["program"], r["duration"], r["school"], r["campus"]])
-        note = _provenance("Programs list.", rs[0]["source_file"] if rs else None,
-                           rs[0]["last_verified_on"] if rs else None)
-        return _md_table(f"{level} Programmes Offered", ["Program", "Duration", "School", "Campus"], rows) + note
+            role = r["role"] or ""
+            if gender=="Boys" and "Ladies" in role: continue
+            if gender=="Girls" and "Men" in role: continue
+            if role_filter and role_filter.lower() not in role.lower(): continue
+            if name_hint and name_hint.lower() not in (r["name"] or "").lower(): continue
+            who = f"{role}: {r['name']}" if r["name"] else role
+            bits=[]
+            if r["phone"]: bits.append(r["phone"])
+            if r["email"]: bits.append(r["email"])
+            rows.append([who, " | ".join(bits)])
+        title = "Men’s Hostel — Key Contacts" if gender=="Boys" else "Ladies’ Hostel — Key Contacts"
+        note = provenance(None, rs[0]["source_file"] if rs else None, rs[0]["last_verified_on"] if rs else None)
+        return md_table(title, ["Role / Person","Contact"], rows) + note if rows else "_No contacts available._"
 
-# ---------- eligibility ----------
+# ----- Reverse lookups -----
+def reverse_lookup(needle: str) -> str:
+    with _c() as con:
+        rows=[]
+        # email?
+        m = re.search(EMAIL_RE, needle)
+        if m:
+            e = m.group(0).lower()
+            if _exists(con,"mh_blocks"):
+                rs = con.execute("SELECT 'Block' AS kind,'Boys' AS hostel, block_code, COALESCE(block_name,block_code) AS nm, landline, email FROM mh_blocks WHERE LOWER(email)=?",(e,)).fetchall()
+                rows += [["MH Block", rr["block_code"], rr["nm"], rr["landline"], rr["email"]] for rr in rs]
+            if _exists(con,"hostel_contacts"):
+                rs = con.execute("SELECT 'Contact' AS kind, role, name, phone, email FROM hostel_contacts WHERE LOWER(email)=?",(e,)).fetchall()
+                rows += [[rr["role"], rr["name"], rr["phone"], rr["email"]] for rr in rs]
+            return md_table("Reverse lookup — email", ["Type/Role","Name/Code","Phone/Landline","Email"], rows) if rows else "_No matches for that email._"
+        # phone?
+        m = re.search(PHONE_RE, needle)
+        if m:
+            p = re.sub(r"\D+","", m.group(0))[-10:]  # last 10
+            if _exists(con,"mh_blocks"):
+                rs = con.execute("SELECT block_code, COALESCE(block_name,block_code) AS nm, landline, COALESCE(email,'') AS email FROM mh_blocks").fetchall()
+                for rr in rs:
+                    if p and re.sub(r'\D+','',rr["landline"] or "").endswith(p):
+                        rows.append(["MH Block", rr["block_code"], rr["nm"], rr["landline"], rr["email"]])
+            if _exists(con,"lh_blocks"):
+                rs = con.execute("SELECT block_code, landline FROM lh_blocks").fetchall()
+                for rr in rs:
+                    if p and re.sub(r'\D+','',rr["landline"] or "").endswith(p):
+                        rows.append(["LH Block", rr["block_code"], rr["block_code"], rr["landline"], ""])
+            if _exists(con,"hostel_contacts"):
+                rs = con.execute("SELECT role, name, phone, COALESCE(email,'') AS email FROM hostel_contacts").fetchall()
+                for rr in rs:
+                    if p and re.sub(r'\D+','',rr["phone"] or "").endswith(p):
+                        rows.append(["Contact", rr["role"], rr["name"], rr["phone"], rr["email"]])
+            return md_table("Reverse lookup — phone", ["Type","Role/Code","Name","Phone","Email"], rows) if rows else "_No matches for that phone number._"
+        return "_No phone/email detected._"
 
-def eligibility(level: str, program: Optional[str] = None) -> str:
-    level = level.upper()
-    with _connect() as con:
-        rows = []
-        # unified
-        if _table_exists(con, "eligibility"):
-            sql = "SELECT program, criteria_text, source_file, last_verified_on FROM eligibility WHERE level=?"
-            args = [level]
-            if program:
-                sql += " AND LOWER(program) LIKE ?"
-                args.append(f"%{program.lower()}%")
-            sql += " ORDER BY program"
-            rs = con.execute(sql, args).fetchall()
-            items = [f"{r['program']}: {r['criteria_text']}" for r in rs]
-            note = _provenance("Eligibility highlights.", rs[0]["source_file"] if rs else None,
-                               rs[0]["last_verified_on"] if rs else None)
-            return _bullets(f"{level} Eligibility", items) + note
-
-        # split fallback
-        tbl = "ug_eligibility" if level == "UG" else "pg_eligibility"
-        if not _table_exists(con, tbl):
-            return "_Eligibility table not found._"
-        if program:
-            rs = con.execute(
-                f"SELECT program, criteria_text, source_file, last_verified_on FROM {tbl} WHERE LOWER(program) LIKE ? ORDER BY program",
-                (f"%{program.lower()}%",),
-            ).fetchall()
-        else:
-            rs = con.execute(
-                f"SELECT program, criteria_text, source_file, last_verified_on FROM {tbl} ORDER BY program"
-            ).fetchall()
-        items = [f"{r['program']}: {r['criteria_text']}" for r in rs]
-        note = _provenance("Eligibility highlights.", rs[0]["source_file"] if rs else None,
-                           rs[0]["last_verified_on"] if rs else None)
-        return _bullets(f"{level} Eligibility", items) + note
-
-# ---------- documents ----------
-
-def documents(level: str) -> str:
-    level = level.upper()
-    with _connect() as con:
-        # unified
-        if _table_exists(con, "documents_required"):
-            rs = con.execute(
-                "SELECT item, details, source_file, last_verified_on FROM documents_required WHERE level=? ORDER BY rowid",
-                (level,),
-            ).fetchall()
-            items = [f"{r['item']}: {r['details']}" for r in rs]
-            note = _provenance("Carry originals + 2–3 photocopies.", rs[0]["source_file"] if rs else None,
-                               rs[0]["last_verified_on"] if rs else None)
-            return _bullets(f"{level} — Documents to Submit", items) + note
-
-        # split fallback
-        tbl = "ug_documents" if level == "UG" else "pg_documents"
-        if not _table_exists(con, tbl):
-            return "_Documents table not found._"
-        rs = con.execute(f"SELECT item, details, source_file, last_verified_on FROM {tbl} ORDER BY rowid").fetchall()
-        items = [f"{r['item']}: {r['details']}" for r in rs]
-        note = _provenance("Carry originals + 2–3 photocopies.", rs[0]["source_file"] if rs else None,
-                           rs[0]["last_verified_on"] if rs else None)
-        return _bullets(f"{level} — Documents to Submit", items) + note
-
-# ---------- academic fees ----------
-
-def academic_fees(level: str,
-                  program: Optional[str] = None,
-                  category: Optional[str] = None,
-                  year: Optional[int] = None) -> str:
+# ----- Hostel fees (normalized schema) -----
+def hostel_fees(gender: Optional[str]=None, level: Optional[str]=None,
+                category: Optional[str]=None, year: Optional[int]=None,
+                block_type: Optional[str]=None) -> str:
     """
-    category: 'Indian' | 'NRI' | 'Foreign' (case-insensitive)
+    Pulls from normalized tables:
+      blocks -> hostels -> hostel_fees (+ years, categories, levels)
     """
-    level = level.upper()
-    with _connect() as con:
-        rows = []
-        # unified
-        if _table_exists(con, "academic_fees"):
-            sql = ("SELECT program, category, year, tuition, one_time, caution, currency, notes, "
-                   "source_file, last_verified_on FROM academic_fees WHERE level=?")
-            args = [level]
-            if program:
-                sql += " AND LOWER(program) LIKE ?"; args.append(f"%{program.lower()}%")
-            if category:
-                sql += " AND LOWER(category)=?"; args.append(category.lower())
-            if year:
-                sql += " AND year=?"; args.append(year)
-            sql += " ORDER BY program, category, year"
-            rs = con.execute(sql, args).fetchall()
-            for r in rs:
-                rows.append([r["program"], r["category"], r["year"], r["tuition"], r["one_time"], r["caution"], r["currency"]])
-            note = _provenance("Academic fee components.", rs[0]["source_file"] if rs else None,
-                               rs[0]["last_verified_on"] if rs else None)
-            return _md_table(f"{level} Academic Fees",
-                             ["Program","Category","Year","Tuition","One-time","Caution","Curr"], rows) + note
-
-        # split fallback
-        tbl = "ug_fees" if level == "UG" else "pg_fees"
-        if not _table_exists(con, tbl):
-            return "_Academic fees table not found._"
-        sql = f"SELECT program, category, year, tuition, one_time, caution, currency, notes, source_file, last_verified_on FROM {tbl} WHERE 1=1"
-        args = []
-        if program:
-            sql += " AND LOWER(program) LIKE ?"; args.append(f"%{program.lower()}%")
-        if category:
-            sql += " AND LOWER(category)=?"; args.append(category.lower())
+    with _c() as con:
+        need = all(_exists(con, t) for t in ("blocks","hostels","hostel_fees","years","categories","levels"))
+        if not need:
+            return "_Hostel fee tables not found._"
+        sql = """
+        SELECT b.block_name, b.gender, b.type AS block_type,
+               y.year, c.name AS category, l.name AS level,
+               hf.room_type, hf.mess_type,
+               hf.room_mess_fee, hf.admission_fee, hf.caution_deposit, hf.total_fee, hf.currency,
+               h.laundry_details, hf.source_pdf, hf.last_verified_on
+        FROM hostel_fees hf
+        JOIN hostels h ON h.hostel_id=hf.hostel_id
+        JOIN blocks  b ON b.block_id=h.block_id
+        JOIN years   y ON y.year_id=h.year_id
+        JOIN categories c ON c.category_id=h.category_id
+        JOIN levels     l ON l.level_id=h.level_id
+        WHERE 1=1
+        """
+        args=[]
         if year:
-            sql += " AND year=?"; args.append(year)
-        sql += " ORDER BY program, category, year"
-        rs = con.execute(sql, args).fetchall()
-        for r in rs:
-            rows.append([r["program"], r["category"], r["year"], r["tuition"], r["one_time"], r["caution"], r["currency"]])
-        note = _provenance("Academic fee components.", rs[0]["source_file"] if rs else None,
-                           rs[0]["last_verified_on"] if rs else None)
-        return _md_table(f"{level} Academic Fees",
-                         ["Program","Category","Year","Tuition","One-time","Caution","Curr"], rows) + note
-
-# ---------- scholarships / rules ----------
-
-def scholarships(level: Optional[str] = None) -> str:
-    with _connect() as con:
-        if not _table_exists(con, "scholarships"):
-            return "_Scholarships table not found._"
+            sql += " AND y.year=?"; args.append(year)
+        if gender:
+            sql += " AND b.gender=?"; args.append(gender)
         if level:
-            rs = con.execute(
-                "SELECT level, name, criteria, amount, source_file, last_verified_on FROM scholarships WHERE UPPER(level)=? ORDER BY name",
-                (level.upper(),)
-            ).fetchall()
-        else:
-            rs = con.execute(
-                "SELECT level, name, criteria, amount, source_file, last_verified_on FROM scholarships ORDER BY level, name"
-            ).fetchall()
-        rows = [[r["level"], r["name"], r["criteria"], r["amount"]] for r in rs]
-        note = _provenance("Scholarships & waivers.", rs[0]["source_file"] if rs else None,
-                           rs[0]["last_verified_on"] if rs else None)
-        return _md_table("Scholarships", ["Level","Name","Criteria","Amount"], rows) + note
-
-def rules(category: Optional[str] = None) -> str:
-    with _connect() as con:
-        if not _table_exists(con, "rules"):
-            return "_Rules table not found._"
+            sql += " AND l.name=?"; args.append(level)
         if category:
-            rs = con.execute(
-                "SELECT category, title, description, source_file, last_verified_on FROM rules WHERE LOWER(category)=? ORDER BY rowid",
-                (category.lower(),)
-            ).fetchall()
-        else:
-            rs = con.execute(
-                "SELECT category, title, description, source_file, last_verified_on FROM rules ORDER BY category, rowid"
-            ).fetchall()
-        # collapse into bullets grouped by category
-        grouped = {}
+            sql += " AND c.name=?"; args.append(category)
+        if block_type:
+            sql += " AND b.type=?"; args.append(block_type)
+        sql += " ORDER BY b.gender, b.type, b.block_name, hf.room_type, hf.mess_type"
+        rs = con.execute(sql, tuple(args)).fetchall()
+        rows=[]
         for r in rs:
-            grouped.setdefault(r["category"], []).append(f"{r['title']}: {r['description']}")
-        parts = []
-        any_row = rs[0] if rs else None
-        for cat, items in grouped.items():
-            parts.append(_bullets(f"{cat.title()} — Key Points", items))
-        note = _provenance(None, any_row["source_file"] if any_row else None,
-                           any_row["last_verified_on"] if any_row else None)
-        return ("\n\n".join(parts) if parts else "_No data found._") + note
+            rows.append([
+                r["block_name"], r["gender"], r["block_type"], r["year"], r["category"], r["level"],
+                r["room_type"], r["mess_type"],
+                r["room_mess_fee"], r["admission_fee"], r["caution_deposit"], r["total_fee"], r["currency"]
+            ])
+        title = "Hostel Fees"
+        out = md_table(title,
+            ["Block","Gender","Type","Year","Category","Level","Room Type","Mess",
+             "Room+Mess","Admission","Caution","Total","Curr"], rows)
+        if rs:
+            out += provenance("Fees are from official PDFs.", rs[0]["source_pdf"], rs[0]["last_verified_on"])
+        return out
