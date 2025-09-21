@@ -1,7 +1,4 @@
-.\.venv\Scripts\python.exe - << 'PY'
-import sqlite3
-con = sqlite3.connect(r'Data/sql/vit_vellore.db')
-print('Tables:', [r[0] for r in con.execute("select name from sqlite_master where type='table'")])
-print('Hostel fee rows:', con.execute('select count(*) from hostel_fees').fetchone()[0])
-con.close()
-PY
+(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe .\app\rag_answer.py --index_dir Data/index/fai
+ss --collection vit_faq_vellore --emb gemini --q "UG programs list"
+usage: rag_answer.py [-h] --index_dir INDEX_DIR [--collection COLLECTION] --q Q
+rag_answer.py: error: unrecognized arguments: --emb gemini
