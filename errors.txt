@@ -1,92 +1,467 @@
-# stage_hostel_tables.py
-# Stages tables from PDFs to CSVs you can eyeball before loading into SQLite.
-import pathlib, re, csv, sys
+# load_sqlite.py
+# Build SQLite DB from staging CSVs (created by stage_hostel_tables.py + any academics CSVs you drop in Data/staging)
+# DB path: Data/sql/vit_vellore.db
 
-IN = pathlib.Path("Data/Raw/HOSTEL")          # put your fee PDFs here (LH/MH/LH-NRI/... etc)
-OUT = pathlib.Path("Data/staging")     # will hold CSVs
-OUT.mkdir(parents=True, exist_ok=True)
+import sqlite3, pathlib, csv, re, os, glob
+from typing import Optional, Tuple, List, Dict
+import pandas as pd
 
-PDFS = [
-  "MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26.pdf",
-  "MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26.pdf",
-  "LH-FEE-structure-Indian-Category-2025-26.pdf",
-  "LH-FEE-structure-NRI-Foreign-Category-2025-26.pdf",
-  "Hostel_info.pdf",
-  "Hostel-joint-Affidavit-2025.pdf",
-]
+BASE    = pathlib.Path("Data")
+STAGING = BASE / "staging"
+SQLDIR  = BASE / "sql"
+SQLDIR.mkdir(parents=True, exist_ok=True)
+DB_PATH = SQLDIR / "vit_vellore.db"
 
-def try_camelot(pdf_path: pathlib.Path):
-    try:
-        import camelot
-    except Exception:
-        return []
-    tables = []
-    try:
-        # lattice works when tables have lines; flavor='stream' if not
-        t = camelot.read_pdf(str(pdf_path), pages='all', flavor='lattice')
-        for i, table in enumerate(t):
-            df = table.df
-            tables.append(("camelot", i, df))
-    except Exception:
-        pass
-    return tables
+MONEY = r"(?:₹|INR|USD|\$)\s*[\d,]+(?:\.\d+)?"
 
-def try_pdfplumber(pdf_path: pathlib.Path):
-    import pdfplumber
-    tables = []
-    try:
-        with pdfplumber.open(str(pdf_path)) as pdf:
-            for pi, page in enumerate(pdf.pages):
-                # attempt simple table extraction
-                try:
-                    tbls = page.extract_tables()
-                except Exception:
-                    tbls = []
-                for ti, rows in enumerate(tbls or []):
-                    # rows is list[list[str]]
-                    tables.append(("pdfplumber", f"{pi}_{ti}", rows))
-    except Exception:
-        pass
-    return tables
+def _mk_conn():
+    con = sqlite3.connect(DB_PATH)
+    con.execute("PRAGMA journal_mode=WAL;")
+    con.execute("PRAGMA synchronous=NORMAL;")
+    return con
 
-def write_csv(name: str, rows, out_csv: pathlib.Path):
-    with out_csv.open("w", newline="", encoding="utf-8") as f:
-        w = csv.writer(f)
-        for r in rows:
-            w.writerow([c.strip() if isinstance(c, str) else c for c in r])
+def _schema(con: sqlite3.Connection):
+    con.executescript("""
+    -- HOSTEL core
+    CREATE TABLE IF NOT EXISTS blocks (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        block_name  TEXT,
+        display_name TEXT,
+        gender      TEXT,     -- Male | Female
+        level       TEXT,     -- First-Year | Senior | NULL
+        block_type  TEXT
+    );
 
-def normalize_df(df):
-    # Convert Camelot DF -> list of rows
-    rows = [list(df.columns)]
-    for _, r in df.iterrows():
-        rows.append([str(x) for x in r.tolist()])
-    return rows
+    CREATE TABLE IF NOT EXISTS hostel_fees (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        block_id INTEGER NOT NULL,
+        ay TEXT,                  -- 2025-26
+        category TEXT,            -- Indian | NRI | Foreign
+        occupancy TEXT,           -- "2 Sharing" / "6 Sharing" / "2 Bed" etc
+        ac INTEGER,               -- 1=AC, 0=Non-AC, NULL=unknown
+        mess_type TEXT,           -- Special / Non-Veg / Veg / ...
+        room_mess_fee TEXT,
+        admission_fee TEXT,
+        caution_deposit TEXT,
+        other_fee TEXT,
+        total_fee TEXT,
+        currency TEXT,            -- INR | USD
+        source_file TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS amenities (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        block_id INTEGER NOT NULL,
+        key TEXT,                 -- 'Laundry','Mess','Note'
+        value TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS contacts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        block_id INTEGER NOT NULL,
+        name TEXT,
+        role TEXT,
+        phone TEXT,
+        email TEXT
+    );
+
+    -- Extracted from Hostel_info.pdf staging
+    CREATE TABLE IF NOT EXISTS mh_blocks (block_code TEXT, block_name TEXT, email TEXT, landline TEXT);
+    CREATE TABLE IF NOT EXISTS lh_blocks (block_code TEXT, landline TEXT);
+    CREATE TABLE IF NOT EXISTS hostel_contacts (role TEXT, name TEXT, email TEXT, phone TEXT);
+
+    -- ACADEMICS
+    CREATE TABLE IF NOT EXISTS programs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      level TEXT,                  -- UG | PG | MCA | MSc
+      program TEXT,                -- e.g., "B.Tech CSE"
+      school TEXT,                 -- optional
+      duration TEXT,               -- e.g., "4 years"
+      campus TEXT,                 -- optional
+      source_file TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS eligibility (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      level TEXT,
+      program TEXT,                -- use "ALL" for common/overall UG or PG criteria
+      criteria TEXT,
+      source_file TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS documents_required (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      level TEXT,
+      program TEXT,                -- "ALL" for level-wide docs, else specific
+      item TEXT,
+      details TEXT,
+      source_file TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS academic_fees (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      level TEXT,
+      program TEXT,                -- "ALL" when a PDF lists fees by category but not by program
+      category TEXT,               -- Indian | NRI | Foreign
+      ay TEXT,                     -- 2025-26
+      tuition TEXT,
+      one_time TEXT,               -- admission/enrolment/registration etc
+      caution TEXT,
+      total TEXT,
+      currency TEXT,               -- INR | USD
+      source_file TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS scholarships (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      level TEXT,                  -- UG | PG | Research
+      name TEXT,
+      criteria TEXT,
+      amount TEXT,
+      currency TEXT,
+      source_file TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS rules (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      category TEXT,               -- attendance | refund | discipline | anti-ragging | exam
+      title TEXT,
+      text TEXT,
+      ay TEXT,
+      source_file TEXT
+    );
+
+    -- VITREE
+    CREATE TABLE IF NOT EXISTS vitree (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      key TEXT,                    -- "process" | "application" | "timeline"
+      value TEXT,
+      source_file TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS vitree_fees (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      category TEXT,               -- Indian | NRI | Foreign
+      ay TEXT,
+      fee TEXT,
+      currency TEXT,
+      source_file TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS vitree_stipend (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      scheme TEXT,                 -- e.g., "Institute Fellowship"
+      amount TEXT,
+      period TEXT,                 -- e.g., "per month"
+      currency TEXT,
+      source_file TEXT
+    );
+
+    -- helpful indexes
+    CREATE INDEX IF NOT EXISTS idx_prog ON programs(level, program);
+    CREATE INDEX IF NOT EXISTS idx_elig ON eligibility(level, program);
+    CREATE INDEX IF NOT EXISTS idx_docs ON documents_required(level, program);
+    CREATE INDEX IF NOT EXISTS idx_fees ON academic_fees(level, program, category, ay);
+    CREATE INDEX IF NOT EXISTS idx_rules ON rules(category);
+    """)
+
+# ---------------------- HOSTEL staging (your original) ----------------------
+
+def _get_or_create_block(con: sqlite3.Connection, block_name: str, display: Optional[str],
+                         gender: str, level: Optional[str], btype: Optional[str]) -> int:
+    row = con.execute(
+        "SELECT id FROM blocks WHERE block_name=? AND IFNULL(level,'')=IFNULL(?, '') AND IFNULL(block_type,'')=IFNULL(?, '') AND IFNULL(gender,'')=IFNULL(?, '')",
+        (block_name, level, btype, gender)
+    ).fetchone()
+    if row: return row[0]
+    con.execute("INSERT INTO blocks(block_name, display_name, gender, level, block_type) VALUES(?,?,?,?,?)",
+                (block_name, display or block_name, gender, level, btype))
+    return con.execute("SELECT last_insert_rowid()").fetchone()[0]
+
+def _guess_meta_from_filename(name: str) -> Tuple[str, Optional[str], str, str]:
+    n = name.lower()
+    gender = "Male" if n.startswith("mh") else ("Female" if n.startswith("lh") else "")
+    level  = "Senior" if "senior" in n else ("First-Year" if ("first-year" in n or "first year" in n) else None)
+    ay = ""
+    m = re.search(r"(20\d{2})\D{0,3}(\d{2})", n)
+    if m: ay = f"{m.group(1)}-{m.group(2)}"
+    if "nri" in n or "foreign" in n:
+        cat = "NRI"
+    elif "indian" in n:
+        cat = "Indian"
+    else:
+        cat = ""
+    return gender, level, ay, cat
+
+HEADER_ALIASES = {
+    "room_type":      ["roomtype", "room", "acnonac", "ac/nonac", "ac", "nonac", "category", "roomcategory"],
+    "mess_type":      ["messtype", "diet", "veg", "nonveg", "specialmess", "special"],
+    "room_mess_fee":  ["roomandmessfee", "roommessfee", "hostelfee", "room&messfee", "roommess", "roomandmess", "hostelandmessfee"],
+    "admission_fee":  ["admissionfee", "admission"],
+    "caution_deposit":["cautiondeposit", "refundabledeposit", "caution", "deposit"],
+    "other_fee":      ["other", "utility", "electricity", "maintenance", "service"],
+    "total_fee":      ["total", "grandtotal", "overalltotal", "nettotal", "totalamount"],
+}
+
+def _norm(s: str) -> str:
+    return re.sub(r"[^a-z0-9]+","", (s or "").lower())
+
+def _score_header_row(cells: List[str]) -> int:
+    toks = [_norm(c) for c in cells]
+    score = 0
+    keys = "room mess total admission caution deposit fee ac non".split()
+    for k in keys:
+        if any(k in t for t in toks): score += 1
+    return score
+
+def _find_header_idx(rows: List[List[str]]) -> int:
+    best_i, best_s = 0, -1
+    for i in range(min(6, len(rows))):
+        s = _score_header_row(rows[i]); 
+        if s > best_s: best_s, best_i = s, i
+    return best_i
+
+def _map_columns(header_cells: List[str]) -> dict:
+    hnorm = [_norm(c) for c in header_cells]
+    mapping = {k: None for k in HEADER_ALIASES.keys()}
+    for k, aliases in HEADER_ALIASES.items():
+        for idx, h in enumerate(hnorm):
+            if any(a in h for a in aliases):
+                if k == "total_fee":
+                    mapping[k] = idx
+                elif mapping[k] is None:
+                    mapping[k] = idx
+    return mapping
+
+def _detect_occupancy(text: str) -> Optional[str]:
+    m = re.search(r"\b(\d+)\s*(?:/|\s)?\s*(\d+)?\s*(sharing|seater|bed|occupancy)\b", text, flags=re.I)
+    if not m:
+        m = re.search(r"\b(\d+)\s*(sharing|seater|bed|occupancy)\b", text, flags=re.I)
+    if not m: return None
+    g = [x for x in m.groups() if x and x.isdigit()]
+    word = (m.groups()[-1] or "").title()
+    if len(g) == 2: return f"{g[0]}/{g[1]} {word}"
+    return f"{g[0]} {word}"
+
+def _detect_ac(text: str) -> Optional[int]:
+    if re.search(r"\bNon[- ]?AC\b", text, flags=re.I): return 0
+    if re.search(r"\bAC\b|\bA/C\b", text, flags=re.I): return 1
+    return None
+
+def _clean_amt(s: str) -> str:
+    s = (s or "").strip()
+    if not s: return ""
+    return re.sub(r"[^\d₹$,\.INRUSD ]", "", s)
+
+def _row_has_any_value(*vals) -> bool:
+    return any((v or "").strip() for v in vals)
+
+def _insert_fee_row(con, block_id: int, ay: str, category: str, occ: str, ac: Optional[int],
+                    mess: str, room_mess: str, admission: str, caution: str, other: str,
+                    total: str, currency: str, source_file: str):
+    if not _row_has_any_value(occ, mess, room_mess, admission, caution, other, total):
+        return
+    con.execute("""
+        INSERT INTO hostel_fees(block_id, ay, category, occupancy, ac, mess_type,
+                                room_mess_fee, admission_fee, caution_deposit, other_fee, total_fee, currency, source_file)
+        VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)
+    """, (block_id, ay, category, occ, ac, mess, room_mess, admission, caution, other, total, currency, source_file))
+
+def _currency_from(filename: str, row_text: str, header_text: str) -> str:
+    if "usd" in row_text.lower() or "$" in row_text or "usd" in header_text.lower():
+        return "USD"
+    if "inr" in row_text.lower() or "₹" in row_text or "inr" in header_text.lower():
+        return "INR"
+    fn = filename.lower()
+    if ("nri" in fn) or ("foreign" in fn): return "USD"
+    if ("indian" in fn): return "INR"
+    return ""
+
+def load_staging_csvs(con: sqlite3.Connection):
+    files = sorted(STAGING.glob("*.csv"))
+    if not files:
+        print(f"[WARN] No CSVs found in {STAGING}")
+        return
+
+    for path in files:
+        # Hostel fee CSVs (produced by stage_hostel_tables.py)
+        if path.stem.lower().startswith(("mh-","lh-","hostel_info")):
+            gender, level, ay, cat_hint = _guess_meta_from_filename(path.stem)
+            block_title = ("Men Hostel" if gender=="Male" else "Ladies Hostel") + (f" {level}" if level else "")
+            block_id = _get_or_create_block(con, block_title, block_title, gender or "", level, None)
+
+            rows = list(csv.reader(path.open("r", encoding="utf-8")))
+            if not rows: 
+                continue
+            hi = _find_header_idx(rows)
+            header = rows[hi]
+            colmap = _map_columns(header)
+            header_text = " ".join(header)
+
+            for r in rows[hi+1:]:
+                if not any((c or "").strip() for c in r): 
+                    continue
+                room_col = colmap.get("room_type")
+                mess_col = colmap.get("mess_type")
+                room_txt = (r[room_col] if (room_col is not None and room_col < len(r)) else "")
+                mess_txt = (r[mess_col] if (mess_col is not None and mess_col < len(r)) else "")
+                joined = " ".join([c for c in r if c])
+
+                occ = _detect_occupancy(room_txt) or _detect_occupancy(joined) or ""
+                ac  = _detect_ac(room_txt) or _detect_ac(joined)
+
+                mess = (mess_txt or "").strip()
+                if re.fullmatch(r"\s*(?:₹|INR|USD|\$)?\s*[\d,]+(?:\.\d+)?\s*", mess):
+                    mess = ""
+                if re.search(r"\bspecial\b", mess, re.I): mess = "Special Mess"
+                elif re.search(r"non\s*veg", mess, re.I): mess = "Non Veg"
+                elif re.search(r"\bveg\b", mess, re.I):   mess = "Veg"
+
+                def pick_amount(key: str) -> str:
+                    idx = colmap.get(key)
+                    if idx is not None and idx < len(r):
+                        return _clean_amt(r[idx])
+                    return ""
+
+                room_mess  = pick_amount("room_mess_fee")
+                admission  = pick_amount("admission_fee")
+                caution    = pick_amount("caution_deposit")
+                other      = pick_amount("other_fee")
+                total      = pick_amount("total_fee")
+
+                row_text = " ".join(r)
+                currency = _currency_from(path.name, row_text, header_text)
+                category = cat_hint or ("NRI" if currency=="USD" else ("Indian" if currency=="INR" else ""))
+
+                if not _row_has_any_value(room_mess, admission, caution, other, total):
+                    m_all = re.findall(MONEY, row_text)
+                    if m_all:
+                        room_mess = m_all[0]
+                        if len(m_all) > 1:
+                            total = m_all[-1]
+
+                _insert_fee_row(con, block_id, ay, category, occ, ac, mess,
+                                room_mess, admission, caution, other, total, currency, path.name)
+
+    print("[OK] Loaded hostel CSVs into SQLITE.")
+
+# ---------- Parse Hostel_info__camelot_*.csv into mh_blocks/lh_blocks/hostel_contacts ----------
+
+def _flatten_hostel_info_frames() -> str:
+    paths = sorted(glob.glob(os.path.join(str(STAGING), "Hostel_info__camelot_*.csv")))
+    if not paths:
+        return ""
+    frames = []
+    for p in paths:
+        df = pd.read_csv(p, header=None, dtype=str).fillna("")
+        frames.append(df)
+    raw = pd.concat(frames, ignore_index=True)
+    raw["joined"] = raw.apply(lambda r: " ".join([c for c in r if isinstance(c, str)]), axis=1)
+    text = "\n".join(raw["joined"].tolist())
+    text = re.sub(r"\s+", " ", text)
+    text = text.replace("vit.ac.i n", "vit.ac.in")
+    return text
+
+def load_hostel_info(con: sqlite3.Connection):
+    text = _flatten_hostel_info_frames()
+    if not text:
+        print("[WARN] Hostel_info__camelot_*.csv not found; skipping mh/lh blocks + contacts.")
+        return
+
+    pat_mh = re.compile(
+        r"(MH [A-Z](?: ANNEX)?)\s+([A-Z0-9 .’'--]+?(?:ANNEX)?)(?:\s+-\s*[A-Z ]+)?\s+0416\s*220\s*(\d{4})\s+([A-Za-z.]+@vit\.ac\.in)",
+        flags=re.I,
+    )
+    mh = pd.DataFrame(pat_mh.findall(text), columns=["block_code","block_name","last4","email"])
+    if not mh.empty:
+        mh["landline"] = "0416 220 " + mh["last4"]
+        mh.drop(columns=["last4"], inplace=True)
+        mh["block_code"] = mh["block_code"].str.upper().str.strip()
+        mh["block_name"] = (mh["block_name"].str.replace("–", "-", regex=False).str.title().str.strip())
+
+    pat_lh = re.compile(r"(LH [A-Z]|RGT H|LH GH \(Annex\))\s+0416\s*220\s*(\d{4})", flags=re.I)
+    lh = pd.DataFrame(pat_lh.findall(text), columns=["block_code","last4"])
+    if not lh.empty:
+        lh["landline"] = "0416 220 " + lh["last4"]
+        lh.drop(columns=["last4"], inplace=True)
+        lh["block_code"] = lh["block_code"].str.upper().str.strip()
+
+    rows = [
+        ("Section Supervisor (MH)", "Mr. Arasu R", "rarasu@vit.ac.in", "0416-220-2523"),
+        ("Section Supervisor (LH)", "Ms. G. Subbulakshmi", "gsubbulakshmi@vit.ac.in", "0416-220-2711"),
+        ("Residential Block Supervisor (LH, Transport)", "Ms. Mythily A", "mythily.a@vit.ac.in", "9488839864, 9791297375"),
+    ]
+    contacts = pd.DataFrame(rows, columns=["role","name","email","phone"])
+
+    cur = con.cursor()
+    cur.execute("DROP TABLE IF EXISTS mh_blocks")
+    cur.execute("DROP TABLE IF EXISTS lh_blocks")
+    cur.execute("DROP TABLE IF EXISTS hostel_contacts")
+
+    if not mh.empty:
+        mh.to_sql("mh_blocks", con, index=False)
+    else:
+        cur.execute("CREATE TABLE IF NOT EXISTS mh_blocks (block_code TEXT, block_name TEXT, email TEXT, landline TEXT)")
+
+    if not lh.empty:
+        lh.to_sql("lh_blocks", con, index=False)
+    else:
+        cur.execute("CREATE TABLE IF NOT EXISTS lh_blocks (block_code TEXT, landline TEXT)")
+
+    contacts.to_sql("hostel_contacts", con, index=False)
+    print("[OK] Loaded Hostel Info (blocks + contacts) into SQLITE.")
+
+# ---------------------- OPTIONAL: ingest academics CSVs if present ----------------------
+# Drop any CSVs with headers matching these schemas into Data/staging and rerun load_sqlite.py.
+
+ACAD_SIGS: Dict[str, List[str]] = {
+    "programs": ["level","program","school","duration","campus","source_file"],
+    "eligibility": ["level","program","criteria","source_file"],
+    "documents_required": ["level","program","item","details","source_file"],
+    "academic_fees": ["level","program","category","ay","tuition","one_time","caution","total","currency","source_file"],
+    "scholarships": ["level","name","criteria","amount","currency","source_file"],
+    "rules": ["category","title","text","ay","source_file"],
+    "vitree": ["key","value","source_file"],
+    "vitree_fees": ["category","ay","fee","currency","source_file"],
+    "vitree_stipend": ["scheme","amount","period","currency","source_file"],
+}
+
+def _load_csv_into(con: sqlite3.Connection, tname: str, df: pd.DataFrame):
+    df.to_sql(tname, con, if_exists="append", index=False)
+
+def load_academics_from_staging(con: sqlite3.Connection):
+    paths = sorted(STAGING.glob("*.csv"))
+    if not paths:
+        return
+    loaded = 0
+    for p in paths:
+        try:
+            df = pd.read_csv(p, dtype=str).fillna("")
+        except Exception:
+            continue
+        cols = [c.strip().lower() for c in df.columns]
+        for tname, need in ACAD_SIGS.items():
+            if all(h in cols for h in need):
+                # reorder to canonical
+                df = df[[c for c in need]]
+                _load_csv_into(con, tname, df)
+                print(f"[OK] Loaded academics CSV into {tname}: {p.name}")
+                loaded += 1
+                break
+    if loaded == 0:
+        print("[NOTE] No academics CSVs detected in staging (optional).")
+
+# ---------------------- main ----------------------
 
 def main():
-    for pdf_name in PDFS:
-        pdf_path = IN / pdf_name
-        if not pdf_path.exists():
-            print(f"[WARN] Missing {pdf_path}")
-            continue
-
-        staged_any = False
-
-        for src, tag, obj in (try_camelot(pdf_path) or []):
-            out_csv = OUT / f"{pdf_path.stem}__{src}_{tag}.csv"
-            rows = normalize_df(obj)
-            write_csv(pdf_path.stem, rows, out_csv)
-            print(f"[STAGED] {out_csv}")
-            staged_any = True
-
-        if not staged_any:
-            for src, tag, rows in (try_pdfplumber(pdf_path) or []):
-                out_csv = OUT / f"{pdf_path.stem}__{src}_{tag}.csv"
-                write_csv(pdf_path.stem, rows, out_csv)
-                print(f"[STAGED] {out_csv}")
-                staged_any = True
-
-        if not staged_any:
-            print(f"[FAIL] No tables detected in {pdf_path}")
+    con = _mk_conn()
+    _schema(con)
+    load_staging_csvs(con)   # hostel fees
+    load_hostel_info(con)    # hostel blocks + contacts
+    load_academics_from_staging(con)  # optional academics CSVs
+    con.commit()
+    con.close()
+    print(f"[DONE] SQLite DB ready at: {DB_PATH}")
 
 if __name__ == "__main__":
     main()
