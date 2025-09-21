@@ -1,482 +1,17 @@
-Microsoft Windows [Version 10.0.26100.6584]
-(c) Microsoft Corporation. All rights reserved.
 
-C:\Users\T8543\Downloads\project-2>C:/Users/T8543/Downloads/project-2/.venv/Scripts/activate.bat
-
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe stage_hostel_tables.py             
-[STAGED] Data\staging\MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
-[STAGED] Data\staging\MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
-[STAGED] Data\staging\MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
-[STAGED] Data\staging\MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv
-[STAGED] Data\staging\MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_4.csv
-[STAGED] Data\staging\MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_5.csv
-[STAGED] Data\staging\MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
-[STAGED] Data\staging\MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
-[STAGED] Data\staging\MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
-[STAGED] Data\staging\MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv
-[STAGED] Data\staging\LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
-[STAGED] Data\staging\LH-FEE-structure-NRI-Foreign-Category-2025-26__camelot_0.csv
-[STAGED] Data\staging\Hostel_info__camelot_0.csv
-[STAGED] Data\staging\Hostel_info__camelot_1.csv
-[STAGED] Data\staging\Hostel_info__camelot_2.csv
-[STAGED] Data\staging\Hostel_info__camelot_3.csv
-[STAGED] Data\staging\Hostel_info__camelot_4.csv
-[STAGED] Data\staging\Hostel-joint-Affidavit-2025__camelot_0.csv
-Exception ignored in atexit callback <function rmtree at 0x000001E192A9D6C0>:
-Traceback (most recent call last):
-  File "C:\Program Files\Python313\Lib\shutil.py", line 790, in rmtree
-    return _rmtree_unsafe(path, onexc)
-  File "C:\Program Files\Python313\Lib\shutil.py", line 629, in _rmtree_unsafe
-    onexc(os.unlink, fullname, err)
-  File "C:\Program Files\Python313\Lib\shutil.py", line 625, in _rmtree_unsafe
-    os.unlink(fullname)
-PermissionError: [WinError 32] The process cannot access the file because it is being used by another process: 'C:\\Users\\T8543\\AppData\\Local\\Temp\\tmpvxb9c7vo\\page-2.pdf'
-
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe load_sqlite.pyl;'     
-.\.venv\Scripts\python.exe: can't open file "C:\\Users\\T8543\\Downloads\\project-2\\load_sqlite.pyl;'": [Errno 2] No such file or directory
-
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe load_sqlite.pyl       
-.\.venv\Scripts\python.exe: can't open file 'C:\\Users\\T8543\\Downloads\\project-2\\load_sqlite.pyl': [Errno 2] No such file or directory
-
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe load_sqlite.py 
-[OK] Loaded staging CSVs into SQLITE.
-C:\Users\T8543\Downloads\project-2\load_sqlite.py:303: FutureWarning: Possible set difference at position 36
-  pat_mh = re.compile(
-[OK] Loaded Hostel Info (blocks + contacts) into SQLITE.
-[DONE] SQLite DB ready at: Data\sql\vit_vellore.db
-
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe rag_answer.py --index_dir Data/inde
-x/faiss --collection vit_faq_vellore --emb gemini --q "list all block names of the boys hostel"
-
-**Men’s Hostel Blocks**
-- MH A — Albert Einstein
-- MH B — Swami Vivekananda
-- MH C — Rabindranath Tagore
-- MH E — Sir C.V.Raman
-- MH F — R Amanujam
-- MH G — Socrates
-- MH J — John F Kennedy
-- MH R — Muthamizh Arignar Kalaignar M.Karunanidhi
-- MH T — Mens Hostel T Block
-
-
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --emb gemini --q "list all block codes of the boys hostel"
-
-**Men’s Hostel Blocks**
-- MH A — Albert Einstein
-- MH B — Swami Vivekananda
-- MH C — Rabindranath Tagore
-- MH E — Sir C.V.Raman
-- MH F — R Amanujam
-- MH G — Socrates
-- MH J — John F Kennedy
-- MH R — Muthamizh Arignar Kalaignar M.Karunanidhi
-- MH T — Mens Hostel T Block
-
-
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --emb gemini --q "list all landline numbers for boys hostel"
-
-**Answer (quick summary):**
-- Male: ₹142,400 – ₹275,000 (Total).
-- Male: USD 2,940 – 5,770 (Total).
-
-**Hostel Fee Details (Vellore)**
-| Block | Gender | Level | Type | AY | Category | Occ | AC | Mess | Room+Mess | Admission | Caution | Other | Total | Curr |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 136,800 | 15,000 | 15,000 |  | 166,800 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 146,300 | 15,000 | 15,000 |  | 176,300 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 158,200 | 15,000 | 15,000 |  | 188,200 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 145,300 | 15,000 | 15,000 |  | 175,300 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 154,800 | 15,000 | 15,000 |  | 184,800 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 166,700 | 15,000 | 15,000 |  | 196,700 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 167,700 | 15,000 | 15,000 |  | 197,700 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 179,600 | 15,000 | 15,000 |  | 209,600 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 165,000 | 15,000 | 15,000 |  | 195,000 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 174,500 | 15,000 | 15,000 |  | 204,500 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 186,400 | 15,000 | 15,000 |  | 216,400 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 198,900 | 15,000 | 15,000 |  | 228,900 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 208,400 | 15,000 | 15,000 |  | 238,400 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 220,300 | 15,000 | 15,000 |  | 250,300 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 146,700 | 15,000 | 15,000 |  | 176,700 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 156,200 | 15,000 | 15,000 |  | 186,200 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 168,100 | 15,000 | 15,000 |  | 198,100 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 156,400 | 15,000 | 15,000 |  | 186,400 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 165,900 | 15,000 | 15,000 |  | 195,900 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 177,800 | 15,000 | 15,000 |  | 207,800 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 167,300 | 15,000 | 15,000 |  | 197,300 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 176,800 | 15,000 | 15,000 |  | 206,800 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 188,700 | 15,000 | 15,000 |  | 218,700 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 182,600 | 15,000 | 15,000 |  | 212,600 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 192,100 | 15,000 | 15,000 |  | 222,100 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 204,000 | 15,000 | 15,000 |  | 234,000 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 196,800 | 15,000 | 15,000 |  | 226,800 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 206,300 | 15,000 | 15,000 |  | 236,300 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 218,200 | 15,000 | 15,000 |  | 248,200 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 2,790 | 250 | 400 |  | 3,440 | USD |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 3,060 | 250 | 400 |  | 3,710 | USD |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 3,430 | 250 | 400 |  | 4,080 | USD |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 3,720 | 250 | 400 |  | 4,370 | USD |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 4,270 | 250 | 400 |  | 4,920 | USD |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 3,070 | 250 | 400 |  | 3,720 | USD |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 3,220 | 250 | 400 |  | 3,870 | USD |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 3,660 | 250 | 400 |  | 4,310 | USD |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 4,020 | 250 | 400 |  | 4,670 | USD |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 4,550 | 250 | 400 |  | 5,200 | USD |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 136,800 | 136,800 | 15,000 | 15,000 |  | 166,800 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 145,300 | 145,300 | 15,000 | 15,000 |  | 175,300 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 146,300 | 146,300 | 15,000 | 15,000 |  | 176,300 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 146,700 | 146,700 | 15,000 | 15,000 |  | 176,700 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 154,800 | 154,800 | 15,000 | 15,000 |  | 184,800 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 156,200 | 156,200 | 15,000 | 15,000 |  | 186,200 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 156,400 | 156,400 | 15,000 | 15,000 |  | 186,400 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 158,200 | 158,200 | 15,000 | 15,000 |  | 188,200 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 165,000 | 165,000 | 15,000 | 15,000 |  | 195,000 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 165,900 | 165,900 | 15,000 | 15,000 |  | 195,900 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 166,700 | 166,700 | 15,000 | 15,000 |  | 196,700 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 167,300 | 167,300 | 15,000 | 15,000 |  | 197,300 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 167,700 | 167,700 | 15,000 | 15,000 |  | 197,700 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 168,100 | 168,100 | 15,000 | 15,000 |  | 198,100 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 174,500 | 174,500 | 15,000 | 15,000 |  | 204,500 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 176,800 | 176,800 | 15,000 | 15,000 |  | 206,800 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 177,800 | 177,800 | 15,000 | 15,000 |  | 207,800 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 179,600 | 179,600 | 15,000 | 15,000 |  | 209,600 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 182,600 | 182,600 | 15,000 | 15,000 |  | 212,600 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 186,400 | 186,400 | 15,000 | 15,000 |  | 216,400 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 188,700 | 188,700 | 15,000 | 15,000 |  | 218,700 | INR |
-
-**Quick overview:**
-- Male First-Year —: 1 block(s)
-- Male Senior —: 1 block(s)
-
-*Note: Structured answers come from your SQLite DB built from official PDFs.*
-
-
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --emb gemini --q "list all landline numbers mens block wise"        
-
-**Men’s Hostel Blocks**
-- MH A — Albert Einstein
-- MH B — Swami Vivekananda
-- MH C — Rabindranath Tagore
-- MH E — Sir C.V.Raman
-- MH F — R Amanujam
-- MH G — Socrates
-- MH J — John F Kennedy
-- MH R — Muthamizh Arignar Kalaignar M.Karunanidhi
-
-
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --emb gemini --q "list all landline numbers mens block wise"        
-
-**Men’s Hostel Blocks**
-- MH A — Albert Einstein
-- MH B — Swami Vivekananda
-- MH C — Rabindranath Tagore
-- MH E — Sir C.V.Raman
-- MH F — R Amanujam
-- MH G — Socrates
-- MH J — John F Kennedy
-- MH R — Muthamizh Arignar Kalaignar M.Karunanidhi
-- MH C — Rabindranath Tagore
-- MH E — Sir C.V.Raman
-- MH F — R Amanujam
-- MH G — Socrates
-- MH J — John F Kennedy
-- MH R — Muthamizh Arignar Kalaignar M.Karunanidhi
-- MH T — Mens Hostel T Block
-
-
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --emb gemini --q "ladies hostel supervisor contact email phone"     
-
-**Hostel Contacts**
-- Section Supervisor (LH): 0 — 0416-220-2711 — gsubbulakshmi@vit.ac.in
-- Residential Block Supervisor (LH, Transport): 1 — 9488839864, 9791297375 — mythily.a@vit.ac.in
-
-
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --emb gemini --q "ladies hostel supervisor contact email phone"     
-
-**Ladies’ Hostel — Block-wise Landlines**
-| Block Code | Block Name | Landline | Email |
-|---|---|---|---|
-| LH A | LH A | 0416 220 2669 |  |
-| LH C | LH C | 0416 220 2703 |  |
-| LH D | LH D | 0416 220 2703 |  |
-| LH F | LH F | 0416 220 2706 |  |
-| LH GH (ANNEX) | LH GH (ANNEX) | 0416 220 2244 |  |
-| LH J | LH J | 0416 220 2896 |  |
-
-
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --emb gemini --q "list all landline numbers men block wise"         
-
-**Men’s Hostel — Block-wise Landlines**
-| Block Code | Block Name | Landline | Email |
-|---|---|---|---|
-| MH A | Albert Einstein | 0416 220 2531 | mhablock@vit.ac.in |
-| MH B | Swami Vivekananda | 0416 220 2532 | mhbblock@vit.ac.in |
-| MH C | Rabindranath Tagore | 0416 220 2534 | mhcblock@vit.ac.in |
-| MH E | Sir C.V.Raman | 0416 220 2537 | mheblock@vit.ac.in |
-| MH F | R Amanujam | 0416 220 2538 | mhfblock@vit.ac.in |
-| MH G | Socrates | 0416 220 2539 | mhgblock@vit.ac.in |
-| MH J | John F Kennedy | 0416 220 2541 | mhjblock@vit.ac.in |
-| MH R | Muthamizh Arignar Kalaignar M.Karunanidhi | 0416 220 2549 | mhrblock@vit.ac.in |
-| MH T | Mens Hostel T Block | 0416 220 2551 | mhtblock@vit.ac.in |
-
-
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --emb gemini --q "what are the programs offered in the ug" 
-
-**Answer (from your PDFs):**
-(or its equivalent) - The candidates short-listed based on their merit will be called for the admission - Candidates will be allot the seat in the order of merit based on the U.G. marks. - The fact that a candidate has qualified is does not guarantee for admission. This depends upon the cut-off fixed on the merit list and the availability of seats - The short listed candidate list will be published on our website    
-
-Will I be offered the option of choosing campus and program while filling application? 'No'. Only at the time of counseling you will be offered the option of choosing campus and programme. This would depend on the availability of the programme and campus as per your rank in the order of merit. What is the closing date for issue of applications? Applications will be issued till end of March 2025 (tentative)
-
-We offer a broad assortment of programmes in Information Technology, Artificial Intelligence and Data Engineering, Cyber Security, Software Engineering, Computer Science and Computer Applications. The curricula of these programmes are designed with stakeholder's feedback and benchmarked against the best in the world.
-
-*Sources:* M.SC PROCESS.pdf, VITEEE FAQS.pdf, UG NRI_FAQS.pdf, MCA 2 Years PG Program.pdf, UG FOREIGN FAQ.pdf
-*Note: Answers are grounded in your ingested PDFs.*
-
-
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --emb gemini --q "list all the programs offered for UG"   
-
-**Answer (from your PDFs):**
-(or its equivalent) - The candidates short-listed based on their merit will be called for the admission - Candidates will be allot the seat in the order of merit based on the U.G. marks. - The fact that a candidate has qualified is does not guarantee for admission. This depends upon the cut-off fixed on the merit list and the availability of seats - The short listed candidate list will be published on our website    
-
-Will I be offered the option of choosing campus and program while filling application? 'No'. Only at the time of counseling you will be offered the option of choosing campus and programme. This would depend on the availability of the programme and campus as per your rank in the order of merit. What is the closing date for issue of applications? Applications will be issued till end of March 2025 (tentative)
-
-There is NO VIT ENTRANCE EXAMINATION - Candidates who have studied in Regular, Full time and Formal Education are alone eligible to apply - Candidate should be Resident Indian National - The Admission will be on the basis of the performance in the qualifying examination UG(or its equivalent) ABOUT THE SCHOOL OF BIO SCIENCES AND TECHNOLOGY (SBST): School of Bio Sciences and Technology (SBST) offer programs in various disciplines of Modern
-
-Data Science - M.Sc. Chemistry - M.Sc.
-
-*Sources:* M.SC PROCESS.pdf, VITEEE FAQS.pdf, UG Programmes Offered.pdf, MCA 2 Years PG Program.pdf, POSTGRADUTE ADMISSIONS PROCESS.pdf
-*Note: Answers are grounded in your ingested PDFs.*
-
-
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --emb gemini --q "what is the fee structure for computer science in UG"
-
-**Answer (quick summary)**
-- ₹2,940 – ₹275,000 (Total).
-
-**Hostel Fee Details (Vellore)**
-| Block | Gender | Level | Type | AY | Category | Occ | AC | Mess | Room+Mess | Admission | Caution | Other | Total | Curr |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,36,800 | 15,000 | 15,000 |  | 1,66,800 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,46,300 | 15,000 | 15,000 |  | 1,76,300 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,58,200 | 15,000 | 15,000 |  | 1,88,200 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,45,300 | 15,000 | 15,000 |  | 1,75,300 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,54,800 | 15,000 | 15,000 |  | 1,84,800 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,66,700 | 15,000 | 15,000 |  | 1,96,700 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,65,000 | 15,000 | 15,000 |  | 1,95,000 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,74,500 | 15,000 | 15,000 |  | 2,04,500 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,86,400 | 15,000 | 15,000 |  | 2,16,400 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,98,900 | 15,000 | 15,000 |  | 2,28,900 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 2,08,400 | 15,000 | 15,000 |  | 2,38,400 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 2,20,300 | 15,000 | 15,000 |  | 2,50,300 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | NRI |  | AC |  |  | 250 | 400 |  | 3,710 | USD |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | 1,36,800 | 1,36,800 | 15,000 | 15,000 |  | 1,66,800 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | 1,45,300 | 1,45,300 | 15,000 | 15,000 |  | 1,75,300 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | 1,46,300 | 1,46,300 | 15,000 | 15,000 |  | 1,76,300 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | 1,54,800 | 1,54,800 | 15,000 | 15,000 |  | 1,84,800 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | 1,58,200 | 1,58,200 | 15,000 | 15,000 |  | 1,88,200 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | 1,65,000 | 1,65,000 | 15,000 | 15,000 |  | 1,95,000 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | 1,66,700 | 1,66,700 | 15,000 | 15,000 |  | 1,96,700 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | 1,74,500 | 1,74,500 | 15,000 | 15,000 |  | 2,04,500 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | 1,86,400 | 1,86,400 | 15,000 | 15,000 |  | 2,16,400 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | 1,98,900 | 1,98,900 | 15,000 | 15,000 |  | 2,28,900 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | 2,08,400 | 2,08,400 | 15,000 | 15,000 |  | 2,38,400 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | 2,20,300 | 2,20,300 | 15,000 | 15,000 |  | 2,50,300 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | NRI |  | AC | 3,060 |  | 250 | 400 |  | 3,710 | USD |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | Non Veg |  |  |  |  |  |  |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | Special Mess |  |  |  |  |  |  |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | Veg |  |  |  |  |  |  |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,12,400 | 15,000 | 15,000 |  | 1,42,400 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,21,900 | 15,000 | 15,000 |  | 1,51,900 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,33,800 | 15,000 | 15,000 |  | 1,63,800 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,17,500 | 15,000 | 15,000 |  | 1,47,500 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,27,000 | 15,000 | 15,000 |  | 1,57,000 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,38,900 | 15,000 | 15,000 |  | 1,68,900 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,31,100 | 15,000 | 15,000 |  | 1,61,100 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,40,600 | 15,000 | 15,000 |  | 1,70,600 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,52,500 | 15,000 | 15,000 |  | 1,82,500 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,49,100 | 15,000 | 15,000 |  | 1,79,100 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,58,600 | 15,000 | 15,000 |  | 1,88,600 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,70,500 | 15,000 | 15,000 |  | 2,00,500 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,79,500 | 15,000 | 15,000 |  | 2,09,500 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,89,000 | 15,000 | 15,000 |  | 2,19,000 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 2,00,900 | 15,000 | 15,000 |  | 2,30,900 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,91,100 | 15,000 | 15,000 |  | 2,21,100 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 2,00,600 | 15,000 | 15,000 |  | 2,30,600 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 2,12,500 | 15,000 | 15,000 |  | 2,42,500 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 2,03,800 | 15,000 | 15,000 |  | 2,33,800 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 2,13,300 | 15,000 | 15,000 |  | 2,43,300 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 2,25,200 | 15,000 | 15,000 |  | 2,55,200 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,99,900 | 15,000 | 15,000 |  | 2,29,900 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 2,09,400 | 15,000 | 15,000 |  | 2,39,400 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 2,21,300 | 15,000 | 15,000 |  | 2,51,300 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 2,10,300 | 15,000 | 15,000 |  | 2,40,300 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 2,19,800 | 15,000 | 15,000 |  | 2,49,800 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 2,31,700 | 15,000 | 15,000 |  | 2,61,700 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | NRI |  |  |  |  | 250 | 400 |  | 4,960 | USD |
-| Ladies Hostel | Female |  |  | 2025-26 | NRI |  |  |  |  | 250 | 400 |  | 5,250 | USD |
-| Ladies Hostel | Female |  |  | 2025-26 | NRI |  |  |  |  | 250 | 400 |  | 5,030 | USD |
-| Ladies Hostel | Female |  |  | 2025-26 | NRI |  |  |  |  | 250 | 400 |  | 5,340 | USD |
-
-*Note: Structured answers come from your SQLite DB built from official PDFs.*
-
-
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --emb gemini --q "what are the documents need to submit for UG"     
-   
-**Answer (from your PDFs):**
-(or its equivalent) - The candidates short-listed based on their merit will be called for the admission - Candidates will be allot the seat in the order of merit based on the U.G. marks. - The fact that a candidate has qualified is does not guarantee for admission. This depends upon the cut-off fixed on the merit list and the availability of seats - The short listed candidate list will be published on our website    
-
-FOREIGN FAQS: 1. Who is considered a "Foreign" nationals for admissions? Any foreign national holding a valid foreign passport is eligible to apply under this category. For Nepal and Bhutan nationals , passport is not mandatory What documents are required to prove foreign nationality? You'll need to provide a copy of your valid passport or National ID as proof of your foreign nationality
-
-Nativity Certificate (For Applicants hailing from North Eastern States and Jammu & Kashmir/ Ladakh) Note: All copies of documents will be archived and will not be returned for any reason - The candidate should submit the qualifying mark statement from the board studied as mentioned on the application form for verification of genuineness at the time of admission
-
-What would be the valid ID proofs needed to be produced in the entrance examination hall, in addition to the E-admit card with photograph? You should bring original of either Aadhar card/ Driving license/ PAN card / Passport/ Voter ID card or else School ID card. Is there an option to 'Edit' the application form in web?
-
-*Sources:* M.SC PROCESS.pdf, UG FOREIGN FAQ.pdf, Document Submission.pdf, VITEEE FAQS.pdf, POSTGRADUTE ADMISSIONS PROCESS.pdf
-*Note: Answers are grounded in your ingested PDFs.*
-
-
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --emb gemini --q "what is the fee structure for the NRI for UG"     
-
-_No contacts available._
-
-
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --emb gemini --q "mens hostel directo number"                       
-
-**Answer (quick summary)**
-- ₹2,940 – ₹275,000 (Total).
-
-**Hostel Fee Details (Vellore)**
-| Block | Gender | Level | Type | AY | Category | Occ | AC | Mess | Room+Mess | Admission | Caution | Other | Total | Curr |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 136,800 | 15,000 | 15,000 |  | 166,800 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 146,300 | 15,000 | 15,000 |  | 176,300 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 158,200 | 15,000 | 15,000 |  | 188,200 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 145,300 | 15,000 | 15,000 |  | 175,300 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 154,800 | 15,000 | 15,000 |  | 184,800 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 166,700 | 15,000 | 15,000 |  | 196,700 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 167,700 | 15,000 | 15,000 |  | 197,700 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 179,600 | 15,000 | 15,000 |  | 209,600 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 165,000 | 15,000 | 15,000 |  | 195,000 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 174,500 | 15,000 | 15,000 |  | 204,500 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 186,400 | 15,000 | 15,000 |  | 216,400 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 198,900 | 15,000 | 15,000 |  | 228,900 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 208,400 | 15,000 | 15,000 |  | 238,400 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 220,300 | 15,000 | 15,000 |  | 250,300 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 146,700 | 15,000 | 15,000 |  | 176,700 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 156,200 | 15,000 | 15,000 |  | 186,200 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 168,100 | 15,000 | 15,000 |  | 198,100 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 156,400 | 15,000 | 15,000 |  | 186,400 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 165,900 | 15,000 | 15,000 |  | 195,900 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 177,800 | 15,000 | 15,000 |  | 207,800 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 167,300 | 15,000 | 15,000 |  | 197,300 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 176,800 | 15,000 | 15,000 |  | 206,800 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 188,700 | 15,000 | 15,000 |  | 218,700 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 182,600 | 15,000 | 15,000 |  | 212,600 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 192,100 | 15,000 | 15,000 |  | 222,100 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 204,000 | 15,000 | 15,000 |  | 234,000 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 196,800 | 15,000 | 15,000 |  | 226,800 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 206,300 | 15,000 | 15,000 |  | 236,300 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 218,200 | 15,000 | 15,000 |  | 248,200 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 2,790 | 250 | 400 |  | 3,440 | USD |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 3,060 | 250 | 400 |  | 3,710 | USD |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 3,430 | 250 | 400 |  | 4,080 | USD |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 3,720 | 250 | 400 |  | 4,370 | USD |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 4,270 | 250 | 400 |  | 4,920 | USD |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 3,070 | 250 | 400 |  | 3,720 | USD |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 3,220 | 250 | 400 |  | 3,870 | USD |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 3,660 | 250 | 400 |  | 4,310 | USD |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 4,020 | 250 | 400 |  | 4,670 | USD |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 4,550 | 250 | 400 |  | 5,200 | USD |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 136,800 | 136,800 | 15,000 | 15,000 |  | 166,800 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 145,300 | 145,300 | 15,000 | 15,000 |  | 175,300 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 146,300 | 146,300 | 15,000 | 15,000 |  | 176,300 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 146,700 | 146,700 | 15,000 | 15,000 |  | 176,700 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 154,800 | 154,800 | 15,000 | 15,000 |  | 184,800 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 156,200 | 156,200 | 15,000 | 15,000 |  | 186,200 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 156,400 | 156,400 | 15,000 | 15,000 |  | 186,400 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 158,200 | 158,200 | 15,000 | 15,000 |  | 188,200 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 165,000 | 165,000 | 15,000 | 15,000 |  | 195,000 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 165,900 | 165,900 | 15,000 | 15,000 |  | 195,900 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 166,700 | 166,700 | 15,000 | 15,000 |  | 196,700 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 167,300 | 167,300 | 15,000 | 15,000 |  | 197,300 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 167,700 | 167,700 | 15,000 | 15,000 |  | 197,700 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 168,100 | 168,100 | 15,000 | 15,000 |  | 198,100 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 174,500 | 174,500 | 15,000 | 15,000 |  | 204,500 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 176,800 | 176,800 | 15,000 | 15,000 |  | 206,800 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 177,800 | 177,800 | 15,000 | 15,000 |  | 207,800 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 179,600 | 179,600 | 15,000 | 15,000 |  | 209,600 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 182,600 | 182,600 | 15,000 | 15,000 |  | 212,600 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 186,400 | 186,400 | 15,000 | 15,000 |  | 216,400 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC | 188,700 | 188,700 | 15,000 | 15,000 |  | 218,700 | INR |
-
-*Note: Structured answers come from your SQLite DB built from official PDFs.*
-
-
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --emb gemini --q "mens hostel director number"
-
-_No contacts available._
-
-
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --emb gemini --q "mens hostel director information"
-
-_No contacts available._
-
-
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --emb gemini --q "mens hostel director information"
-
-**Men’s Hostel — Key Contacts**
-- Director: Dr. Mohanasundaram R — 0416-220-2520 | director.mh@vit.ac.in
-
-
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --emb gemini --q "mens hostel manager information" 
-
-**Men’s Hostel — Key Contacts**
-- Manager: Mr. K. Ravichandran — 0416-220-2523 | manager.mh@vit.ac.in
-- Assistant Manager – Food: Mr. D. Varadharajan — 0416-220-2528 | asstmanager.food@vit.ac.in
-- Assistant Manager: Mr. Bhoobalan K — 0416-220-2526 | asstmanager1.mh@vit.ac.in
-- Assistant Manager: Mr. Chidambaram N — 0416-220-2525 | asstmanager2.mh@vit.ac.in
-
-
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --emb gemini --q "what is the fee structure for the NRI for UG"
+(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --emb gemini --q "what is the fee structure for UG NRI?
 
 **Answer:** What is the fee structure for NRI students? Please follow the link for the NRI fee structure: https://vit.ac.in/admissions/international/fee How do I apply for B.Tech admission under the NRI category? The application process is usually online. You'll need to fill out the application form, upload required documents, and pay the application fee A minimum aggregate of 55% in PCM or PCB Please refer the link for more details: https://vit.ac.in/admissions/international/btecheligibilityandprocedure What is the fee structure for Foreign students? Please follow the link for the Foreign/ NRI fee structure: https://vit.ac.in/admissions/international/fee Admission Fee (non-refundable) 2. Hostel Fee 3. Caution deposit (refundable) Policy herein below speaks out the refund norms applicable for the academic year 2025 - 26 as and when a student is withdrawing / vacating the hostel room allotted. 1.
 
 *Sources:* UG NRI_FAQS.pdf, UG FOREIGN FAQ.pdf, Hostel-Refund-Policy-25-26.pdf, M.SC PROCESS.pdf, Academic Fee.pdf
 
 
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --emb gemini --q "what is the fee structure for computer science in UG"
+(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --emb gemini --q "list all the programs offered for PG"
 
-**Answer:** A minimum aggregate of 55% in PCM or PCB Please refer the link for more details: https://vit.ac.in/admissions/international/btecheligibilityandprocedure What is the fee structure for Foreign students? Please follow the link for the Foreign/ NRI fee structure: https://vit.ac.in/admissions/international/fee Admission Fee (non-refundable) 2. Hostel Fee 3. Caution deposit (refundable) Policy herein below speaks out the refund norms applicable for the academic year 2025 - 26 as and when a student is withdrawing / vacating the hostel room allotted. 1. Admission Fee Admission fee is collected from students who are willing to avail the hostel facility inside the campus. Admission fee is a one-time fee payable at the time of joining the hostel Computer Science and Engineering (Bioinformatics) - B.Tech. Computer Science and Engineering (Cyber Security) - B.Tech.
+**Answer (from your PDFs):** (or its equivalent) - The candidates short-listed based on their merit will be called for the admission - Candidates will be allot the seat in the order of merit based on the U.G. marks. - The fact that a candidate has qualified is does not guarantee for admission. This depends upon the cut-off fixed on the merit list and the availability of seats - The short listed candidate list will be published on our website Will I be offered the option of choosing campus and program while filling application? 'No'. Only at the time of counseling you will be offered the option of choosing campus and programme. This would depend on the availability of the programme and campus as per your rank in the order of merit. What is the closing date for issue of applications?
 
-*Sources:* UG FOREIGN FAQ.pdf, Hostel-Refund-Policy-25-26.pdf, Academic Fee.pdf, M.SC PROCESS.pdf, FEE STRUCTURE INTERNATIONAL ADMISSIONS.pdf
-
-
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --emb gemini --q "list all block names of the boys hostel"          
-   
-**Men’s Hostel Blocks**
-- MH A — Albert Einstein
-- MH B — Swami Vivekananda
-- MH B ANNEX — Swami Vivekananda – B Annex
-- MH C — Rabindranath Tagore
-- MH D — Nelson Mandela
-- MH D ANNEX — Nelson Mandela – D Annex
-- MH E — Sir C.V.Raman
-- MH F — R Amanujam
-- MH G — Socrates
-- MH H — John F Kennedy
-- MH J — John F Kennedy
-- MH J ANNEX — John F Kennedy – J Annex
-- MH K — Dr. Sarvepalli Radhakrishnan
-- MH L — Netaji Subhas Chandra Bose
-- MH M — Quaid-e-Millat Muhammed Ismail
-- MH M ANNEX — Quaid-e-Millat Muhammed Ismail – M Annex
-- MH N — Charles Darwin
-- MH N ANNEX — Charles Darwin – N Annex
-- MH P — Sardar Patel
-- MH Q — Vajpayee Block
-- MH R — Muthamizh Arignar Kalaignar M.Karunanidhi
-- MH S — Men’s Hostel S Block
-- MH T — Mens Hostel T Block
+*Sources:* M.SC PROCESS.pdf, VITEEE FAQS.pdf, POSTGRADUTE ADMISSIONS PROCESS.pdf, UG Programmes Offered.pdf, UG FOREIGN FAQ.pdf
+*Note: Answers are grounded in your ingested PDFs.*
 
 
 (.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --emb gemini --q "list all landline numbers for boys hostel"
@@ -509,27 +44,39 @@ _No contacts available._
 | MH T | Mens Hostel T Block | 0416 220 2551 | mhtblock@vit.ac.in |
 
 
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --emb gemini --q "list all the programs offered for UG"             
+(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --emb gemini --q "list all block names of the boys hostel"          
 
-**UG Programmes Offered**
-- Industrial Design - Offered Location: Vellore B.Arch - Offered Location: Vellore, VIT-Bhopal B.Sc. (Hons.) Agriculture
+**Men’s Hostel Blocks**
+- MH A — Albert Einstein
+- MH B — Swami Vivekananda
+- MH B ANNEX — Swami Vivekananda – B Annex
+- MH C — Rabindranath Tagore
+- MH D — Nelson Mandela
+- MH D ANNEX — Nelson Mandela – D Annex
+- MH E — Sir C.V.Raman
+- MH F — R Amanujam
+- MH G — Socrates
+- MH H — John F Kennedy
+- MH J — John F Kennedy
+- MH J ANNEX — John F Kennedy – J Annex
+- MH K — Dr. Sarvepalli Radhakrishnan
+- MH L — Netaji Subhas Chandra Bose
+- MH M — Quaid-e-Millat Muhammed Ismail
+- MH M ANNEX — Quaid-e-Millat Muhammed Ismail – M Annex
+- MH N — Charles Darwin
+- MH N ANNEX — Charles Darwin – N Annex
+- MH P — Sardar Patel
+- MH Q — Vajpayee Block
+- MH R — Muthamizh Arignar Kalaignar M.Karunanidhi
+- MH S — Men’s Hostel S Block
+- MH T — Mens Hostel T Block
 
-*Sources:* M.SC PROCESS.pdf, VITEEE FAQS.pdf, UG Programmes Offered.pdf, MCA 2 Years PG Program.pdf, POSTGRADUTE ADMISSIONS PROCESS.pdf
+
+(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --emb gemini --q "what is the fee structure for computer science in UG"
+
+**Answer:** A minimum aggregate of 55% in PCM or PCB Please refer the link for more details: https://vit.ac.in/admissions/international/btecheligibilityandprocedure What is the fee structure for Foreign students? Please follow the link for the Foreign/ NRI fee structure: https://vit.ac.in/admissions/international/fee Admission Fee (non-refundable) 2. Hostel Fee 3. Caution deposit (refundable) Policy herein below speaks out the refund norms applicable for the academic year 2025 - 26 as and when a student is withdrawing / vacating the hostel room allotted. 1. Admission Fee Admission fee is collected from students who are willing to avail the hostel facility inside the campus. Admission fee is a one-time fee payable at the time of joining the hostel Computer Science and Engineering (Bioinformatics) - B.Tech. Computer Science and Engineering (Cyber Security) - B.Tech.
+
+*Sources:* UG FOREIGN FAQ.pdf, Hostel-Refund-Policy-25-26.pdf, Academic Fee.pdf, M.SC PROCESS.pdf, FEE STRUCTURE INTERNATIONAL ADMISSIONS.pdf
 
 
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --emb gemini --q "list all the programs offered for PG"   
-
-**Answer (from your PDFs):** (or its equivalent) - The candidates short-listed based on their merit will be called for the admission - Candidates will be allot the seat in the order of merit based on the U.G. marks. - The fact that a candidate has qualified is does not guarantee for admission. This depends upon the cut-off fixed on the merit list and the availability of seats - The short listed candidate list will be published on our website Will I be offered the option of choosing campus and program while filling application? 'No'. Only at the time of counseling you will be offered the option of choosing campus and programme. This would depend on the availability of the programme and campus as per your rank in the order of merit. What is the closing date for issue of applications?
-
-*Sources:* M.SC PROCESS.pdf, VITEEE FAQS.pdf, POSTGRADUTE ADMISSIONS PROCESS.pdf, UG Programmes Offered.pdf, UG FOREIGN FAQ.pdf
-*Note: Answers are grounded in your ingested PDFs.*
-
-
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --emb gemini --q "what is the fee structure for UG NRI?     
-
-**Answer:** What is the fee structure for NRI students? Please follow the link for the NRI fee structure: https://vit.ac.in/admissions/international/fee How do I apply for B.Tech admission under the NRI category? The application process is usually online. You'll need to fill out the application form, upload required documents, and pay the application fee A minimum aggregate of 55% in PCM or PCB Please refer the link for more details: https://vit.ac.in/admissions/international/btecheligibilityandprocedure What is the fee structure for Foreign students? Please follow the link for the Foreign/ NRI fee structure: https://vit.ac.in/admissions/international/fee Admission Fee (non-refundable) 2. Hostel Fee 3. Caution deposit (refundable) Policy herein below speaks out the refund norms applicable for the academic year 2025 - 26 as and when a student is withdrawing / vacating the hostel room allotted. 1.
-
-*Sources:* UG NRI_FAQS.pdf, UG FOREIGN FAQ.pdf, Hostel-Refund-Policy-25-26.pdf, M.SC PROCESS.pdf, Academic Fee.pdf
-
-
-(.venv) C:\Users\T8543\Downloads\project-2>
+(.venv) C:\Users\T8543\Downloads\project-2>  
