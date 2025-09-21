@@ -1,274 +1,333 @@
+# app/rag_answer.py — SQL for hostel, FAISS for academics (fast, reliable)
+import os, re, sys, argparse, sqlite3
+from pathlib import Path
+from typing import List, Dict, Any, Tuple, Optional
 
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe .\app\rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --q "UG programs list"             
+# ---------------- FAISS + Gemini embeddings ----------------
+from langchain_community.vectorstores import FAISS
+from langchain_core.embeddings import Embeddings as LCEmbeddings
 
-**Programs Offered**
-| Level | Program | School | Duration |
-|---|---|---|---|
+class GeminiLCEmbeddings(LCEmbeddings):
+    def __init__(self, model: str = "models/text-embedding-004", api_key_env: str = "GEMINI_API_KEY"):
+        import google.generativeai as genai
+        api_key = os.getenv(api_key_env)
+        if not api_key:
+            print("[ERROR] GEMINI_API_KEY not set.")
+            sys.exit(1)
+        genai.configure(api_key=api_key)
+        self.genai = genai
+        self.model = model
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+        return [self.genai.embed_content(model=self.model, content=t)["embedding"] for t in texts]
+    def embed_query(self, text: str) -> List[float]:
+        return self.genai.embed_content(model=self.model, content=text)["embedding"]
 
+def load_store(index_dir: Path, collection: str, emb: LCEmbeddings) -> FAISS:
+    return FAISS.load_local(
+        str(index_dir), embeddings=emb, index_name=collection,
+        allow_dangerous_deserialization=True
+    )
 
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe .\app\rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --q "Boys hostel first year indian fee table 2025-26"
+def retrieve(store: FAISS, query: str, k: int = 40):
+    return store.similarity_search(query, k=k)
 
-**Hostel Fee Details (Vellore)**
-| Block | Gender | Level | Type | AY | Category | Occ | AC | Mess | Room+Mess | Admission | Caution | Other | Total | Curr |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+def _keyword_score(text: str, q: str) -> int:
+    qwords = [w for w in re.findall(r"[a-z0-9]+", q.lower()) if len(w) > 2]
+    t = text.lower()
+    return sum(t.count(w) for w in qwords)
 
+def _postfilter_and_rerank(docs, query: str, want_hostel: bool = False, topn: int = 12):
+    def tok(md):
+        name = (md.get("source_file") or "").lower()
+        return {
+            "lh": "lh" in name or "ladies" in name or "girls" in name or "women" in name,
+            "mh": "mh" in name or "mens" in name or "boys" in name,
+            "hostel": "hostel" in name,
+        }
+    scored = []
+    for d in docs:
+        md = d.metadata or {}
+        t = tok(md)
+        s = 0
+        if want_hostel and t["hostel"]: s += 2
+        s += _keyword_score(d.page_content or "", query)
+        scored.append((s, d))
+    scored.sort(key=lambda x: x[0], reverse=True)
+    return [d for s, d in scored][:topn]
 
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe .\app\rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --q "what is the eligibility criteria for UG?"       
+# ---------------- SQLite helpers ----------------
+DB_PATH = Path("Data/sql/vit_vellore.db")
+def _conn() -> Optional[sqlite3.Connection]:
+    try:
+        con = sqlite3.connect(str(DB_PATH))
+        con.row_factory = sqlite3.Row
+        return con
+    except Exception:
+        return None
 
-**Eligibility**
-| Level | Program | Criteria |
-|---|---|---|
+# ---------------- simple renderers ----------------
+def md_table(title: str, cols: List[str], rows: List[List[str]]) -> str:
+    seen=set(); uniq=[]
+    for r in rows:
+        tup=tuple("" if c is None else str(c) for c in r)
+        if tup in seen: continue
+        seen.add(tup); uniq.append(r)
+    out = []
+    if title: out.append(f"**{title}**")
+    out.append("| " + " | ".join(cols) + " |")
+    out.append("|" + "|".join(["---"]*len(cols)) + "|")
+    for r in uniq:
+        out.append("| " + " | ".join("" if c is None else str(c) for c in r) + " |")
+    return "\n".join(out)
 
+def bullets(lines: List[str], title: Optional[str]=None) -> str:
+    if not lines: return ""
+    seen=set(); out_lines=[]
+    for ln in lines:
+        if ln in seen: continue
+        seen.add(ln); out_lines.append(ln)
+    out = [f"**{title}**" if title else ""]
+    out += [f"- {ln}" for ln in out_lines]
+    return "\n".join([x for x in out if x])
 
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe .\app\rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --q "ug faqs"                                 
+# ---------------- hostel helpers (SQL) ----------------
+def _looks_like_phone(s: str) -> bool:
+    return bool(re.search(r"(?:\+?\d{1,3}[-\s]?)?\d{7,}", s or ""))
 
-**Answer (from your PDFs):** FOREIGN FAQS: 1. Who is considered a "Foreign" nationals for admissions? Any foreign national holding a valid foreign passport is eligible to apply under this category. For Nepal and Bhutan nationals , passport is not mandatory What documents are required to prove foreign nationality? You'll need to provide a copy of your valid passport or National ID as proof of your foreign nationality UG NRI: What are the basic academic requirements? You'll need to have completed 12 years of schooling (equivalent to the 10+2 system in India) with Physics, Chemistry, and Mathematics / Biology (Biotechnology) as core subjects. A minimum aggregate of 60% in PCM or PCB, as per the case may be programmes only) - Community Certificate (only for SC/ST categories) - Conduct Certificate (Original) - Admission letter and a photocopy of the programme fee receipt - Four copies of recent passport size colour photograph - An undertaking for good conduct and behavior in a prescribed form (to be issued by the University/Institute at the time of admission) - University Registration Number/ID will be generated to the candidates those who have 11. What documents are required for admission?
+def _looks_like_email(s: str) -> bool:
+    return "@" in (s or "") and "." in (s or "")
 
-*Sources:* UG FOREIGN FAQ.pdf, UG NRI_FAQS.pdf, POSTGRADUTE ADMISSIONS PROCESS.pdf, PG MTECH FAQS.pdf, M.SC PROCESS.pdf
+def render_landlines(con, gender: Optional[str]) -> str:
+    if gender == "LH":
+        rows = con.execute("SELECT block_code AS code, block_code AS name, landline, '' AS email FROM lh_blocks ORDER BY block_code").fetchall()
+        return md_table("Ladies’ Hostel — Block-wise Landlines", ["Block Code","Block Name","Landline","Email"], [[r["code"],r["name"],r["landline"],""] for r in rows])
+    else:
+        rows = con.execute("SELECT block_code, COALESCE(block_name, block_code) AS block_name, landline, COALESCE(email,'') AS email FROM mh_blocks ORDER BY block_code").fetchall()
+        return md_table("Men’s Hostel — Block-wise Landlines", ["Block Code","Block Name","Landline","Email"], [[r["block_code"],r["block_name"],r["landline"],r["email"]] for r in rows])
 
+def render_block_list(con, gender: Optional[str]) -> str:
+    if gender == "LH":
+        rows = con.execute("SELECT block_code FROM lh_blocks ORDER BY block_code").fetchall()
+        return bullets([f'{r["block_code"]} — {r["block_code"]}' for r in rows], "Ladies’ Hostel Blocks")
+    elif gender == "MH":
+        rows = con.execute("SELECT block_code, COALESCE(block_name, block_code) AS nm FROM mh_blocks ORDER BY block_code").fetchall()
+        return bullets([f'{r["block_code"]} — {r["nm"]}' for r in rows], "Men’s Hostel Blocks")
+    else:
+        a = render_block_list(con, "MH")
+        b = render_block_list(con, "LH")
+        return a + "\n\n" + b
 
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe .\app\rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --q "mca admission process"
+def _reverse_lookup_phone(con, needle: str):
+    n = re.sub(r"\D", "", needle or "")
+    hits=[]
+    # hostel_contacts
+    cols = [c[1].lower() for c in con.execute("PRAGMA table_info(hostel_contacts)")]
+    if cols:
+        for r in con.execute("SELECT * FROM hostel_contacts"):
+            ph = re.sub(r"\D", "", (r[cols.index("phone")] if "phone" in cols else "") or "")
+            if n and ph.find(n) != -1:
+                hits.append(["Contact", r[cols.index('role')] if 'role' in cols else "",
+                             r[cols.index('name')] if 'name' in cols else "",
+                             r[cols.index('phone')] if 'phone' in cols else "",
+                             r[cols.index('email')] if 'email' in cols else ""])
+    # mh/lh landlines
+    for tname in ("mh_blocks","lh_blocks"):
+        cols = [c[1].lower() for c in con.execute(f"PRAGMA table_info({tname})")]
+        if not cols: continue
+        for r in con.execute(f"SELECT * FROM {tname}"):
+            ph = re.sub(r"\D", "", (r[cols.index("landline")] if "landline" in cols else "") or "")
+            if n and ph.find(n) != -1:
+                code = r[cols.index('block_code')] if 'block_code' in cols else ""
+                name = r[cols.index('block_name')] if 'block_name' in cols else code
+                mail = r[cols.index('email')] if 'email' in cols else ""
+                hits.append(["Block", code, name, ph, mail])
+    return hits
 
-**Answer (from your PDFs):** What documents are required for MCA admission? At the time of admission, you will need: - VITMEE scorecard. - Academic certificates (10th, 12th, and undergraduate mark sheets). - Mathematics proof (if required). - Transfer Certificate (TC). - Migration Certificate. - Valid photo ID proof. Is VITMEE mandatory for MCA admission?
+def _reverse_lookup_email(con, needle: str):
+    mail = (needle or "").strip().lower()
+    hits=[]
+    for tname in ("hostel_contacts","mh_blocks"):
+        cols = [c[1].lower() for c in con.execute(f"PRAGMA table_info({tname})")]
+        if "email" not in cols: continue
+        for r in con.execute(f"SELECT * FROM {tname}"):
+            e = (r[cols.index("email")] or "").lower()
+            if e and e==mail:
+                if tname=="hostel_contacts":
+                    hits.append(["Contact", r[cols.index('role')], r[cols.index('name')], r[cols.index('phone')], e])
+                else:
+                    code = r[cols.index('block_code')]
+                    name = r[cols.index('block_name')] if 'block_name' in cols else code
+                    land = r[cols.index('landline')] if 'landline' in cols else ""
+                    hits.append(["Block", code, name, land, e])
+    return hits
 
-*Sources:* VITMEE MCA FAQS.pdf, UG NRI PROCESS.pdf, MCA 2 Years PG Program.pdf, POSTGRADUTE ADMISSIONS PROCESS.pdf, VITREE PROCESS.pdf
+def render_reverse_phone(con, phone: str) -> str:
+    hits = _reverse_lookup_phone(con, phone)
+    if not hits: return "_No matches for that phone number._"
+    return md_table("Reverse lookup — phone", ["Type","Role/Code","Name","Phone","Email"], hits)
 
+def render_reverse_mail(con, mail: str) -> str:
+    hits = _reverse_lookup_email(con, mail)
+    if not hits: return "_No matches for that email._"
+    return md_table("Reverse lookup — email", ["Type","Role/Code","Name","Phone","Email"], hits)
 
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe .\app\rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --q "fee structure for mens hostel"
+def render_hostel_overview_via_sql_router(query: str) -> Optional[str]:
+    try:
+        import sql_router as SR
+        sr_intent = SR.detect_structured_intent(query)
+        f = SR.parse_filters(query)
+        if sr_intent == "contacts":
+            data = SR.sql_block_contacts(f)
+        elif sr_intent == "blocks":
+            data = SR.sql_list_blocks(f)
+        else:
+            data = SR.sql_hostel_overview(f)
+        cols = data["table"]["columns"][:]
+        rows = [r[:] for r in data["table"]["rows"]]
+        if not rows:
+            return None
+        if "Source" in cols:
+            si = cols.index("Source")
+            cols = cols[:si] + cols[si+1:]
+            rows = [[c for j,c in enumerate(r) if j!=si] for r in rows]
+        return md_table(data["table"].get("title","Results"), cols, rows[:80])
+    except Exception:
+        return None
 
-**Hostel Fee Details (Vellore)**
-| Block | Gender | Level | Type | AY | Category | Occ | AC | Mess | Room+Mess | Admission | Caution | Other | Total | Curr |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 136,800 | 15,000 | 15,000 |  | 166,800 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 146,300 | 15,000 | 15,000 |  | 176,300 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 158,200 | 15,000 | 15,000 |  | 188,200 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 145,300 | 15,000 | 15,000 |  | 175,300 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 154,800 | 15,000 | 15,000 |  | 184,800 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 166,700 | 15,000 | 15,000 |  | 196,700 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 158,200 | 15,000 | 15,000 |  | 188,200 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 167,700 | 15,000 | 15,000 |  | 197,700 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 179,600 | 15,000 | 15,000 |  | 209,600 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 165,000 | 15,000 | 15,000 |  | 195,000 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 174,500 | 15,000 | 15,000 |  | 204,500 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 186,400 | 15,000 | 15,000 |  | 216,400 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 198,900 | 15,000 | 15,000 |  | 228,900 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 208,400 | 15,000 | 15,000 |  | 238,400 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 220,300 | 15,000 | 15,000 |  | 250,300 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 146,700 | 15,000 | 15,000 |  | 176,700 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 156,200 | 15,000 | 15,000 |  | 186,200 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 168,100 | 15,000 | 15,000 |  | 198,100 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 156,400 | 15,000 | 15,000 |  | 186,400 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 165,900 | 15,000 | 15,000 |  | 195,900 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 177,800 | 15,000 | 15,000 |  | 207,800 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 167,300 | 15,000 | 15,000 |  | 197,300 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 176,800 | 15,000 | 15,000 |  | 206,800 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 188,700 | 15,000 | 15,000 |  | 218,700 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 182,600 | 15,000 | 15,000 |  | 212,600 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 192,100 | 15,000 | 15,000 |  | 222,100 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 204,000 | 15,000 | 15,000 |  | 234,000 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 196,800 | 15,000 | 15,000 |  | 226,800 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 206,300 | 15,000 | 15,000 |  | 236,300 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 218,200 | 15,000 | 15,000 |  | 248,200 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 2,790 | 250 | 400 |  | 3,440 | USD |    
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 3,060 | 250 | 400 |  | 3,710 | USD |    
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 3,430 | 250 | 400 |  | 4,080 | USD |    
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 3,720 | 250 | 400 |  | 4,370 | USD |    
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 4,270 | 250 | 400 |  | 4,920 | USD |    
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 3,070 | 250 | 400 |  | 3,720 | USD |    
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 3,220 | 250 | 400 |  | 3,870 | USD |    
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 3,660 | 250 | 400 |  | 4,310 | USD |    
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 4,020 | 250 | 400 |  | 4,670 | USD |    
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 4,550 | 250 | 400 |  | 5,200 | USD |    
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 136,800 | 15,000 | 15,000 |  | 166,800 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 146,300 | 15,000 | 15,000 |  | 176,300 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 158,200 | 15,000 | 15,000 |  | 188,200 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 145,300 | 15,000 | 15,000 |  | 175,300 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 154,800 | 15,000 | 15,000 |  | 184,800 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 166,700 | 15,000 | 15,000 |  | 196,700 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 158,200 | 15,000 | 15,000 |  | 188,200 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 167,700 | 15,000 | 15,000 |  | 197,700 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 179,600 | 15,000 | 15,000 |  | 209,600 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 165,000 | 15,000 | 15,000 |  | 195,000 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 174,500 | 15,000 | 15,000 |  | 204,500 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 186,400 | 15,000 | 15,000 |  | 216,400 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 198,900 | 15,000 | 15,000 |  | 228,900 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 208,400 | 15,000 | 15,000 |  | 238,400 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 220,300 | 15,000 | 15,000 |  | 250,300 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 146,700 | 15,000 | 15,000 |  | 176,700 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 156,200 | 15,000 | 15,000 |  | 186,200 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 168,100 | 15,000 | 15,000 |  | 198,100 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 156,400 | 15,000 | 15,000 |  | 186,400 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 165,900 | 15,000 | 15,000 |  | 195,900 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 177,800 | 15,000 | 15,000 |  | 207,800 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 167,300 | 15,000 | 15,000 |  | 197,300 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 176,800 | 15,000 | 15,000 |  | 206,800 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 188,700 | 15,000 | 15,000 |  | 218,700 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 182,600 | 15,000 | 15,000 |  | 212,600 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 192,100 | 15,000 | 15,000 |  | 222,100 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 204,000 | 15,000 | 15,000 |  | 234,000 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 196,800 | 15,000 | 15,000 |  | 226,800 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 206,300 | 15,000 | 15,000 |  | 236,300 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 218,200 | 15,000 | 15,000 |  | 248,200 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 2,790 | 250 | 400 |  | 3,440 | USD |    
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 3,060 | 250 | 400 |  | 3,710 | USD |    
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 3,430 | 250 | 400 |  | 4,080 | USD |    
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 3,720 | 250 | 400 |  | 4,370 | USD |    
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 4,270 | 250 | 400 |  | 4,920 | USD |    
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 3,070 | 250 | 400 |  | 3,720 | USD |    
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 3,220 | 250 | 400 |  | 3,870 | USD |    
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 3,660 | 250 | 400 |  | 4,310 | USD |    
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 4,020 | 250 | 400 |  | 4,670 | USD |    
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 4,550 | 250 | 400 |  | 5,200 | USD |    
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 136,800 | 15,000 | 15,000 |  | 166,800 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 146,300 | 15,000 | 15,000 |  | 176,300 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 158,200 | 15,000 | 15,000 |  | 188,200 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 145,300 | 15,000 | 15,000 |  | 175,300 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 154,800 | 15,000 | 15,000 |  | 184,800 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 166,700 | 15,000 | 15,000 |  | 196,700 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 158,200 | 15,000 | 15,000 |  | 188,200 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 167,700 | 15,000 | 15,000 |  | 197,700 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 179,600 | 15,000 | 15,000 |  | 209,600 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 165,000 | 15,000 | 15,000 |  | 195,000 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 174,500 | 15,000 | 15,000 |  | 204,500 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 186,400 | 15,000 | 15,000 |  | 216,400 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 198,900 | 15,000 | 15,000 |  | 228,900 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 208,400 | 15,000 | 15,000 |  | 238,400 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 220,300 | 15,000 | 15,000 |  | 250,300 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 146,700 | 15,000 | 15,000 |  | 176,700 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 156,200 | 15,000 | 15,000 |  | 186,200 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 168,100 | 15,000 | 15,000 |  | 198,100 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 156,400 | 15,000 | 15,000 |  | 186,400 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 165,900 | 15,000 | 15,000 |  | 195,900 | INR |
+# ---------------- intent detection ----------------
+def detect_hostel_intent(q: str) -> Dict[str, Any]:
+    qq = q.lower()
+    hostelish = any(w in qq for w in ["hostel","block","mh","lh","boys","girls","mens","ladies","warden","supervisor","director","manager","landline","mess","fee"])
+    g = None
+    if any(w in qq for w in ["men", "boys", "mh", "mens"]): g = "MH"
+    if any(w in qq for w in ["ladies", "girls", "women", "lh"]): g = "LH" if g is None else g
+    wants_landlines = hostelish and any(w in qq for w in ["landline", "land line", "std", "phone number", "contact number", "phone", "call"])
+    wants_blocks    = hostelish and "block" in qq and any(w in qq for w in ["name","names","code","codes","list"])
+    reverse_phone = None
+    m = re.search(r"(\+?\d[\d\s\-]{7,})", q)
+    if m and _looks_like_phone(m.group(1)): reverse_phone = m.group(1)
+    reverse_mail = None
+    m = re.search(r"([A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,})", q)
+    if m and _looks_like_email(m.group(1)): reverse_mail = m.group(1)
+    return {"hostelish": hostelish, "gender": g, "landlines": wants_landlines, "blocks": wants_blocks, "reverse_phone": reverse_phone, "reverse_mail": reverse_mail}
 
+# ---------------- FAISS academic extractors ----------------
+def _extract_lines(text: str) -> List[str]:
+    text = re.sub(r"[ \t]+", " ", text or "")
+    raw = re.split(r"[\r\n]+", text)
+    lines = []
+    for ln in raw:
+        ln = ln.strip(" -•\u2022\t")
+        if not ln: continue
+        lines.append(ln)
+    return lines
 
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe .\app\rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --q "mens director details"        
+def summarize_programs(text: str) -> List[str]:
+    lines = _extract_lines(text)
+    picks=[]
+    pat = re.compile(r"\b(B\.?Tech|B\.?Sc|B\.?Com|B\.?A|BBA|BCA|M\.?Tech|MCA|M\.?Sc|MBA|Integrated|Dual|Honours?)\b", re.I)
+    for ln in lines:
+        if pat.search(ln) and len(ln) <= 160:
+            picks.append(ln)
+    seen=set(); out=[]
+    for ln in picks:
+        k=re.sub(r"\W+","",ln.lower())
+        if k in seen: continue
+        seen.add(k); out.append(ln)
+        if len(out)>=30: break
+    return out
 
-**Answer (from your PDFs):** MENS HOSTEL: Director Dr. Mohanasundaram R Email-id : director.mh@vit.ac.in Phone No : 0416 - 220 2520 Chief Warden Dr. Sathiavelu A Email-id : cw.mh@vit.ac.in Phone No : 0416 - 220 2521 Associate Chief Wardens Dr. Dinesh Kumar S Email-id : acw.mh@vit.ac.in Phone No : 0416 - 220 2522 Dr. Hemadri Reddy Reganti Email-id : acw1.mh@vit.ac.in Phone No : 0416 - 220 2522 Warden - Discipline Dr Ladies hostel: Director Ladies Hostels Dr. Nirmala G S Email-id : director.lh@vit.ac.in Phone No : 0416 - 220 2712 Chief Warden, Ladies Hostels Dr. Mythili S Email-id : cw.lh@vit.ac.in Phone No :0416 - 220 2713 Associate Chief Warden Dr. Jagatheswari S Email-id : acw.lh@vit.ac.in Phone No : 0416 - 220 2896 Manager Ms.
+def summarize_documents(text: str) -> List[str]:
+    lines = _extract_lines(text)
+    picks=[]
+    keys = ["class 12","xii","hsc","10","sslc","marksheet","mark statement","transfer certificate","tc","migration","provisional","aadhaar","aadhar","pan","passport","visa","id proof","photo","nativity","community","caste","bonafide","medical","blood","undertaking","anti ragging"]
+    for ln in lines:
+        ln_low = ln.lower()
+        if any(k in ln_low for k in keys) and len(ln)<=160:
+            picks.append(re.sub(r"^\d+\s*[\).\-\u2022]*\s*","",ln).strip())
+    seen=set(); out=[]
+    for ln in picks:
+        k=re.sub(r"\W+","",ln.lower())
+        if k in seen: continue
+        seen.add(k); out.append(ln)
+        if len(out)>=30: break
+    return out
 
-*Sources:* Hostel_info.pdf, UG NRI PROCESS.pdf, VITREE PROCESS.pdf, M.SC PROCESS.pdf, Fresher's-Hostel-Admission-Information-Vellore-Campus-2025-26.pdf
+def summarize_generic(text: str) -> str:
+    blob = re.sub(r"\s+", " ", text or "").strip()
+    if not blob: return ""
+    parts = re.split(r"(?<=[.!?])\s+", blob)
+    return " ".join(parts[:8])
 
+def _faiss_bundle(index_dir: Path, collection: str, query: str, want_hostel_bias=False) -> Tuple[str,List[str]]:
+    emb = GeminiLCEmbeddings()
+    store = load_store(index_dir, collection, emb)
+    docs = retrieve(store, query, k=40)
+    docs = _postfilter_and_rerank(docs, query, want_hostel=want_hostel_bias, topn=12)
+    ctx_lines, sources = [], []
+    for d in docs:
+        md = d.metadata or {}
+        src = md.get("source_file") or md.get("source_title") or "unknown"
+        sources.append(src)
+        ctx_lines += [d.page_content or ""]
+    return "\n\n".join(ctx_lines), list(dict.fromkeys(sources))
 
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe .\app\rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --q "ladies hostel supervisor number?"
+# ---------------- Main orchestrator ----------------
+def answer_query(index_dir: Path, collection: str, query: str) -> str:
+    con = _conn()
+    H = detect_hostel_intent(query)
 
-**Hostel Contacts**
-| Block | Name | Role | Phone | Email |
-|---|---|---|---|---|
+    # HOSTEL: reverse lookups & simple views first
+    if H["reverse_phone"]:
+        return render_reverse_phone(con, H["reverse_phone"])
+    if H["reverse_mail"]:
+        return render_reverse_mail(con, H["reverse_mail"])
+    if H["landlines"]:
+        if H["gender"] in (None,"MH"):
+            out = render_landlines(con, "MH")
+            if H["gender"] is None:
+                out += "\n\n" + render_landlines(con, "LH")
+            return out
+        else:
+            return render_landlines(con, "LH")
+    if H["blocks"]:
+        return render_block_list(con, H["gender"])
 
+    # HOSTEL: fee/contacts/blocks -> SQL router (uses your DB)
+    if H["hostelish"]:
+        sql_ans = render_hostel_overview_via_sql_router(query)
+        if sql_ans:
+            return sql_ans
 
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe .\app\rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --q "list out all block names of boys hostels"
+    # ACADEMICS (UG/PG/MCA/MSc, eligibility, docs, academic fees, vitree, rules) via FAISS
+    text, sources = _faiss_bundle(index_dir, collection, query, want_hostel_bias=False)
+    if not text.strip():
+        return "_I couldn’t find enough context to answer that from your PDFs._"
+    squery = query.lower()
 
-**Hostel Blocks**
-| Block | Gender | Level | Type |
-|---|---|---|---|
-| Men Hostel First-Year | Male | First-Year |  |
-| Men Hostel Senior | Male | Senior |  |
+    if any(w in squery for w in ["program", "programme", "course", "list of programmes"]):
+        items = summarize_programs(text)
+        if items:
+            return bullets(items, "Programs Offered") + "\n\n*Sources:* " + ", ".join(sources[:5])
 
+    if any(w in squery for w in ["document", "certificate", "submit", "submission"]):
+        items = summarize_documents(text)
+        if items:
+            return bullets(items, "Documents to submit") + "\n\n*Tip:* Carry originals + 2–3 photocopies.\n*Sources:* " + ", ".join(sources[:5])
 
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe .\app\rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --q "ladies hostel fee structure?"            
+    # generic fallback
+    para = summarize_generic(text)
+    return f"**Answer (from your PDFs):** {para}\n\n*Sources:* {', '.join(sources[:5])}\n*Note: Extracted from your ingested PDFs.*"
 
-**Hostel Fee Details (Vellore)**
-| Block | Gender | Level | Type | AY | Category | Occ | AC | Mess | Room+Mess | Admission | Caution | Other | Total | Curr |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,36,800 | 15,000 | 15,000 |  | 1,66,800 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,46,300 | 15,000 | 15,000 |  | 1,76,300 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,58,200 | 15,000 | 15,000 |  | 1,88,200 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,45,300 | 15,000 | 15,000 |  | 1,75,300 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,54,800 | 15,000 | 15,000 |  | 1,84,800 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,66,700 | 15,000 | 15,000 |  | 1,96,700 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,65,000 | 15,000 | 15,000 |  | 1,95,000 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,74,500 | 15,000 | 15,000 |  | 2,04,500 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,86,400 | 15,000 | 15,000 |  | 2,16,400 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,98,900 | 15,000 | 15,000 |  | 2,28,900 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 2,08,400 | 15,000 | 15,000 |  | 2,38,400 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 2,20,300 | 15,000 | 15,000 |  | 2,50,300 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | NRI |  | AC |  |  | 250 | 400 |  | 3,710 | USD |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,36,800 | 15,000 | 15,000 |  | 1,66,800 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,46,300 | 15,000 | 15,000 |  | 1,76,300 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,58,200 | 15,000 | 15,000 |  | 1,88,200 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,45,300 | 15,000 | 15,000 |  | 1,75,300 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,54,800 | 15,000 | 15,000 |  | 1,84,800 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,66,700 | 15,000 | 15,000 |  | 1,96,700 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,65,000 | 15,000 | 15,000 |  | 1,95,000 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,74,500 | 15,000 | 15,000 |  | 2,04,500 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,86,400 | 15,000 | 15,000 |  | 2,16,400 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,98,900 | 15,000 | 15,000 |  | 2,28,900 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 2,08,400 | 15,000 | 15,000 |  | 2,38,400 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 2,20,300 | 15,000 | 15,000 |  | 2,50,300 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | NRI |  | AC |  |  | 250 | 400 |  | 3,710 | USD |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,36,800 | 15,000 | 15,000 |  | 1,66,800 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,46,300 | 15,000 | 15,000 |  | 1,76,300 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,58,200 | 15,000 | 15,000 |  | 1,88,200 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,45,300 | 15,000 | 15,000 |  | 1,75,300 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,54,800 | 15,000 | 15,000 |  | 1,84,800 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,66,700 | 15,000 | 15,000 |  | 1,96,700 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,65,000 | 15,000 | 15,000 |  | 1,95,000 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,74,500 | 15,000 | 15,000 |  | 2,04,500 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,86,400 | 15,000 | 15,000 |  | 2,16,400 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,98,900 | 15,000 | 15,000 |  | 2,28,900 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 2,08,400 | 15,000 | 15,000 |  | 2,38,400 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 2,20,300 | 15,000 | 15,000 |  | 2,50,300 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | NRI |  | AC |  |  | 250 | 400 |  | 3,710 | USD |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,36,800 | 15,000 | 15,000 |  | 1,66,800 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,46,300 | 15,000 | 15,000 |  | 1,76,300 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,58,200 | 15,000 | 15,000 |  | 1,88,200 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,45,300 | 15,000 | 15,000 |  | 1,75,300 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,54,800 | 15,000 | 15,000 |  | 1,84,800 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,66,700 | 15,000 | 15,000 |  | 1,96,700 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,65,000 | 15,000 | 15,000 |  | 1,95,000 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,74,500 | 15,000 | 15,000 |  | 2,04,500 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,86,400 | 15,000 | 15,000 |  | 2,16,400 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,98,900 | 15,000 | 15,000 |  | 2,28,900 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 2,08,400 | 15,000 | 15,000 |  | 2,38,400 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 2,20,300 | 15,000 | 15,000 |  | 2,50,300 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | NRI |  | AC |  |  | 250 | 400 |  | 3,710 | USD |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | 1,36,800 | 1,36,800 | 15,000 | 15,000 |  | 1,66,800 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | 1,45,300 | 1,45,300 | 15,000 | 15,000 |  | 1,75,300 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | 1,46,300 | 1,46,300 | 15,000 | 15,000 |  | 1,76,300 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | 1,54,800 | 1,54,800 | 15,000 | 15,000 |  | 1,84,800 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | 1,58,200 | 1,58,200 | 15,000 | 15,000 |  | 1,88,200 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | 1,65,000 | 1,65,000 | 15,000 | 15,000 |  | 1,95,000 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | 1,66,700 | 1,66,700 | 15,000 | 15,000 |  | 1,96,700 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | 1,74,500 | 1,74,500 | 15,000 | 15,000 |  | 2,04,500 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | 1,86,400 | 1,86,400 | 15,000 | 15,000 |  | 2,16,400 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | 1,98,900 | 1,98,900 | 15,000 | 15,000 |  | 2,28,900 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | 2,08,400 | 2,08,400 | 15,000 | 15,000 |  | 2,38,400 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | 2,20,300 | 2,20,300 | 15,000 | 15,000 |  | 2,50,300 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | NRI |  | AC | 3,060 |  | 250 | 400 |  | 3,710 | USD |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | Non Veg |  |  |  |  |  |  |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | Non Veg |  |  |  |  |  |  |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | Non Veg |  |  |  |  |  |  |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | Non Veg |  |  |  |  |  |  |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | Special Mess |  |  |  |  |  |  |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | Special Mess |  |  |  |  |  |  |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | Special Mess |  |  |  |  |  |  |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | Special Mess |  |  |  |  |  |  |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | Veg |  |  |  |  |  |  |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | Veg |  |  |  |  |  |  |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | Veg |  |  |  |  |  |  |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | Veg |  |  |  |  |  |  |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,12,400 | 15,000 | 15,000 |  | 1,42,400 | INR |       
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,21,900 | 15,000 | 15,000 |  | 1,51,900 | INR |       
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,33,800 | 15,000 | 15,000 |  | 1,63,800 | INR |       
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,17,500 | 15,000 | 15,000 |  | 1,47,500 | INR |       
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,27,000 | 15,000 | 15,000 |  | 1,57,000 | INR |       
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,38,900 | 15,000 | 15,000 |  | 1,68,900 | INR |       
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,31,100 | 15,000 | 15,000 |  | 1,61,100 | INR |       
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,40,600 | 15,000 | 15,000 |  | 1,70,600 | INR |       
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,52,500 | 15,000 | 15,000 |  | 1,82,500 | INR |       
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,49,100 | 15,000 | 15,000 |  | 1,79,100 | INR |       
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,58,600 | 15,000 | 15,000 |  | 1,88,600 | INR |       
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,70,500 | 15,000 | 15,000 |  | 2,00,500 | INR |       
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,79,500 | 15,000 | 15,000 |  | 2,09,500 | INR |       
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,89,000 | 15,000 | 15,000 |  | 2,19,000 | INR |       
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 2,00,900 | 15,000 | 15,000 |  | 2,30,900 | INR |       
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,91,100 | 15,000 | 15,000 |  | 2,21,100 | INR |       
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 2,00,600 | 15,000 | 15,000 |  | 2,30,600 | INR |       
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 2,12,500 | 15,000 | 15,000 |  | 2,42,500 | INR |       
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 2,03,800 | 15,000 | 15,000 |  | 2,33,800 | INR |       
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 2,13,300 | 15,000 | 15,000 |  | 2,43,300 | INR |       
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 2,25,200 | 15,000 | 15,000 |  | 2,55,200 | INR |       
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,99,900 | 15,000 | 15,000 |  | 2,29,900 | INR |       
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 2,09,400 | 15,000 | 15,000 |  | 2,39,400 | INR |       
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--index_dir", required=True)
+    ap.add_argument("--collection", default="vit_faq_vellore")
+    ap.add_argument("--q", required=True)
+    # accept --emb to avoid errors, but currently unused
+    ap.add_argument("--emb", default="gemini")
+    args = ap.parse_args()
+    print("\n" + answer_query(Path(args.index_dir), args.collection, args.q) + "\n")
 
-
-(.venv) C:\Users\T8543\Downloads\project-2>
+if __name__ == "__main__":
+    main()
