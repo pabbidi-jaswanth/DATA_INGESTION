@@ -1,374 +1,99 @@
-# app/handlers/academics.py — SQL-first answers for programs/eligibility/documents/academic_fees/scholarships
-
-import re, sqlite3
-from typing import Dict, Any, List, Optional, Tuple
-from app.utils.aliases import norm, level_alias, category_alias
-from app.utils.render  import md_table, bullets, join_sources
-
-ACA_COLUMNS_PROGRAMS = ["Program", "School", "Duration", "Campus", "Source"]
-ACA_COLUMNS_ELIG     = ["Level/Program", "Criteria", "Source"]
-ACA_COLUMNS_DOCS     = ["Level/Program", "Item", "Details", "Source"]
-ACA_COLUMNS_FEES     = ["Level/Program", "AY", "Category", "Tuition", "One-time", "Caution", "Total", "Curr", "Source"]
-ACA_COLUMNS_SCH      = ["Level", "Name", "Criteria", "Amount", "Curr", "Source"]
-
-def is_academic_like(q: str) -> bool:
-    ql = q.lower()
-    keys = [
-        "ug","undergrad","pg","mca","msc","programme","program","course",
-        "eligibility","criteria","documents","doc to submit","submit docs","admission",
-        "academic fee","tuition","semester fee","scholarship","stipend"
-    ]
-    return any(k in ql for k in keys)
-
-def detect_academics_intent(q: str) -> Dict[str, Any]:
-    ql = q.lower()
-    level = None
-    if any(w in ql for w in ["ug","undergrad","b.tech","btech","bsc","bca","bba"]):
-        level = "UG"
-    elif any(w in ql for w in ["pg","m.tech","mtech","msc","m.sc","mca","mba"]):
-        level = "PG"
-    # Program name extraction is open-ended; rely on SQL LIKE later
-    want_programs   = any(w in ql for w in ["program","programme","courses","offer","available"])
-    want_elig       = "eligib" in ql or "criteria" in ql
-    want_docs       = "document" in ql or "submit" in ql or "submission" in ql
-    want_fees       = "fee" in ql or "tuition" in ql
-    want_schol      = "scholar" in ql
-    ay = None
-    m = re.search(r"\b(20\d{2})\s*[-/–]\s*(\d{2})\b", ql)
-    if m:
-        ay = f"{m.group(1)}-{m.group(2)}"
-    cat = None
-    if "nri" in ql: cat = "NRI"
-    elif "foreign" in ql: cat = "Foreign"
-    elif "indian" in ql: cat = "Indian"
-    return {
-        "level": level,
-        "program_like": None,  # set later if we capture any quoted string
-        "want_programs": want_programs,
-        "want_elig": want_elig,
-        "want_docs": want_docs,
-        "want_fees": want_fees,
-        "want_schol": want_schol,
-        "ay": ay,
-        "category": cat
-    }
-
-def _maybe_extract_program_like(q: str) -> Optional[str]:
-    # Try picking quoted fragments as program-like hints
-    m = re.search(r"['\"]([^\"']{2,80})['\"]", q)
-    if m:
-        return m.group(1).strip()
-    # small heuristic: words after 'for ' or 'in '
-    m = re.search(r"\b(for|in)\s+([A-Za-z0-9 &/\-]{2,80})$", q, re.I)
-    if m:
-        return m.group(2).strip()
-    return None
-
-def _sql_like_prog(cond: List[str], args: List[Any], prog_like: Optional[str]):
-    if prog_like:
-        cond.append("(LOWER(program) LIKE ?)")
-        args.append(f"%{prog_like.lower()}%")
-
-def _src(row):
-    return row["source_file"] or ""
-
-def answer_academics_sql(con: sqlite3.Connection, q: str) -> Optional[str]:
-    if not con: return None
-    intent = detect_academics_intent(q)
-    if not any([intent["want_programs"], intent["want_elig"], intent["want_docs"], intent["want_fees"], intent["want_schol"]]):
-        return None
-
-    level = level_alias(intent["level"]) if intent["level"] else None
-    prog_like = _maybe_extract_program_like(q)
-
-    # PROGRAMS
-    if intent["want_programs"]:
-        sql = "SELECT level, program, school, duration, campus, source_file FROM programs WHERE 1=1"
-        cond, args = [], []
-        if level:
-            cond.append("LOWER(level)=LOWER(?)"); args.append(level)
-        _sql_like_prog(cond, args, prog_like)
-        rows = con.execute(sql + (" AND " + " AND ".join(cond) if cond else "") + " ORDER BY program", args).fetchall()
-        if rows:
-            tbl = {
-                "columns": ACA_COLUMNS_PROGRAMS,
-                "rows": [[r["program"] or "", r["school"] or "", r["duration"] or "", r["campus"] or "", _src(r)] for r in rows]
-            }
-            return md_table(f"Programs Offered ({level or 'All'})", tbl["columns"], tbl["rows"])
-        # fall-through to other branches if nothing
-
-    # ELIGIBILITY
-    if intent["want_elig"]:
-        sql = "SELECT level, program, criteria, source_file FROM eligibility WHERE 1=1"
-        cond, args = [], []
-        if level: cond.append("LOWER(level)=LOWER(?)"); args.append(level)
-        _sql_like_prog(cond, args, prog_like)
-        rows = con.execute(sql + (" AND " + " AND ".join(cond) if cond else ""), args).fetchall()
-        if rows:
-            tbl = {
-                "columns": ACA_COLUMNS_ELIG,
-                "rows": [[(r["level"] or "") + (" / " + (r["program"] or "")), r["criteria"] or "", _src(r)] for r in rows]
-            }
-            return md_table("Eligibility", tbl["columns"], tbl["rows"])
-
-    # DOCUMENTS
-    if intent["want_docs"]:
-        sql = "SELECT level, program, item, details, source_file FROM documents_required WHERE 1=1"
-        cond, args = [], []
-        if level: cond.append("LOWER(level)=LOWER(?)"); args.append(level)
-        _sql_like_prog(cond, args, prog_like)
-        rows = con.execute(sql + (" AND " + " AND ".join(cond) if cond else "") + " ORDER BY level, program, item", args).fetchall()
-        if rows:
-            tbl = {"columns": ACA_COLUMNS_DOCS,
-                   "rows": [[(r["level"] or "") + (" / " + (r["program"] or "")), r["item"] or "", r["details"] or "", _src(r)]
-                            for r in rows]}
-            return md_table("Documents to Submit", tbl["columns"], tbl["rows"])
-
-    # ACADEMIC FEES
-    if intent["want_fees"]:
-        sql = """SELECT level, program, ay, category, tuition, one_time, caution, total, currency, source_file
-                 FROM academic_fees WHERE 1=1"""
-        cond, args = [], []
-        if level: cond.append("LOWER(level)=LOWER(?)"); args.append(level)
-        if intent["ay"]: cond.append("ay=?"); args.append(intent["ay"])
-        if intent["category"]:
-            cond.append("LOWER(category)=LOWER(?)"); args.append(category_alias(intent["category"]))
-        _sql_like_prog(cond, args, prog_like)
-        order = " ORDER BY level, program, ay, category"
-        rows = con.execute(sql + (" AND " + " AND ".join(cond) if cond else "") + order, args).fetchall()
-        if rows:
-            tbl = {"columns": ACA_COLUMNS_FEES,
-                   "rows": [[(r["level"] or "") + (" / " + (r["program"] or "")), r["ay"] or "", r["category"] or "",
-                             r["tuition"] or "", r["one_time"] or "", r["caution"] or "", r["total"] or "",
-                             r["currency"] or "", _src(r)] for r in rows]}
-            return md_table("Academic Fee Details", tbl["columns"], tbl["rows"])
-
-    # SCHOLARSHIPS
-    if intent["want_schol"]:
-        sql = "SELECT level, name, criteria, amount, currency, source_file FROM scholarships WHERE 1=1"
-        cond, args = [], []
-        if level: cond.append("LOWER(level)=LOWER(?)"); args.append(level)
-        rows = con.execute(sql + (" AND " + " AND ".join(cond) if cond else "") + " ORDER BY level, name", args).fetchall()
-        if rows:
-            tbl = {"columns": ACA_COLUMNS_SCH,
-                   "rows": [[r["level"] or "", r["name"] or "", r["criteria"] or "", r["amount"] or "", r["currency"] or "", _src(r)]
-                            for r in rows]}
-            return md_table("Scholarships", tbl["columns"], tbl["rows"])
-
-    return None
-
-
-
-
-
-# app/handlers/hostels.py — hostel routing (contacts/blocks/landlines/fees) with your existing vibe
-
-import re, sqlite3
-from typing import Dict, Any, List, Optional, Tuple
-from app.utils.aliases import norm
-from app.utils.render  import md_table, bullets
-
-def detect_hostel_intent(q: str) -> Dict[str, Any]:
-    qq = q.lower()
-    hostelish = any(w in qq for w in [
-        "hostel","block","mh","lh","boys","girls","mens","ladies",
-        "warden","supervisor","director","manager","landline","mess","laundry","fee","fees"
-    ])
-    g = None
-    if any(w in qq for w in ["men", "boys", "mh", "mens"]): g = "MH"
-    if any(w in qq for w in ["ladies", "girls", "women", "lh"]): g = "LH" if g is None else g
-
-    wants_landlines = hostelish and any(w in qq for w in ["landline", "phone", "contact number", "call"])
-    role_hit = any(w in qq for w in ["director","chief warden","associate chief","warden","manager","assistant manager","supervisor"])
-    wants_contacts  = hostelish and role_hit or role_hit
-    wants_blocks    = hostelish and "block" in qq and any(w in qq for w in ["name","names","code","codes","list","all"])
-    wants_fees      = hostelish and ("fee" in qq or "mess" in qq or "room" in qq)
-
-    specific_block  = None
-    m = re.search(r"\b(MH|LH)\s*-?\s*([A-Z]{1,2})(?:\s*ANNEX)?\b", q, re.I)
-    if m:
-        specific_block = (m.group(1).upper() + " " + m.group(2).upper()).strip()
-        if "annex" in qq: specific_block += " ANNEX"
-
-    reverse_phone = None
-    m = re.search(r"(\+?\d[\d\s\-]{7,})", q)
-    if m: reverse_phone = m.group(1)
-    reverse_mail = None
-    m = re.search(r"([A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,})", q)
-    if m: reverse_mail = m.group(1)
-
-    return {
-        "hostelish": hostelish, "gender": g,
-        "landlines": wants_landlines, "contacts": wants_contacts,
-        "blocks": wants_blocks, "fees": wants_fees,
-        "specific_block": specific_block,
-        "reverse_phone": reverse_phone, "reverse_mail": reverse_mail
-    }
-
-def reverse_lookup_bundle(con: sqlite3.Connection, intent: Dict[str,Any]) -> str:
-    # reuse the mh_blocks/lh_blocks + hostel_contacts for lookups
-    q_phone = intent["reverse_phone"]; q_mail = intent["reverse_mail"]
-
-    def _get_all_contacts():
-        try:
-            return con.execute("SELECT role,name,phone,email FROM hostel_contacts").fetchall()
-        except Exception:
-            return []
-
-    def _get_mh_blocks():
-        try:
-            return con.execute("SELECT block_code, block_name, landline, IFNULL(email,'') as email FROM mh_blocks").fetchall()
-        except Exception:
-            return []
-
-    def _get_lh_blocks():
-        try:
-            return con.execute("SELECT block_code, block_code AS block_name, landline, '' as email FROM lh_blocks").fetchall()
-        except Exception:
-            return []
-
-    hits = []
-    if q_phone:
-        n = re.sub(r"\D", "", q_phone)
-        for r in _get_all_contacts():
-            ph = re.sub(r"\D", "", r["phone"] or "")
-            if n and ph.find(n) != -1:
-                hits.append(["Contact","-", r["role"] or "", r["name"] or "", r["phone"] or "", r["email"] or ""])
-        for r in _get_mh_blocks():
-            ph = re.sub(r"\D", "", r["landline"] or "")
-            if n and ph.find(n) != -1:
-                hits.append(["Block","MH", r["block_code"] or "", r["block_name"] or "", r["landline"] or "", r["email"] or ""])
-        for r in _get_lh_blocks():
-            ph = re.sub(r"\D", "", r["landline"] or "")
-            if n and ph.find(n) != -1:
-                hits.append(["Block","LH", r["block_code"] or "", r["block_name"] or "", r["landline"] or "", ""])
-        if hits:
-            return md_table("Reverse lookup — phone", ["Type","Hostel","Role/Code","Name","Phone","Email"], hits)
-        return "_No matches for that phone number._"
-
-    if q_mail:
-        mail = q_mail.strip().lower()
-        for r in _get_all_contacts():
-            if (r["email"] or "").lower() == mail:
-                hits.append(["Contact","-", r["role"] or "", r["name"] or "", r["phone"] or "", r["email"] or ""])
-        for r in _get_mh_blocks():
-            if (r["email"] or "").lower() == mail:
-                hits.append(["Block","MH", r["block_code"] or "", r["block_name"] or "", r["landline"] or "", r["email"] or ""])
-        if hits:
-            return md_table("Reverse lookup — email", ["Type","Hostel","Role/Code","Name","Phone","Email"], hits)
-        return "_No matches for that email._"
-
-    return "_No reverse lookup target found._"
-
-def answer_hostel_sqlfirst(con: sqlite3.Connection, q: str, intent: Dict[str,Any]) -> Optional[str]:
-    if not con: return None
-    ql = q.lower()
-
-    # Landlines / blocks lists from mh_blocks/lh_blocks
-    if intent["landlines"] or intent["blocks"] or intent["specific_block"]:
-        if intent["specific_block"]:
-            code = intent["specific_block"]
-            rows = []
-            mhr = con.execute("SELECT 'MH' as hostel, block_code, block_name, landline, IFNULL(email,'') as email FROM mh_blocks WHERE UPPER(block_code)=UPPER(?)", (code,)).fetchall()
-            lhr = con.execute("SELECT 'LH' as hostel, block_code, block_code as block_name, landline, '' as email FROM lh_blocks WHERE UPPER(block_code)=UPPER(?)", (code,)).fetchall()
-            for r in list(mhr) + list(lhr):
-                rows.append([r["hostel"], r["block_code"], r["block_name"], r["landline"], r["email"]])
-            return md_table("Block Details", ["Hostel","Block Code","Block Name","Landline","Email"], rows) if rows else "_No matching block found._"
-
-        # list or landlines
-        if intent["gender"] in (None, "MH"):
-            mh = con.execute("SELECT block_code, block_name, landline, IFNULL(email,'') as email FROM mh_blocks").fetchall()
-            if mh:
-                out = md_table("Men’s Hostel — Block-wise Landlines", ["Block Code","Block Name","Landline","Email"],
-                               [[r["block_code"], r["block_name"], r["landline"], r["email"]] for r in mh])
-            else:
-                out = ""
-        else:
-            out = ""
-        if intent["gender"] in (None, "LH"):
-            lh = con.execute("SELECT block_code, block_code as block_name, landline, '' as email FROM lh_blocks").fetchall()
-            if lh:
-                t = md_table("Ladies’ Hostel — Block-wise Landlines", ["Block Code","Block Name","Landline","Email"],
-                             [[r["block_code"], r["block_name"], r["landline"], r["email"]] for r in lh])
-                out = (out + "\n\n" + t) if out else t
-        return out or "_No hostel blocks/landlines found in DB._"
-
-    # Contacts (hostel_contacts)
-    if intent["contacts"]:
-        rows = con.execute("SELECT role, name, phone, email FROM hostel_contacts ORDER BY role").fetchall()
-        if not rows: return "_No contacts available._"
-        lines = []
-        for r in rows:
-            who = f"{r['role']}: {r['name']}" if r["name"] else r["role"]
-            bits = []
-            if r["phone"]: bits.append(r["phone"])
-            if r["email"]: bits.append(r["email"])
-            lines.append(f"{who} — " + " | ".join(bits) if bits else who)
-        return bullets(lines, "Hostel — Key Contacts")
-
-    # Fees: readable table from hostel_fees + blocks
-    if intent["fees"]:
-        cond, args = [], []
-        if "2025-26" in ql:
-            cond.append("hf.ay=?"); args.append("2025-26")
-        if "nri" in ql: cond.append("LOWER(hf.category)='nri'")
-        if "indian" in ql: cond.append("LOWER(hf.category)='indian'")
-        if "foreign" in ql: cond.append("LOWER(hf.category)='foreign'")
-        sql = f"""
-        SELECT b.display_name as block, b.gender, b.level, hf.ay, hf.category, hf.occupancy, hf.ac, hf.mess_type,
-               hf.room_mess_fee, hf.admission_fee, hf.caution_deposit, hf.other_fee, hf.total_fee, hf.currency, hf.source_file
-        FROM hostel_fees hf
-        JOIN blocks b ON b.id=hf.block_id
-        {"WHERE " + " AND ".join(cond) if cond else ""}
-        ORDER BY b.gender, b.level, b.block_name, hf.occupancy, hf.ac DESC, hf.mess_type
-        """
-        rows = con.execute(sql, args).fetchall()
-        if rows:
-            return md_table("Hostel Fee Details", 
-                ["Block","Gender","Level","AY","Category","Occ","AC","Mess","Room+Mess","Admission","Caution","Other","Total","Curr","Source"],
-                [[r["block"], r["gender"] or "", r["level"] or "", r["ay"] or "", r["category"] or "", r["occupancy"] or "",
-                  "AC" if (r["ac"]==1) else ("Non-AC" if (r["ac"]==0) else ""), r["mess_type"] or "", r["room_mess_fee"] or "",
-                  r["admission_fee"] or "", r["caution_deposit"] or "", r["other_fee"] or "", r["total_fee"] or "", r["currency"] or "", r["source_file"] or ""]
-                 for r in rows
-                ])
-        return "_No hostel fee rows matched your filters._"
-
-    return None
-
-
-
-
-# app/handlers/vitree.py — research (VITREE) process/fees/stipend
+# app/handlers/rules.py — refund/attendance/discipline/exam etc.
 
 import re, sqlite3
 from typing import Optional
 from app.utils.render import md_table, bullets
 
-def detect_vitree_intent(q: str) -> bool:
-    ql = q.lower()
-    return "vitree" in ql or "phd" in ql or "research" in ql
+RULE_KEYS = ["refund","attendance","discipline","anti-ragging","anti ragging","exam","examination"]
 
-def answer_vitree_sql(con: sqlite3.Connection, q: str) -> Optional[str]:
+def detect_rules_intent(q: str) -> bool:
+    ql = q.lower()
+    return any(k in ql for k in RULE_KEYS)
+
+def answer_rules_sql(con: sqlite3.Connection, q: str) -> Optional[str]:
     if not con: return None
     ql = q.lower()
+    cat = None
+    for k in RULE_KEYS:
+        if k in ql:
+            cat = "anti-ragging" if k in ("anti ragging","anti-ragging") else k
+            break
+    sql = "SELECT category, title, text, IFNULL(ay,'') as ay, source_file FROM rules"
+    args = []
+    if cat:
+        sql += " WHERE LOWER(category)=LOWER(?)"
+        args.append(cat)
+    sql += " ORDER BY ay DESC, title"
+    rows = con.execute(sql, args).fetchall()
+    if not rows:
+        return None
+    lines = [f"**{r['title']}** — {r['text']} *(AY: {r['ay']} | src: {r['source_file']})*" for r in rows]
+    return bullets(lines, f"Rules — {cat.title() if cat else 'All'}")
+
+
+
+
+
+
+# app/utils/aliases.py — simple normalizers and token→canonical maps
+
+import re
+
+def norm(s: str) -> str:
+    return re.sub(r"[^a-z0-9]+","", (s or "").lower())
+
+def level_alias(txt: str) -> str:
+    if not txt: return ""
+    t = txt.lower()
+    if t in ("ug","undergrad","undergraduate","btech","b.tech","bsc","bca","bba"): return "UG"
+    if t in ("pg","postgrad","postgraduate","mtech","m.tech","msc","m.sc","mca","mba"): return "PG"
+    return txt
+
+def category_alias(txt: str) -> str:
+    if not txt: return ""
+    t = txt.lower()
+    if "nri" in t: return "NRI"
+    if "foreign" in t: return "Foreign"
+    if "indian" in t: return "Indian"
+    return txt
+
+
+
+
+# app/utils/render.py — consistent markdown output
+
+from typing import List, Optional
+
+def md_table(title: str, cols: List[str], rows: List[List[str]]) -> str:
+    seen=set(); uniq=[]
+    for r in rows:
+        tup=tuple("" if c is None else str(c) for c in r)
+        if tup in seen: continue
+        seen.add(tup); uniq.append(list(tup))
     out = []
+    if title: out.append(f"**{title}**")
+    out.append("| " + " | ".join(cols) + " |")
+    out.append("|" + "|".join(["---"]*len(cols)) + "|")
+    for r in uniq:
+        out.append("| " + " | ".join("" if c is None else str(c) for c in r) + " |")
+    return "\n".join(out)
 
-    if any(w in ql for w in ["process","how to apply","application","timeline","steps"]):
-        rows = con.execute("SELECT key, value, source_file FROM vitree ORDER BY key").fetchall()
-        if rows:
-            lines = [f"**{r['key'].title()}** — {r['value']} (src: {r['source_file']})" for r in rows]
-            out.append(bullets(lines, "VITREE — Process"))
-    if "fee" in ql or "tuition" in ql:
-        rows = con.execute("SELECT category, ay, fee, currency, source_file FROM vitree_fees ORDER BY ay, category").fetchall()
-        if rows:
-            out.append(md_table("VITREE — Fees",
-                ["AY","Category","Fee","Curr","Source"],
-                [[r["ay"] or "", r["category"] or "", r["fee"] or "", r["currency"] or "", r["source_file"] or ""] for r in rows]))
-    if "stipend" in ql or "fellowship" in ql or "scholar" in ql:
-        rows = con.execute("SELECT scheme, amount, period, currency, source_file FROM vitree_stipend").fetchall()
-        if rows:
-            out.append(md_table("VITREE — Stipend/Fellowship",
-                ["Scheme","Amount","Period","Curr","Source"],
-                [[r["scheme"] or "", r["amount"] or "", r["period"] or "", r["currency"] or "", r["source_file"] or ""] for r in rows]))
+def bullets(lines: List[str], title: Optional[str]=None) -> str:
+    if not lines: return ""
+    seen=set(); out_lines=[]
+    for ln in lines:
+        if ln in seen: continue
+        seen.add(ln); out_lines.append(ln)
+    out = [f"**{title}**" if title else ""]
+    out += [f"- {ln}" for ln in out_lines]
+    return "\n".join([x for x in out if x])
 
-    return "\n\n".join([x for x in out if x]) or None
+def join_sources(srcs: List[str], maxn: int = 5) -> str:
+    if not srcs: return ""
+    uniq = []
+    seen = set()
+    for s in srcs:
+        if not s or s in seen: continue
+        seen.add(s); uniq.append(s)
+        if len(uniq) >= maxn: break
+    return ", ".join(uniq)
