@@ -1,201 +1,57 @@
-# app/handlers/hostels.py
-# contacts / landlines / blocks / hostel fees / reverse lookups
+# app/handlers/vitree.py
+# VITREE: process / fees / stipend / scholarships
 
 from __future__ import annotations
-import re, sqlite3
+import sqlite3
 from pathlib import Path
-from typing import Optional, List, Dict
+from typing import Optional, List
 from app.utils.render import md_table, bullets, provenance
 
 DB_PATH = Path("Data/sql/vit_vellore.db")
-
-PHONE_RE = r"(?:(?:\+?\d{1,3}[-\s]?)?\d{6,})"
-EMAIL_RE = r"[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}"
 
 def _c():
     con = sqlite3.connect(str(DB_PATH))
     con.row_factory = sqlite3.Row
     return con
 
-def _exists(con, name: str) -> bool:
-    return con.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?",(name,)).fetchone() is not None
+def _has(con, t): return con.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?",(t,)).fetchone() is not None
 
-# ----- Landlines (block-wise) -----
-def landlines(gender: Optional[str] = None) -> str:
-    """gender: 'Boys'|'Girls'|None"""
+def process() -> str:
     with _c() as con:
-        rows = []
-        if gender in (None, "Boys"):
-            if _exists(con, "mh_blocks"):
-                rs = con.execute("""SELECT block_code AS 'Block Code',
-                                           COALESCE(block_name, block_code) AS 'Block Name',
-                                           landline AS 'Landline',
-                                           COALESCE(email,'') AS 'Email'
-                                    FROM mh_blocks ORDER BY block_code""").fetchall()
-                rows += [[r[0], r[1], r[2], r[3]] for r in rs]
-        if gender in (None, "Girls"):
-            if _exists(con, "lh_blocks"):
-                rs = con.execute("""SELECT block_code AS 'Block Code',
-                                           block_code  AS 'Block Name',
-                                           landline    AS 'Landline',
-                                           ''          AS 'Email'
-                                    FROM lh_blocks ORDER BY block_code""").fetchall()
-                rows += [[r[0], r[1], r[2], r[3]] for r in rs]
-        title = "Hostel — Block-wise Landlines" if gender is None else ("Men’s Hostel — Block-wise Landlines" if gender=="Boys" else "Ladies’ Hostel — Block-wise Landlines")
-        return md_table(title, ["Block Code","Block Name","Landline","Email"], rows)
+        if _has(con,"vitree_process"):
+            rs = con.execute("SELECT step, detail, source_file, last_verified_on FROM vitree_process ORDER BY step_no").fetchall()
+            items = [f"{r['step']}: {r['detail']}" for r in rs]
+            return bullets("VITREE — Process", items) + provenance(None, rs[0]["source_file"] if rs else None, rs[0]["last_verified_on"] if rs else None)
+        return "_VITREE process table not found._"
 
-# ----- Blocks list / details -----
-def blocks_list(gender: Optional[str]=None) -> str:
+def fees(year: Optional[int]=None, category: Optional[str]=None) -> str:
     with _c() as con:
-        items=[]
-        if gender in (None,"Boys") and _exists(con,"mh_blocks"):
-            rs = con.execute("SELECT block_code, COALESCE(block_name, block_code) AS nm FROM mh_blocks ORDER BY block_code").fetchall()
-            items += [f"{r['block_code']} — {r['nm']}" for r in rs]
-        if gender in (None,"Girls") and _exists(con,"lh_blocks"):
-            rs = con.execute("SELECT block_code FROM lh_blocks ORDER BY block_code").fetchall()
-            items += [f"{r['block_code']} — {r['block_code']}" for r in rs]
-        title = "Hostel Blocks" if gender is None else ("Men’s Hostel Blocks" if gender=="Boys" else "Ladies’ Hostel Blocks")
-        return bullets(title, items)
-
-def block_detail(text: str, gender_hint: Optional[str]=None) -> str:
-    t = text.upper()
-    # capture MH J, MHJ, LH GH, ANNEX, famous names
-    codes = re.findall(r"\b(?:MH|LH)\s*[A-Z]{1,2}(?:\s*ANNEX)?\b|\bLH GH\b", t)
-    if "KENNEDY" in t or "JOHN F KENNEDY" in t:
-        codes += ["MH H", "MH J", "MH J ANNEX"]
-    codes = list(dict.fromkeys([re.sub(r"\s+"," ",c.strip()) for c in codes]))
-    rows=[]
-    with _c() as con:
-        for c in codes:
-            if c.startswith("MH") and (gender_hint in (None,"Boys")) and _exists(con,"mh_blocks"):
-                r = con.execute("""SELECT 'Boys' AS Hostel,
-                                          block_code AS 'Block Code',
-                                          COALESCE(block_name, block_code) AS 'Block Name',
-                                          landline AS 'Landline',
-                                          COALESCE(email,'') AS 'Email'
-                                   FROM mh_blocks WHERE UPPER(block_code)=?""",(c.upper(),)).fetchall()
-                rows += [[rr[x] for x in ("Hostel","Block Code","Block Name","Landline","Email")] for rr in r]
-            if c.startswith("LH") and (gender_hint in (None,"Girls")) and _exists(con,"lh_blocks"):
-                r = con.execute("""SELECT 'Girls' AS Hostel,
-                                          block_code AS 'Block Code',
-                                          block_code AS 'Block Name',
-                                          landline AS 'Landline',
-                                          '' AS 'Email'
-                                   FROM lh_blocks WHERE UPPER(block_code)=?""",(c.upper(),)).fetchall()
-                rows += [[rr[x] for x in ("Hostel","Block Code","Block Name","Landline","Email")] for rr in r]
-    return md_table("Block Details", ["Hostel","Block Code","Block Name","Landline","Email"], rows) if rows else "_No matching block found._"
-
-# ----- Contacts -----
-def contacts(gender: str, role_filter: Optional[str]=None, name_hint: Optional[str]=None) -> str:
-    """gender: 'Boys' or 'Girls'"""
-    with _c() as con:
-        if not _exists(con,"hostel_contacts"):
-            return "_No contacts table found._"
-        sql = "SELECT role,name,phone,email,source_file,last_verified_on FROM hostel_contacts"
-        rs = con.execute(sql).fetchall()
-        rows=[]
-        for r in rs:
-            role = r["role"] or ""
-            if gender=="Boys" and "Ladies" in role: continue
-            if gender=="Girls" and "Men" in role: continue
-            if role_filter and role_filter.lower() not in role.lower(): continue
-            if name_hint and name_hint.lower() not in (r["name"] or "").lower(): continue
-            who = f"{role}: {r['name']}" if r["name"] else role
-            bits=[]
-            if r["phone"]: bits.append(r["phone"])
-            if r["email"]: bits.append(r["email"])
-            rows.append([who, " | ".join(bits)])
-        title = "Men’s Hostel — Key Contacts" if gender=="Boys" else "Ladies’ Hostel — Key Contacts"
-        note = provenance(None, rs[0]["source_file"] if rs else None, rs[0]["last_verified_on"] if rs else None)
-        return md_table(title, ["Role / Person","Contact"], rows) + note if rows else "_No contacts available._"
-
-# ----- Reverse lookups -----
-def reverse_lookup(needle: str) -> str:
-    with _c() as con:
-        rows=[]
-        # email?
-        m = re.search(EMAIL_RE, needle)
-        if m:
-            e = m.group(0).lower()
-            if _exists(con,"mh_blocks"):
-                rs = con.execute("SELECT 'Block' AS kind,'Boys' AS hostel, block_code, COALESCE(block_name,block_code) AS nm, landline, email FROM mh_blocks WHERE LOWER(email)=?",(e,)).fetchall()
-                rows += [["MH Block", rr["block_code"], rr["nm"], rr["landline"], rr["email"]] for rr in rs]
-            if _exists(con,"hostel_contacts"):
-                rs = con.execute("SELECT 'Contact' AS kind, role, name, phone, email FROM hostel_contacts WHERE LOWER(email)=?",(e,)).fetchall()
-                rows += [[rr["role"], rr["name"], rr["phone"], rr["email"]] for rr in rs]
-            return md_table("Reverse lookup — email", ["Type/Role","Name/Code","Phone/Landline","Email"], rows) if rows else "_No matches for that email._"
-        # phone?
-        m = re.search(PHONE_RE, needle)
-        if m:
-            p = re.sub(r"\D+","", m.group(0))[-10:]  # last 10
-            if _exists(con,"mh_blocks"):
-                rs = con.execute("SELECT block_code, COALESCE(block_name,block_code) AS nm, landline, COALESCE(email,'') AS email FROM mh_blocks").fetchall()
-                for rr in rs:
-                    if p and re.sub(r'\D+','',rr["landline"] or "").endswith(p):
-                        rows.append(["MH Block", rr["block_code"], rr["nm"], rr["landline"], rr["email"]])
-            if _exists(con,"lh_blocks"):
-                rs = con.execute("SELECT block_code, landline FROM lh_blocks").fetchall()
-                for rr in rs:
-                    if p and re.sub(r'\D+','',rr["landline"] or "").endswith(p):
-                        rows.append(["LH Block", rr["block_code"], rr["block_code"], rr["landline"], ""])
-            if _exists(con,"hostel_contacts"):
-                rs = con.execute("SELECT role, name, phone, COALESCE(email,'') AS email FROM hostel_contacts").fetchall()
-                for rr in rs:
-                    if p and re.sub(r'\D+','',rr["phone"] or "").endswith(p):
-                        rows.append(["Contact", rr["role"], rr["name"], rr["phone"], rr["email"]])
-            return md_table("Reverse lookup — phone", ["Type","Role/Code","Name","Phone","Email"], rows) if rows else "_No matches for that phone number._"
-        return "_No phone/email detected._"
-
-# ----- Hostel fees (normalized schema) -----
-def hostel_fees(gender: Optional[str]=None, level: Optional[str]=None,
-                category: Optional[str]=None, year: Optional[int]=None,
-                block_type: Optional[str]=None) -> str:
-    """
-    Pulls from normalized tables:
-      blocks -> hostels -> hostel_fees (+ years, categories, levels)
-    """
-    with _c() as con:
-        need = all(_exists(con, t) for t in ("blocks","hostels","hostel_fees","years","categories","levels"))
-        if not need:
-            return "_Hostel fee tables not found._"
-        sql = """
-        SELECT b.block_name, b.gender, b.type AS block_type,
-               y.year, c.name AS category, l.name AS level,
-               hf.room_type, hf.mess_type,
-               hf.room_mess_fee, hf.admission_fee, hf.caution_deposit, hf.total_fee, hf.currency,
-               h.laundry_details, hf.source_pdf, hf.last_verified_on
-        FROM hostel_fees hf
-        JOIN hostels h ON h.hostel_id=hf.hostel_id
-        JOIN blocks  b ON b.block_id=h.block_id
-        JOIN years   y ON y.year_id=h.year_id
-        JOIN categories c ON c.category_id=h.category_id
-        JOIN levels     l ON l.level_id=h.level_id
-        WHERE 1=1
-        """
+        if not _has(con,"vitree_fees"):
+            return "_VITREE fees table not found._"
+        sql = "SELECT year, category, tuition, application_fee, other_charges, currency, source_file, last_verified_on FROM vitree_fees WHERE 1=1"
         args=[]
-        if year:
-            sql += " AND y.year=?"; args.append(year)
-        if gender:
-            sql += " AND b.gender=?"; args.append(gender)
-        if level:
-            sql += " AND l.name=?"; args.append(level)
-        if category:
-            sql += " AND c.name=?"; args.append(category)
-        if block_type:
-            sql += " AND b.type=?"; args.append(block_type)
-        sql += " ORDER BY b.gender, b.type, b.block_name, hf.room_type, hf.mess_type"
+        if year: sql += " AND year=?"; args.append(year)
+        if category: sql += " AND LOWER(category)=?"; args.append(category.lower())
+        sql += " ORDER BY year, category"
         rs = con.execute(sql, tuple(args)).fetchall()
-        rows=[]
-        for r in rs:
-            rows.append([
-                r["block_name"], r["gender"], r["block_type"], r["year"], r["category"], r["level"],
-                r["room_type"], r["mess_type"],
-                r["room_mess_fee"], r["admission_fee"], r["caution_deposit"], r["total_fee"], r["currency"]
-            ])
-        title = "Hostel Fees"
-        out = md_table(title,
-            ["Block","Gender","Type","Year","Category","Level","Room Type","Mess",
-             "Room+Mess","Admission","Caution","Total","Curr"], rows)
-        if rs:
-            out += provenance("Fees are from official PDFs.", rs[0]["source_pdf"], rs[0]["last_verified_on"])
+        rows = [[r["year"], r["category"], r["tuition"], r["application_fee"], r["other_charges"], r["currency"]] for r in rs]
+        out = md_table("VITREE — Fees", ["Year","Category","Tuition","Application Fee","Other","Curr"], rows)
+        if rs: out += provenance(None, rs[0]["source_file"], rs[0]["last_verified_on"])
         return out
+
+def stipend() -> str:
+    with _c() as con:
+        # either a vitree_stipend table or a scholarships table with level='PhD'
+        if _has(con,"vitree_stipend"):
+            rs = con.execute("SELECT title, amount, period, conditions, source_file, last_verified_on FROM vitree_stipend ORDER BY rowid").fetchall()
+            rows = [[r["title"], r["amount"], r["period"], r["conditions"]] for r in rs]
+            out = md_table("VITREE — Stipend", ["Title","Amount","Period","Conditions"], rows)
+            if rs: out += provenance(None, rs[0]["source_file"], rs[0]["last_verified_on"])
+            return out
+        if _has(con,"scholarships"):
+            rs = con.execute("SELECT name, amount, criteria, source_file, last_verified_on FROM scholarships WHERE UPPER(level)='PHD' ORDER BY name").fetchall()
+            rows = [[r["name"], r["amount"], r["criteria"]] for r in rs]
+            out = md_table("VITREE — Scholarships/Stipend", ["Name","Amount","Criteria"], rows)
+            if rs: out += provenance(None, rs[0]["source_file"], rs[0]["last_verified_on"])
+            return out
+        return "_No stipend/scholarship data found for VITREE._"
