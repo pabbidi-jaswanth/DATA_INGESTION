@@ -1,82 +1,264 @@
+# app/handlers/academics.py
+# Unified academic handlers for UG / PG / MCA / MSc
+# Works with either:
+#   A) unified tables with a `level` column  (level in ['UG','PG','MCA','MSC'])
+#   B) split tables: ug_programs/pg_programs/...; ug_fees/pg_fees/...
 
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --emb gemini --q "what is the fee structure for UG NRI?
+from __future__ import annotations
+import sqlite3
+import re
+from pathlib import Path
+from typing import Optional, List
 
-**Answer:** What is the fee structure for NRI students? Please follow the link for the NRI fee structure: https://vit.ac.in/admissions/international/fee How do I apply for B.Tech admission under the NRI category? The application process is usually online. You'll need to fill out the application form, upload required documents, and pay the application fee A minimum aggregate of 55% in PCM or PCB Please refer the link for more details: https://vit.ac.in/admissions/international/btecheligibilityandprocedure What is the fee structure for Foreign students? Please follow the link for the Foreign/ NRI fee structure: https://vit.ac.in/admissions/international/fee Admission Fee (non-refundable) 2. Hostel Fee 3. Caution deposit (refundable) Policy herein below speaks out the refund norms applicable for the academic year 2025 - 26 as and when a student is withdrawing / vacating the hostel room allotted. 1.
+DB_PATH = Path("Data/sql/vit_vellore.db")
 
-*Sources:* UG NRI_FAQS.pdf, UG FOREIGN FAQ.pdf, Hostel-Refund-Policy-25-26.pdf, M.SC PROCESS.pdf, Academic Fee.pdf
+# ---------- small helpers ----------
 
+def _connect() -> sqlite3.Connection:
+    con = sqlite3.connect(str(DB_PATH))
+    con.row_factory = sqlite3.Row
+    return con
 
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --emb gemini --q "list all the programs offered for PG"
+def _table_exists(con: sqlite3.Connection, name: str) -> bool:
+    q = "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?"
+    return con.execute(q, (name,)).fetchone() is not None
 
-**Answer (from your PDFs):** (or its equivalent) - The candidates short-listed based on their merit will be called for the admission - Candidates will be allot the seat in the order of merit based on the U.G. marks. - The fact that a candidate has qualified is does not guarantee for admission. This depends upon the cut-off fixed on the merit list and the availability of seats - The short listed candidate list will be published on our website Will I be offered the option of choosing campus and program while filling application? 'No'. Only at the time of counseling you will be offered the option of choosing campus and programme. This would depend on the availability of the programme and campus as per your rank in the order of merit. What is the closing date for issue of applications?
+def _md_table(title: str, cols: List[str], rows: List[List[str]]) -> str:
+    if not rows:
+        return "_No data found._"
+    out = []
+    if title:
+        out.append(f"**{title}**")
+    out.append("| " + " | ".join(cols) + " |")
+    out.append("|" + "|".join(["---"] * len(cols)) + "|")
+    for r in rows:
+        out.append("| " + " | ".join("" if v is None else str(v) for v in r) + " |")
+    return "\n".join(out)
 
-*Sources:* M.SC PROCESS.pdf, VITEEE FAQS.pdf, POSTGRADUTE ADMISSIONS PROCESS.pdf, UG Programmes Offered.pdf, UG FOREIGN FAQ.pdf
-*Note: Answers are grounded in your ingested PDFs.*
+def _bullets(title: str, items: List[str]) -> str:
+    if not items:
+        return "_No data found._"
+    dedup, seen = [], set()
+    for it in items:
+        k = re.sub(r"\W+", "", (it or "").lower())
+        if k in seen:
+            continue
+        seen.add(k)
+        dedup.append(it)
+    lines = [f"**{title}**"] + [f"- {x}" for x in dedup]
+    return "\n".join(lines)
 
+def _provenance(note: Optional[str], src: Optional[str], dt: Optional[str]) -> str:
+    parts = []
+    if note:
+        parts.append(note)
+    src_bits = []
+    if src:
+        src_bits.append(src)
+    if dt:
+        src_bits.append(f"Verified: {dt}")
+    if src_bits:
+        parts.append("Source: " + " · ".join(src_bits))
+    return ("\n\n" + " ".join(parts)) if parts else ""
 
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --emb gemini --q "list all landline numbers for boys hostel"
+# ---------- programs ----------
 
-**Men’s Hostel — Block-wise Landlines**
-| Block Code | Block Name | Landline | Email |
-|---|---|---|---|
-| MH A | Albert Einstein | 0416 220 2531 | mhablock@vit.ac.in |
-| MH B | Swami Vivekananda | 0416 220 2532 | mhbblock@vit.ac.in |
-| MH B ANNEX | Swami Vivekananda – B Annex | 0416 220 2533 | mhbannex@vit.ac.in |
-| MH C | Rabindranath Tagore | 0416 220 2534 | mhcblock@vit.ac.in |
-| MH D | Nelson Mandela | 0416 220 2535 | mhdblock@vit.ac.in |
-| MH D ANNEX | Nelson Mandela – D Annex | 0416 220 2536 | mhdannex@vit.ac.in |
-| MH E | Sir C.V.Raman | 0416 220 2537 | mheblock@vit.ac.in |
-| MH F | R Amanujam | 0416 220 2538 | mhfblock@vit.ac.in |
-| MH G | Socrates | 0416 220 2539 | mhgblock@vit.ac.in |
-| MH H | John F Kennedy | 0416 220 2540 | mhhblock@vit.ac.in |
-| MH J | John F Kennedy | 0416 220 2541 | mhjblock@vit.ac.in |
-| MH J ANNEX | John F Kennedy – J Annex | 0416 220 2563 | mhjannexblock@vit.ac.in |
-| MH K | Dr. Sarvepalli Radhakrishnan | 0416 220 2542 | mhkblock@vit.ac.in |
-| MH L | Netaji Subhas Chandra Bose | 0416 220 2543 | mhlblock@vit.ac.in |
-| MH M | Quaid-e-Millat Muhammed Ismail | 0416 220 2544 | mhmblock@vit.ac.in |
-| MH M ANNEX | Quaid-e-Millat Muhammed Ismail – M Annex | 0416 220 2545 | mhmannexblock@vit.ac.in |      
-| MH N | Charles Darwin | 0416 220 2546 | mhnblock@vit.ac.in |
-| MH N ANNEX | Charles Darwin – N Annex | 0416 220 2564 | mhnannexblock@vit.ac.in |
-| MH P | Sardar Patel | 0416 220 2547 | mhpblock@vit.ac.in |
-| MH Q | Vajpayee Block | 0416 220 2548 | mhqblock@vit.ac.in |
-| MH R | Muthamizh Arignar Kalaignar M.Karunanidhi | 0416 220 2549 | mhrblock@vit.ac.in |
-| MH S | Men’s Hostel S Block | 0416 220 2550 | mhsblock@vit.ac.in |
-| MH T | Mens Hostel T Block | 0416 220 2551 | mhtblock@vit.ac.in |
+def list_programs(level: str, school: Optional[str] = None) -> str:
+    """
+    level: 'UG' | 'PG' | 'MCA' | 'MSC'
+    """
+    level = level.upper()
+    with _connect() as con:
+        rows = []
+        # unified table
+        if _table_exists(con, "programs"):
+            sql = "SELECT program, school, duration, campus, source_file, last_verified_on FROM programs WHERE level=?"
+            args = [level]
+            if school:
+                sql += " AND LOWER(school)=?"
+                args.append(school.lower())
+            sql += " ORDER BY program"
+            rs = con.execute(sql, args).fetchall()
+            for r in rs:
+                rows.append([r["program"], r["duration"], r["school"], r["campus"]])
+            note = _provenance("Programs list.", rs[0]["source_file"] if rs else None,
+                               rs[0]["last_verified_on"] if rs else None)
+            return _md_table(f"{level} Programmes Offered", ["Program", "Duration", "School", "Campus"], rows) + note
 
+        # split tables fallback
+        tbl = "ug_programs" if level == "UG" else "pg_programs"
+        if not _table_exists(con, tbl):
+            return "_Programs table not found._"
+        sql = f"SELECT program, school, duration, campus, source_file, last_verified_on FROM {tbl}"
+        if school:
+            sql += " WHERE LOWER(school)=?"
+            rs = con.execute(sql, (school.lower(),)).fetchall()
+        else:
+            rs = con.execute(sql).fetchall()
+        for r in rs:
+            rows.append([r["program"], r["duration"], r["school"], r["campus"]])
+        note = _provenance("Programs list.", rs[0]["source_file"] if rs else None,
+                           rs[0]["last_verified_on"] if rs else None)
+        return _md_table(f"{level} Programmes Offered", ["Program", "Duration", "School", "Campus"], rows) + note
 
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --emb gemini --q "list all block names of the boys hostel"          
+# ---------- eligibility ----------
 
-**Men’s Hostel Blocks**
-- MH A — Albert Einstein
-- MH B — Swami Vivekananda
-- MH B ANNEX — Swami Vivekananda – B Annex
-- MH C — Rabindranath Tagore
-- MH D — Nelson Mandela
-- MH D ANNEX — Nelson Mandela – D Annex
-- MH E — Sir C.V.Raman
-- MH F — R Amanujam
-- MH G — Socrates
-- MH H — John F Kennedy
-- MH J — John F Kennedy
-- MH J ANNEX — John F Kennedy – J Annex
-- MH K — Dr. Sarvepalli Radhakrishnan
-- MH L — Netaji Subhas Chandra Bose
-- MH M — Quaid-e-Millat Muhammed Ismail
-- MH M ANNEX — Quaid-e-Millat Muhammed Ismail – M Annex
-- MH N — Charles Darwin
-- MH N ANNEX — Charles Darwin – N Annex
-- MH P — Sardar Patel
-- MH Q — Vajpayee Block
-- MH R — Muthamizh Arignar Kalaignar M.Karunanidhi
-- MH S — Men’s Hostel S Block
-- MH T — Mens Hostel T Block
+def eligibility(level: str, program: Optional[str] = None) -> str:
+    level = level.upper()
+    with _connect() as con:
+        rows = []
+        # unified
+        if _table_exists(con, "eligibility"):
+            sql = "SELECT program, criteria_text, source_file, last_verified_on FROM eligibility WHERE level=?"
+            args = [level]
+            if program:
+                sql += " AND LOWER(program) LIKE ?"
+                args.append(f"%{program.lower()}%")
+            sql += " ORDER BY program"
+            rs = con.execute(sql, args).fetchall()
+            items = [f"{r['program']}: {r['criteria_text']}" for r in rs]
+            note = _provenance("Eligibility highlights.", rs[0]["source_file"] if rs else None,
+                               rs[0]["last_verified_on"] if rs else None)
+            return _bullets(f"{level} Eligibility", items) + note
 
+        # split fallback
+        tbl = "ug_eligibility" if level == "UG" else "pg_eligibility"
+        if not _table_exists(con, tbl):
+            return "_Eligibility table not found._"
+        if program:
+            rs = con.execute(
+                f"SELECT program, criteria_text, source_file, last_verified_on FROM {tbl} WHERE LOWER(program) LIKE ? ORDER BY program",
+                (f"%{program.lower()}%",),
+            ).fetchall()
+        else:
+            rs = con.execute(
+                f"SELECT program, criteria_text, source_file, last_verified_on FROM {tbl} ORDER BY program"
+            ).fetchall()
+        items = [f"{r['program']}: {r['criteria_text']}" for r in rs]
+        note = _provenance("Eligibility highlights.", rs[0]["source_file"] if rs else None,
+                           rs[0]["last_verified_on"] if rs else None)
+        return _bullets(f"{level} Eligibility", items) + note
 
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --emb gemini --q "what is the fee structure for computer science in UG"
+# ---------- documents ----------
 
-**Answer:** A minimum aggregate of 55% in PCM or PCB Please refer the link for more details: https://vit.ac.in/admissions/international/btecheligibilityandprocedure What is the fee structure for Foreign students? Please follow the link for the Foreign/ NRI fee structure: https://vit.ac.in/admissions/international/fee Admission Fee (non-refundable) 2. Hostel Fee 3. Caution deposit (refundable) Policy herein below speaks out the refund norms applicable for the academic year 2025 - 26 as and when a student is withdrawing / vacating the hostel room allotted. 1. Admission Fee Admission fee is collected from students who are willing to avail the hostel facility inside the campus. Admission fee is a one-time fee payable at the time of joining the hostel Computer Science and Engineering (Bioinformatics) - B.Tech. Computer Science and Engineering (Cyber Security) - B.Tech.
+def documents(level: str) -> str:
+    level = level.upper()
+    with _connect() as con:
+        # unified
+        if _table_exists(con, "documents_required"):
+            rs = con.execute(
+                "SELECT item, details, source_file, last_verified_on FROM documents_required WHERE level=? ORDER BY rowid",
+                (level,),
+            ).fetchall()
+            items = [f"{r['item']}: {r['details']}" for r in rs]
+            note = _provenance("Carry originals + 2–3 photocopies.", rs[0]["source_file"] if rs else None,
+                               rs[0]["last_verified_on"] if rs else None)
+            return _bullets(f"{level} — Documents to Submit", items) + note
 
-*Sources:* UG FOREIGN FAQ.pdf, Hostel-Refund-Policy-25-26.pdf, Academic Fee.pdf, M.SC PROCESS.pdf, FEE STRUCTURE INTERNATIONAL ADMISSIONS.pdf
+        # split fallback
+        tbl = "ug_documents" if level == "UG" else "pg_documents"
+        if not _table_exists(con, tbl):
+            return "_Documents table not found._"
+        rs = con.execute(f"SELECT item, details, source_file, last_verified_on FROM {tbl} ORDER BY rowid").fetchall()
+        items = [f"{r['item']}: {r['details']}" for r in rs]
+        note = _provenance("Carry originals + 2–3 photocopies.", rs[0]["source_file"] if rs else None,
+                           rs[0]["last_verified_on"] if rs else None)
+        return _bullets(f"{level} — Documents to Submit", items) + note
 
+# ---------- academic fees ----------
 
-(.venv) C:\Users\T8543\Downloads\project-2>  
+def academic_fees(level: str,
+                  program: Optional[str] = None,
+                  category: Optional[str] = None,
+                  year: Optional[int] = None) -> str:
+    """
+    category: 'Indian' | 'NRI' | 'Foreign' (case-insensitive)
+    """
+    level = level.upper()
+    with _connect() as con:
+        rows = []
+        # unified
+        if _table_exists(con, "academic_fees"):
+            sql = ("SELECT program, category, year, tuition, one_time, caution, currency, notes, "
+                   "source_file, last_verified_on FROM academic_fees WHERE level=?")
+            args = [level]
+            if program:
+                sql += " AND LOWER(program) LIKE ?"; args.append(f"%{program.lower()}%")
+            if category:
+                sql += " AND LOWER(category)=?"; args.append(category.lower())
+            if year:
+                sql += " AND year=?"; args.append(year)
+            sql += " ORDER BY program, category, year"
+            rs = con.execute(sql, args).fetchall()
+            for r in rs:
+                rows.append([r["program"], r["category"], r["year"], r["tuition"], r["one_time"], r["caution"], r["currency"]])
+            note = _provenance("Academic fee components.", rs[0]["source_file"] if rs else None,
+                               rs[0]["last_verified_on"] if rs else None)
+            return _md_table(f"{level} Academic Fees",
+                             ["Program","Category","Year","Tuition","One-time","Caution","Curr"], rows) + note
+
+        # split fallback
+        tbl = "ug_fees" if level == "UG" else "pg_fees"
+        if not _table_exists(con, tbl):
+            return "_Academic fees table not found._"
+        sql = f"SELECT program, category, year, tuition, one_time, caution, currency, notes, source_file, last_verified_on FROM {tbl} WHERE 1=1"
+        args = []
+        if program:
+            sql += " AND LOWER(program) LIKE ?"; args.append(f"%{program.lower()}%")
+        if category:
+            sql += " AND LOWER(category)=?"; args.append(category.lower())
+        if year:
+            sql += " AND year=?"; args.append(year)
+        sql += " ORDER BY program, category, year"
+        rs = con.execute(sql, args).fetchall()
+        for r in rs:
+            rows.append([r["program"], r["category"], r["year"], r["tuition"], r["one_time"], r["caution"], r["currency"]])
+        note = _provenance("Academic fee components.", rs[0]["source_file"] if rs else None,
+                           rs[0]["last_verified_on"] if rs else None)
+        return _md_table(f"{level} Academic Fees",
+                         ["Program","Category","Year","Tuition","One-time","Caution","Curr"], rows) + note
+
+# ---------- scholarships / rules ----------
+
+def scholarships(level: Optional[str] = None) -> str:
+    with _connect() as con:
+        if not _table_exists(con, "scholarships"):
+            return "_Scholarships table not found._"
+        if level:
+            rs = con.execute(
+                "SELECT level, name, criteria, amount, source_file, last_verified_on FROM scholarships WHERE UPPER(level)=? ORDER BY name",
+                (level.upper(),)
+            ).fetchall()
+        else:
+            rs = con.execute(
+                "SELECT level, name, criteria, amount, source_file, last_verified_on FROM scholarships ORDER BY level, name"
+            ).fetchall()
+        rows = [[r["level"], r["name"], r["criteria"], r["amount"]] for r in rs]
+        note = _provenance("Scholarships & waivers.", rs[0]["source_file"] if rs else None,
+                           rs[0]["last_verified_on"] if rs else None)
+        return _md_table("Scholarships", ["Level","Name","Criteria","Amount"], rows) + note
+
+def rules(category: Optional[str] = None) -> str:
+    with _connect() as con:
+        if not _table_exists(con, "rules"):
+            return "_Rules table not found._"
+        if category:
+            rs = con.execute(
+                "SELECT category, title, description, source_file, last_verified_on FROM rules WHERE LOWER(category)=? ORDER BY rowid",
+                (category.lower(),)
+            ).fetchall()
+        else:
+            rs = con.execute(
+                "SELECT category, title, description, source_file, last_verified_on FROM rules ORDER BY category, rowid"
+            ).fetchall()
+        # collapse into bullets grouped by category
+        grouped = {}
+        for r in rs:
+            grouped.setdefault(r["category"], []).append(f"{r['title']}: {r['description']}")
+        parts = []
+        any_row = rs[0] if rs else None
+        for cat, items in grouped.items():
+            parts.append(_bullets(f"{cat.title()} — Key Points", items))
+        note = _provenance(None, any_row["source_file"] if any_row else None,
+                           any_row["last_verified_on"] if any_row else None)
+        return ("\n\n".join(parts) if parts else "_No data found._") + note
