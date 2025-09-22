@@ -1,299 +1,61 @@
-
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe .\app\rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --q "what ug programs are offered on the vellore campus"
-
-**Programs Offered**
-- Industrial Design - Offered Location: Vellore B.Arch - Offered Location: Vellore, VIT-Bhopal B.Sc. (Hons.) Agriculture
-
-*Sources:* UG Programmes Offered.pdf, POSTGRADUTE ADMISSIONS PROCESS.pdf, Hostel_info.pdf
-
-
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe .\app\rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --q "what is the elegibility for the btech?"            
-
-**Answer (from your PDFs):** A minimum aggregate of 55% in PCM or PCB Please refer the link for more details: https://vit.ac.in/admissions/international/btecheligibilityandprocedure What is the fee structure for Foreign students? Please follow the link for the Foreign/ NRI fee structure: https://vit.ac.in/admissions/international/fee There is NO VIT ENTRANCE EXAMINATION - Candidates who have studied in Regular, Full time and Formal Education are alone eligible to apply - Candidate should be Resident Indian National - The Admission will be on the basis of the performance in the qualifying examination UG(or its equivalent) ABOUT THE SCHOOL OF BIO SCIENCES AND TECHNOLOGY (SBST): School of Bio Sciences and Technology (SBST) offer programs in various disciplines of Modern Is there an entrance exam for NRI admission? We offer direct admission to B.Tech programs for NRI students based on their eligibility requirements. However NRI candidates can also appear for VITEEE, where the Admission is based on the VITEEE rank and the counselling procedure. For more details https://viteee.vit.ac.in The third subject can either be Chemistry / Computer Sciences / Electronics / Biotechnology / Biology. For those interested in pursuing B.Tech. Bio related programmes, the eligible combination is either Physics, Chemistry and Mathematics (PCM) OR Physics, Chemistry and Biology (PCB). - A pass with Minimum aggregate of 55% in the above mentioned subjects in standard XII or its equivalent they have passed is equivalent to the Class 12 Examination with grade/CGPA converted to percentage Note: - Applicants must provide their qualifying mark statement from the respective board for verification during admission to confirm its authenticity Any applicant who presents fraudulent or invalid documentation will face legal consequences, and their provisional admission will be revoked without refund However OCI/PIO candidates can also appear for VITEEE, where Admission is based on the VITEEE rank and the counselling procedure.For more details https://viteee.vit.ac.in What are the basic academic requirements?
-
-*Sources:* UG FOREIGN FAQ.pdf, M.SC PROCESS.pdf, UG NRI_FAQS.pdf, UG NRI PROCESS.pdf, VITEEE FAQS.pdf
-*Note: Extracted from your ingested PDFs.*
-
-
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe .\app\rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --q "Do i need JEE main/other tests for ug admission or only VITEEE?"
-
-**Answer (from your PDFs):** There is no lateral entry admission offered for B.Tech. programme VITEEE RELATED QUERIES: Is VITEEE mandatory or would merit of XII/ Higher Secondary Board, JEE Main/ SAT scores be considered for admission to the B.Tech. Degree programme? 'Yes'. VITEEE is mandatory for admission to the B.Tech. Programme in VIT. Higher Secondary Board, JEE Main/ SAT scores will not be considered for admission to the B.Tech Is there an entrance exam for NRI admission? We offer direct admission to B.Tech programs for NRI students based on their eligibility requirements.
-
-*Sources:* VITEEE FAQS.pdf, UG NRI_FAQS.pdf, VITMEE MCA FAQS.pdf, UG FOREIGN FAQ.pdf, PG MTECH FAQS.pdf
-*Note: Extracted from your ingested PDFs.*
-
-
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe .\app\rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --q "what is the minimum age for ug application?"                    
-
-**Answer (from your PDFs):** What would be the valid ID proofs needed to be produced in the entrance examination hall, in addition to the E-admit card with photograph? You should bring original of either Aadhar card/ Driving license/ PAN card / Passport/ Voter ID card or else School ID card. Is there an option to 'Edit' the application form in web? 'Yes'. Once you complete the application form, you will be able to edit your application (or its equivalent) - The candidates short-listed based on their merit will be called for the admission - Candidates will be allot the seat in the order of merit based on the U.G. marks. - The fact that a candidate has qualified is does not guarantee for admission. This depends upon the cut-off fixed on the merit list and the availability of seats - The short listed candidate list will be published on our website Will I be offered the option of choosing campus and program while filling application?
-
-*Sources:* VITEEE FAQS.pdf, M.SC PROCESS.pdf, MCA 2 Years PG Program.pdf, POSTGRADUTE ADMISSIONS PROCESS.pdf, UG FOREIGN FAQ.pdf
-*Note: Extracted from your ingested PDFs.*
-
-
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe .\app\rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --q "are there seperate quotas for NRI/foreign application at UG level?"
-
-**Answer (from your PDFs):** FOREIGN FAQS: 1. Who is considered a "Foreign" nationals for admissions? Any foreign national holding a valid foreign passport is eligible to apply under this category. For Nepal and Bhutan nationals , passport is not mandatory What documents are required to prove foreign nationality? You'll need to provide a copy of your valid passport or National ID as proof of your foreign nationality What is the fee structure for NRI students? Please follow the link for the NRI fee structure: https://vit.ac.in/admissions/international/fee How do I apply for B.Tech admission under the NRI category? The application process is usually online. You'll need to fill out the application form, upload required documents, and pay the application fee National ID (For Nepal and Bhutan Candidates) as proof of your foreign nationality.
-
-*Sources:* UG FOREIGN FAQ.pdf, UG NRI_FAQS.pdf, UG NRI PROCESS.pdf, M.SC PROCESS.pdf, MCA 2 Years PG Program.pdf    
-*Note: Extracted from your ingested PDFs.*
-
-
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe .\app\rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --q "cacn PCB student apply for CS/IT branches"                         
-
-**Answer (from your PDFs):** What would I enter under the 'Nationality' field in such case? NRI (Non Resident Indian) Which Engineering stream would I be eligible to apply for if I opt for Physics, Chemistry and Biology? If you have opted for Physics, Chemistry and Biology in VITEEE 2025, you would be eligible only for (1) B.Tech Bio-Engineering, (2) B.Tech Biotechnology, (3) B.Tech Computer Science and Engineering (Bioinformatics), (4) B.Tech Computer Science and 2. 11th grade marksheet/AS Level/Form V(for appearing candidates) & 12th grade mark sheet/A Level/Form VI (for passed out candidates). 3. Both 11th and 12th Marksheets (for Nepal Education Board Candidates) Equivalent certificate from Association of Indian Universities(AIU) is mandatory, if passed from Universities/Boards other than India. - Stage 6 Download Application Filled in application will be available for download after completion Pay the application fee Rs.1200/- through online mode using netbanking/Debit card / Credit card/Paytm mode - Upload your Photo and Sign image on the application form - Upload all semester/year/consolidated marksheets, Prefinal year students upload upto 4 semester marksheet - The filled in Application may be downloaded and stored for future reference. NO NEED TO SEND THE FILLED IN APPLICATION FORM / CERTIFICATES BY POST TO US Follow the link for the application: https://admissions.vit.ac.in/ugforeignapplication/login Which Engineering stream will I be eligible if I have taken Physics, Chemistry and Biology in 12th grade?
-
-*Sources:* VITEEE FAQS.pdf, UG FOREIGN FAQ.pdf, MCA 2 Years PG Program.pdf, POSTGRADUTE ADMISSIONS PROCESS.pdf, M.SC PROCESS.pdf
-*Note: Extracted from your ingested PDFs.*
-
-
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe .\app\rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --q "how are the seats allotted across campuses after VITREEE"
-
-**Answer (from your PDFs):** When is VITMEE conducted? The exam is typically held in the first half of the year (April-May), depending on the admission cycle. Check the official website for the latest updates. Where is the VITMEE exam conducted? The exam is conducted at designated test centers across India. The exact test center details will be mentioned on the admit card. How is the MCA admission process carried out? Admission is based on: 1.
-
-*Sources:* VITMEE MCA FAQS.pdf, PG MTECH FAQS.pdf, VITREE FAQS.pdf, VITEEE FAQS.pdf, MCA 2 Years PG Program.pdf     
-*Note: Extracted from your ingested PDFs.*
-
-
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe .\app\rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --q "is there lateral entry for diploma holders"              
-
-**Answer (from your PDFs):** ADMISSION RELATED QUERIES: Does VIT offer admissions through Management quota? There is no Management Quota in VIT. Admissions to B.Tech. programme is based on the merit rank obtained in the VITEEE 2025 and for other Undergraduate programmes, it is based on the merit of your XII/ Higher Secondary Boards by which you would be ranked accordingly. Is there lateral entry admission available for Diploma candidates? 'No' There is no lateral entry admission offered for B.Tech. programme VITEEE RELATED QUERIES: Is VITEEE mandatory or would merit of XII/ Higher Secondary Board, JEE Main/ SAT scores be considered for admission to the B.Tech. Degree programme?
-
-*Sources:* VITEEE FAQS.pdf, UG FOREIGN FAQ.pdf, UG NRI_FAQS.pdf, POSTGRADUTE ADMISSIONS PROCESS.pdf, M.SC PROCESS.pdf
-*Note: Extracted from your ingested PDFs.*
-
-
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe .\app\rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --q "what is the conselling process and documents verfication for ug"
-
-**Answer (from your PDFs):** (or its equivalent) - The candidates short-listed based on their merit will be called for the admission - Candidates will be allot the seat in the order of merit based on the U.G. marks. - The fact that a candidate has qualified is does not guarantee for admission. This depends upon the cut-off fixed on the merit list and the availability of seats - The short listed candidate list will be published on our website The specific test center details will be provided on the admit card. How is the research admissions process carried out? The selection process is based on the following components: 1. Performance in the VITREE exam. 2.
-
-*Sources:* M.SC PROCESS.pdf, VITREE FAQS.pdf, Academic Fee.pdf, UG FOREIGN FAQ.pdf, MCA 2 Years PG Program.pdf      
-*Note: Extracted from your ingested PDFs.*
-
-
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe .\app\rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --q "can i change my branch or campus after the first semester"      
-
-**Answer (from your PDFs):** The details on the sessions and timings would be intimated before slot booking. If a student has selected / allotted a particular branch of Engineering through counseling, in a selected campus, under a specific category, would it be possible to change the branch, campus or category later after allotment? Once allotted. There is no Sliding/ up gradation in category / change of campus/ change of branch option offered further to admission The applicants should register for VITMEE, a Computer Based Objective test at indicated test centres. - The list of short-listed candidates will be published in the website and personal SMS will be sent to the registered mobile number for online counselling. - Short-listed Candidates will be asked to choose the preference of campus and branch. Selected candidates will have to pay the full fees The list of short-listed candidates will be published in the website or personal SMS will be sent to the registered mobile number for online counselling. - Short-listed Candidates will be asked to choose the preference of campus and branch.
-
-*Sources:* VITEEE FAQS.pdf, MCA 2 Years PG Program.pdf, POSTGRADUTE ADMISSIONS PROCESS.pdf, Fresher's-Hostel-Admission-Information-Vellore-Campus-2025-26.pdf, VITMEE MCA FAQS.pdf
-*Note: Extracted from your ingested PDFs.*
-
-
-
-
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe .\app\rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --q "which PG programs are avialable in vellore"               
-
-**Programs Offered**
-- Industrial Design - Offered Location: Vellore B.Arch - Offered Location: Vellore, VIT-Bhopal B.Sc. (Hons.) Agriculture
-
-*Sources:* POSTGRADUTE ADMISSIONS PROCESS.pdf, UG Programmes Offered.pdf, Academic Fee.pdf, UG FOREIGN FAQ.pdf
-
-
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe .\app\rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --q "is VITMEE required for M.Tech/MCA what are the valid scorecards?"
-
-**Answer (from your PDFs):** When is VITMEE conducted? The exam is typically held in the first half of the year (April-May), depending on the admission cycle. Check the official website for the latest updates. Where is the VITMEE exam conducted? The exam is conducted at designated test centers across India. The exact test center details will be mentioned on the admit card. How is the MCA admission process carried out? Admission is based on: 1.
-
-*Sources:* VITMEE MCA FAQS.pdf, VITEEE FAQS.pdf, PG MTECH FAQS.pdf
-*Note: Extracted from your ingested PDFs.*
-
-
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe .\app\rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --q "what is the MBA admission process"                               
-
-**Answer (from your PDFs):** When is VITMEE conducted? The exam is typically held in the first half of the year (April-May), depending on the admission cycle. Check the official website for the latest updates. Where is the VITMEE exam conducted? The exam is conducted at designated test centers across India. The exact test center details will be mentioned on the admit card. How is the MCA admission process carried out? Admission is based on: 1.
-
-*Sources:* VITMEE MCA FAQS.pdf, M.SC PROCESS.pdf, VITREE FAQS.pdf, PG MTECH FAQS.pdf, VITEEE FAQS.pdf
-*Note: Extracted from your ingested PDFs.*
-
-
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe .\app\rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --q "what are the ug degree requirements and minimum marks for PG entry"
-
-**Answer (from your PDFs):** (or its equivalent) - The candidates short-listed based on their merit will be called for the admission - Candidates will be allot the seat in the order of merit based on the U.G. marks. - The fact that a candidate has qualified is does not guarantee for admission. This depends upon the cut-off fixed on the merit list and the availability of seats - The short listed candidate list will be published on our website 2. 11th grade marksheet/AS Level/Form V(for appearing candidates) & 12th grade mark sheet/A Level/Form VI (for passed out candidates). 3. Both 11th and 12th Marksheets (for Nepal Education Board Candidates) Equivalent certificate from Association of Indian Universities(AIU) is mandatory, if passed from Universities/Boards other than India. - Stage 6 Download Application Filled in application will be available for download after completion View More - The qualifying marks is relaxed by 10 % i.e.
-
-*Sources:* M.SC PROCESS.pdf, UG FOREIGN FAQ.pdf, Academic Fee.pdf, POSTGRADUTE ADMISSIONS PROCESS.pdf, MCA 2 Years PG Program.pdf
-*Note: Extracted from your ingested PDFs.*
-
-
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe .\app\rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --q "are there programme - specific prerequisites"                      
-
-**Answer (from your PDFs):** We offer a broad assortment of programmes in Information Technology, Artificial Intelligence and Data Engineering, Cyber Security, Software Engineering, Computer Science and Computer Applications. The curricula of these programmes are designed with stakeholder's feedback and benchmarked against the best in the world. We handhold our students and facilitate their learning process throughout their curriculum Eligibility: General Eligibility . Indian students whose parents are currently working abroad with a valid work VISA. . Candidates whose date of birth falls on or after 1st July 2003 are eligible to apply. . English as one of the subjects in the qualifying Examination programmes only) - Community Certificate (only for SC/ST categories) - Conduct Certificate (Original) - Admission letter and a photocopy of the programme fee receipt - Four copies of recent passport size colour photograph - An undertaking for good conduct and behavior in a prescribed form (to be issued by the University/Institute at the time of admission) - University Registration Number/ID will be generated to the candidates those who have Eligibility The following are the basic prerequisites for candidates: A full-time degree from any recognized University/Institute with a minimum aggregate of 60% or first class for M.Tech degree programmes (Candidates appearing for their final degree exam/ final semester exam in the current year are also eligible to apply) Must have 60% and above or equivalent CGPA in 10th, 12th / Diploma / UG / PG degree Pattern of the Question Paper The Computer-Based Test (CBT) objective question Paper consists of 100 questions with a maximum of 100 marks Eligibility Criteria - Candidates should have graduated with a full-time degree from any recognized University/Institute with a minimum aggregate of 60% or First class for M.Tech.
-
-*Sources:* M.SC PROCESS.pdf, UG NRI PROCESS.pdf, POSTGRADUTE ADMISSIONS PROCESS.pdf, UG FOREIGN FAQ.pdf, VITREE PROCESS.pdf
-*Note: Extracted from your ingested PDFs.*
-
-
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe .\app\rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --q "is work experience need for mCA"             
-
-**Answer (from your PDFs):** What documents are required for MCA admission? At the time of admission, you will need: - VITMEE scorecard. - Academic certificates (10th, 12th, and undergraduate mark sheets). - Mathematics proof (if required). - Transfer Certificate (TC). - Migration Certificate. - Valid photo ID proof. Is VITMEE mandatory for MCA admission?
-
-*Sources:* VITMEE MCA FAQS.pdf, UG FOREIGN FAQ.pdf, MCA 2 Years PG Program.pdf
-*Note: Extracted from your ingested PDFs.*
-
-
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe .\app\rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --q "do PG programs offer part-time or weekend modes"
-
-**Answer (from your PDFs):** Criteria Description v) Research Previous research contributions, including publications and Experience projects. Fee Structure for Tuition Fee: Details One Time Tuition Fee Per Thesis Payment Annum Fee* Ph.D. Internal Full Time 3,000 INR 40,000 INR 10,000 INR Ph.D. External Part Time 3,000 INR 60,000 INR 10,000 (Teachers) INR Ph.D. External Part Time 3,000 INR 75,000 INR 10,000 (Industry) INR Direct Ph.D M.Tech. Smart Manufacturing - Offered Location: Vellore M.Tech. Computer Science and Engineering - Offered Location: Vellore, Chennai M. Tech.
-
-*Sources:* VITREE PROCESS.pdf, POSTGRADUTE ADMISSIONS PROCESS.pdf, VITEEE FAQS.pdf, Academic Fee.pdf, M.SC PROCESS.pdf
-*Note: Extracted from your ingested PDFs.*
-
-
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe .\app\rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --q "what is the credit structure and duration for each PG program"
-
-**Answer (from your PDFs):** (or its equivalent) - The candidates short-listed based on their merit will be called for the admission - Candidates will be allot the seat in the order of merit based on the U.G. marks. - The fact that a candidate has qualified is does not guarantee for admission. This depends upon the cut-off fixed on the merit list and the availability of seats - The short listed candidate list will be published on our website Will I be offered the option of choosing campus and program while filling application? 'No'. Only at the time of counseling you will be offered the option of choosing campus and programme. This would depend on the availability of the programme and campus as per your rank in the order of merit. What is the closing date for issue of applications?
-
-*Sources:* M.SC PROCESS.pdf, VITEEE FAQS.pdf, POSTGRADUTE ADMISSIONS PROCESS.pdf, VITREE FAQS.pdf, UG FOREIGN FAQ.pdf
-*Note: Extracted from your ingested PDFs.*
-
-
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe .\app\rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --q "can PG students can select the electives across schools"      
-
-**Answer (from your PDFs):** (or its equivalent) - The candidates short-listed based on their merit will be called for the admission - Candidates will be allot the seat in the order of merit based on the U.G. marks. - The fact that a candidate has qualified is does not guarantee for admission. This depends upon the cut-off fixed on the merit list and the availability of seats - The short listed candidate list will be published on our website The list of short-listed candidates will be published in the website or personal SMS will be sent to the registered mobile number for online counselling. - Short-listed Candidates will be asked to choose the preference of campus and branch. Selected candidates will have to pay an advance payment of Rs. 1 lakh. - Candidates who fail to pay the advance before deadline, will not be considered for admission Applicants belonging to SC/ST category must fill in the proforma given in Appendix-II and have it attested by a competent authority (The list of authorities empowered for the same is given in Appendix-II).
-
-*Sources:* M.SC PROCESS.pdf, POSTGRADUTE ADMISSIONS PROCESS.pdf, UG FOREIGN FAQ.pdf, Hostel-Joint-Affidavit-2025.pdf, Hostel_info.pdf
-*Note: Extracted from your ingested PDFs.*
-
-
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe .\app\rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --q "si there any bridge course for non cs graduates"        
-
-**Answer (from your PDFs):** Electronics/Physics/Bio-Medical Sciences/ Bio-medical Instrumentation (* Bridge course needed) Electronics & B.E/B.Tech. Degree in Electronics /ECE/ Communication Telecommunication/Information Technology/ Engineering Computer Sciences* (*Bridge course needed) (Intelligent Communication Systems) B.E/B.Tech. Degree in any branch / M.S / M.Sc. Computer Science or IT or Software Engineering / MCA Computer / Int. M.Tech CSE, any Computer Science related Science and branches/ Int. M.Sc Computer Science, Software Engg., Engineering IT, Software Tech., Data Science B.E/B.Tech. Degree in any branch / M.S / M.Sc. Computer Science or IT or Software Engineering / MCA / Int.
-
-*Sources:* POSTGRADUTE ADMISSIONS PROCESS.pdf, MCA 2 Years PG Program.pdf, UG FOREIGN FAQ.pdf, Academic Fee.pdf, UG NRI PROCESS.pdf
-*Note: Extracted from your ingested PDFs.*
-
-
-
-
-
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe .\app\rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --q "what is the tutuion fee for computer science"   
-
-**Hostel Fee Details (Vellore)**
-| Block | Gender | Level | Type | AY | Category | Occ | AC | Mess | Room+Mess | Admission | Caution | Other | Total | Curr |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,36,800 | 15,000 | 15,000 |  | 1,66,800 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,46,300 | 15,000 | 15,000 |  | 1,76,300 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,58,200 | 15,000 | 15,000 |  | 1,88,200 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,45,300 | 15,000 | 15,000 |  | 1,75,300 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,54,800 | 15,000 | 15,000 |  | 1,84,800 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,66,700 | 15,000 | 15,000 |  | 1,96,700 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,65,000 | 15,000 | 15,000 |  | 1,95,000 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,74,500 | 15,000 | 15,000 |  | 2,04,500 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,86,400 | 15,000 | 15,000 |  | 2,16,400 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,98,900 | 15,000 | 15,000 |  | 2,28,900 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 2,08,400 | 15,000 | 15,000 |  | 2,38,400 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 2,20,300 | 15,000 | 15,000 |  | 2,50,300 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | NRI |  | AC |  |  | 250 | 400 |  | 3,710 | USD |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | 1,36,800 | 1,36,800 | 15,000 | 15,000 |  | 1,66,800 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | 1,45,300 | 1,45,300 | 15,000 | 15,000 |  | 1,75,300 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | 1,46,300 | 1,46,300 | 15,000 | 15,000 |  | 1,76,300 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | 1,54,800 | 1,54,800 | 15,000 | 15,000 |  | 1,84,800 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | 1,58,200 | 1,58,200 | 15,000 | 15,000 |  | 1,88,200 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | 1,65,000 | 1,65,000 | 15,000 | 15,000 |  | 1,95,000 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | 1,66,700 | 1,66,700 | 15,000 | 15,000 |  | 1,96,700 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | 1,74,500 | 1,74,500 | 15,000 | 15,000 |  | 2,04,500 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | 1,86,400 | 1,86,400 | 15,000 | 15,000 |  | 2,16,400 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | 1,98,900 | 1,98,900 | 15,000 | 15,000 |  | 2,28,900 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | 2,08,400 | 2,08,400 | 15,000 | 15,000 |  | 2,38,400 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | 2,20,300 | 2,20,300 | 15,000 | 15,000 |  | 2,50,300 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | NRI |  | AC | 3,060 |  | 250 | 400 |  | 3,710 | USD |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | Non Veg |  |  |  |  |  |  |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | Special Mess |  |  |  |  |  |  |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | Veg |  |  |  |  |  |  |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,12,400 | 15,000 | 15,000 |  | 1,42,400 | INR |       
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,21,900 | 15,000 | 15,000 |  | 1,51,900 | INR |       
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,33,800 | 15,000 | 15,000 |  | 1,63,800 | INR |       
-
-
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe .\app\rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --q "what is the last date and mode of payment "  
-
-**Answer (from your PDFs):** The list of short-listed candidates will be published in the website or personal SMS will be sent to the registered mobile number for online counselling. - Short-listed Candidates will be asked to choose the preference of campus and branch. Selected candidates will have to pay an advance payment of Rs. 1 lakh. - Candidates who fail to pay the advance before deadline, will not be considered for admission The applicants should register for VITMEE, a Computer Based Objective test at indicated test centres. - The list of short-listed candidates will be published in the website and personal SMS will be sent to the registered mobile number for online counselling. - Short-listed Candidates will be asked to choose the preference of campus and branch. Selected candidates will have to pay the full fees Will I be offered the option of choosing campus and program while filling application?
-
-*Sources:* POSTGRADUTE ADMISSIONS PROCESS.pdf, MCA 2 Years PG Program.pdf, VITEEE FAQS.pdf, PG MTECH FAQS.pdf, M.SC PROCESS.pdf
-*Note: Extracted from your ingested PDFs.*
-
-
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe .\app\rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --q "what happen if i miss the fee payment deadline"
-
-**Hostel Fee Details (Vellore)**
-| Block | Gender | Level | Type | AY | Category | Occ | AC | Mess | Room+Mess | Admission | Caution | Other | Total | Curr |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 136,800 | 15,000 | 15,000 |  | 166,800 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 146,300 | 15,000 | 15,000 |  | 176,300 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 158,200 | 15,000 | 15,000 |  | 188,200 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 145,300 | 15,000 | 15,000 |  | 175,300 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 154,800 | 15,000 | 15,000 |  | 184,800 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 166,700 | 15,000 | 15,000 |  | 196,700 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 167,700 | 15,000 | 15,000 |  | 197,700 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 179,600 | 15,000 | 15,000 |  | 209,600 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 165,000 | 15,000 | 15,000 |  | 195,000 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 174,500 | 15,000 | 15,000 |  | 204,500 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 186,400 | 15,000 | 15,000 |  | 216,400 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 198,900 | 15,000 | 15,000 |  | 228,900 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 208,400 | 15,000 | 15,000 |  | 238,400 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 220,300 | 15,000 | 15,000 |  | 250,300 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 146,700 | 15,000 | 15,000 |  | 176,700 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 156,200 | 15,000 | 15,000 |  | 186,200 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 168,100 | 15,000 | 15,000 |  | 198,100 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 156,400 | 15,000 | 15,000 |  | 186,400 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 165,900 | 15,000 | 15,000 |  | 195,900 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 177,800 | 15,000 | 15,000 |  | 207,800 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 167,300 | 15,000 | 15,000 |  | 197,300 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 176,800 | 15,000 | 15,000 |  | 206,800 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 188,700 | 15,000 | 15,000 |  | 218,700 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 182,600 | 15,000 | 15,000 |  | 212,600 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 192,100 | 15,000 | 15,000 |  | 222,100 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 204,000 | 15,000 | 15,000 |  | 234,000 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 196,800 | 15,000 | 15,000 |  | 226,800 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 206,300 | 15,000 | 15,000 |  | 236,300 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 218,200 | 15,000 | 15,000 |  | 248,200 | INR |
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 2,790 | 250 | 400 |  | 3,440 | USD |    
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 3,060 | 250 | 400 |  | 3,710 | USD |    
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 3,430 | 250 | 400 |  | 4,080 | USD |    
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 3,720 | 250 | 400 |  | 4,370 | USD |    
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 4,270 | 250 | 400 |  | 4,920 | USD |    
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 3,070 | 250 | 400 |  | 3,720 | USD |    
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 3,220 | 250 | 400 |  | 3,870 | USD |    
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 3,660 | 250 | 400 |  | 4,310 | USD |    
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 4,020 | 250 | 400 |  | 4,670 | USD |    
-| Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 4,550 | 250 | 400 |  | 5,200 | USD |    
-
-
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe .\app\rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --q "who are hostel fees are paid"                  
-
-**Hostel Fee Details (Vellore)**
-| Block | Gender | Level | Type | AY | Category | Occ | AC | Mess | Room+Mess | Admission | Caution | Other | Total | Curr |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,36,800 | 15,000 | 15,000 |  | 1,66,800 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,46,300 | 15,000 | 15,000 |  | 1,76,300 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,58,200 | 15,000 | 15,000 |  | 1,88,200 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,45,300 | 15,000 | 15,000 |  | 1,75,300 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,54,800 | 15,000 | 15,000 |  | 1,84,800 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,66,700 | 15,000 | 15,000 |  | 1,96,700 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,65,000 | 15,000 | 15,000 |  | 1,95,000 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,74,500 | 15,000 | 15,000 |  | 2,04,500 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,86,400 | 15,000 | 15,000 |  | 2,16,400 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,98,900 | 15,000 | 15,000 |  | 2,28,900 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 2,08,400 | 15,000 | 15,000 |  | 2,38,400 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 2,20,300 | 15,000 | 15,000 |  | 2,50,300 | INR |     
-| Ladies Hostel | Female |  |  | 2025-26 | NRI |  | AC |  |  | 250 | 400 |  | 3,710 | USD |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | 1,36,800 | 1,36,800 | 15,000 | 15,000 |  | 1,66,800 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | 1,45,300 | 1,45,300 | 15,000 | 15,000 |  | 1,75,300 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | 1,46,300 | 1,46,300 | 15,000 | 15,000 |  | 1,76,300 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | 1,54,800 | 1,54,800 | 15,000 | 15,000 |  | 1,84,800 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | 1,58,200 | 1,58,200 | 15,000 | 15,000 |  | 1,88,200 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | 1,65,000 | 1,65,000 | 15,000 | 15,000 |  | 1,95,000 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | 1,66,700 | 1,66,700 | 15,000 | 15,000 |  | 1,96,700 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | 1,74,500 | 1,74,500 | 15,000 | 15,000 |  | 2,04,500 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | 1,86,400 | 1,86,400 | 15,000 | 15,000 |  | 2,16,400 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | 1,98,900 | 1,98,900 | 15,000 | 15,000 |  | 2,28,900 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | 2,08,400 | 2,08,400 | 15,000 | 15,000 |  | 2,38,400 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | 2,20,300 | 2,20,300 | 15,000 | 15,000 |  | 2,50,300 | INR |
-| Ladies Hostel | Female |  |  | 2025-26 | NRI |  | AC | 3,060 |  | 250 | 400 |  | 3,710 | USD |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | Non Veg |  |  |  |  |  |  |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | Special Mess |  |  |  |  |  |  |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC | Veg |  |  |  |  |  |  |
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,12,400 | 15,000 | 15,000 |  | 1,42,400 | INR |       
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,21,900 | 15,000 | 15,000 |  | 1,51,900 | INR |       
-| Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,33,800 | 15,000 | 15,000 |  | 1,63,800 | INR |       
-
-
-(.venv) C:\Users\T8543\Downloads\project-2>
+project-2/
+├─ app/
+│  ├─ rag_answer.py              # router: SQL-first, FAISS fallback (RAG)
+│  ├─ sql_router.py              # hostel SQL helpers
+│  ├─ handlers/
+│  │  ├─ academics.py            # reads academic_* tables
+│  │  ├─ hostels.py              # reads hostel_* tables
+│  │  ├─ rules.py                # reads rules
+│  │  └─ vitree.py               # reads vitree_* tables
+│  └─ utils/
+│     ├─ render.py               # md_table/bullets
+│     ├─ aliases.py              # text normalizers (UG/PG/NRI…)
+│     └─ fallback_rag.py         # FAISS retrieval + summarizer (RAG fallback)
+│
+├─ Data/
+│  ├─ Raw/                       # original PDFs (ALL of them)
+│  │  ├─ HOSTEL/                 # hostel fee/info PDFs
+│  │  └─ ACADEMICS/              # UG/PG/MCA/MSc/VITREE/Rules PDFs
+│  ├─ staging/                   # auto tables from hostel PDFs (ETL output)
+│  ├─ processed/                 # **YOUR curated CSVs** (source of truth for SQL)
+│  │  ├─ UG/
+│  │  │  ├─ ug_programs.csv
+│  │  │  ├─ ug_eligibility.csv
+│  │  │  ├─ ug_documents.csv
+│  │  │  ├─ ug_fees.csv
+│  │  │  └─ ug_scholarships.csv
+│  │  ├─ PG/
+│  │  │  ├─ pg_programs.csv
+│  │  │  ├─ pg_eligibility.csv
+│  │  │  ├─ pg_documents.csv
+│  │  │  ├─ pg_fees.csv
+│  │  │  └─ pg_scholarships.csv
+│  │  ├─ MCA/
+│  │  │  ├─ mca_programs.csv     # or include under PG_programs; your choice
+│  │  │  ├─ mca_eligibility.csv
+│  │  │  ├─ mca_documents.csv
+│  │  │  └─ mca_fees.csv
+│  │  ├─ MSc/
+│  │  │  ├─ msc_programs.csv
+│  │  │  ├─ msc_eligibility.csv
+│  │  │  ├─ msc_documents.csv
+│  │  │  └─ msc_fees.csv
+│  │  ├─ RULES/
+│  │  │  └─ rules.csv
+│  │  └─ VITREE/
+│  │     ├─ vitree.csv
+│  │     ├─ vitree_fees.csv
+│  │     └─ vitree_stipend.csv
+│  ├─ sql/
+│  │  └─ vit_vellore.db         # SQLite generated by ETL/load_sqlite.py
+│  └─ index/
+│     └─ faiss/                  # vector store (embeddings) built from PDFs
+│
+├─ ETL/
+│  ├─ stage_hostel_tables.py     # hostel PDFs → staging CSVs (auto)
+│  ├─ load_sqlite.py             # loads BOTH staging + processed CSVs → SQLite
+│  ├─ data_ingestion.py          # PDFs → clean text chunks (for FAISS)
+│  ├─ embeddings                 # builds FAISS index from chunks
+│  ├─ pre_processed.py           # optional cleaners
+│  └─ requirements.txt
+└─ .env                          # GEMINI_API_KEY, etc.
