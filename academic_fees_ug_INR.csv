@@ -1,0 +1,28 @@
+level,program,category,ay,tuition,one_time,caution,total,currency,source_file
+UG,B.Tech Group A,Indian,2025-26,173000,,,3000,176000,Academic Fee.pdf
+UG,B.Tech Group A **,Indian,2025-26,207000,,,3000,210000,Academic Fee.pdf
+UG,B.Tech Group B,Indian,2025-26,195000,,,3000,198000,Academic Fee.pdf
+UG,B.Tech Group B (Bhopal campus),Indian,2025-26,198000,,,3000,201000,Academic Fee.pdf
+UG,B.Arch,Indian,2025-26,310000,,,5000,315000,Academic Fee.pdf
+UG,B.Des (Industrial Design),Indian,2025-26,173000,,,5000,178000,Academic Fee.pdf
+UG,B.Sc. (Hons.) Agriculture,Indian,2025-26,110000,,,5000,115000,Academic Fee.pdf
+UG,B.Sc. (Hospitality and Hotel Administration),Indian,2025-26,77000,,,5000,82000,Academic Fee.pdf
+UG,BCA,Indian,2025-26,90000,,,5000,95000,Academic Fee.pdf
+UG,B.Sc. (Computer Science),Indian,2025-26,90000,,,5000,95000,Academic Fee.pdf
+UG,B.Com,Indian,2025-26,90000,,,5000,95000,Academic Fee.pdf
+UG,B.Com (Banking And Capital Markets),Indian,2025-26,127000,,,5000,132000,Academic Fee.pdf
+UG,B.Com (Financial Technology),Indian,2025-26,127000,,,5000,132000,Academic Fee.pdf
+UG,B.Sc. (Multimedia and Animation),Indian,2025-26,99000,,,5000,104000,Academic Fee.pdf
+UG,B.Sc. Visual Communication,Indian,2025-26,128000,,,5000,133000,Academic Fee.pdf
+UG,BBA,Indian,2025-26,90000,,,5000,95000,Academic Fee.pdf
+UG,Integrated M.Tech. (Years 1-5),Indian,2025-26,120000,,,2000,,Academic Fee.pdf
+UG,Integrated M.Tech. (Years 1-5) Category 2,Indian,2025-26,190000,,,2000,,Academic Fee.pdf
+UG,Integrated M.Tech. (Years 1-5) Category 3,Indian,2025-26,230000,,,2000,,Academic Fee.pdf
+UG,Integrated M.Tech. (Years 1-5) Category 4,Indian,2025-26,275000,,,2000,,Academic Fee.pdf
+UG,Integrated M.Tech. (Years 1-5) Category 5,Indian,2025-26,295000,,,2000,,Academic Fee.pdf
+UG,Integrated M.Sc. Biotechnology (Years 1-5),Indian,2025-26,75000,,,2000,,Academic Fee.pdf
+UG,Integrated M.Sc. Food Science and Technology (Years 1-5),Indian,2025-26,75000,,,2000,,Academic Fee.pdf
+UG,Integrated M.Sc. Computational Statistics and Data Analytics (Years 1-5),Indian,2025-26,75000,,,2000,,Academic Fee.pdf
+UG,Integrated M.Sc. Physics (Years 1-5),Indian,2025-26,75000,,,2000,,Academic Fee.pdf
+UG,Integrated M.Sc. Chemistry (Years 1-5),Indian,2025-26,75000,,,2000,,Academic Fee.pdf
+UG,Integrated M.Sc. Mathematics (Years 1-5),Indian,2025-26,75000,,,2000,,Academic Fee.pdf
