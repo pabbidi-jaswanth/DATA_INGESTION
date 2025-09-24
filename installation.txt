@@ -1,22 +1,13 @@
-# keep your current venv
-python -m pip install -U pip setuptools wheel
+level, audience, section, text, source_file
+UG, Foreign, General Eligibility, "Any foreign national with valid passport... OCI/PIO...", UG FOREIGN Program_Process.pdf
+UG, Foreign, Qualifying Examination, "English should have been studied... Mathematics and Physics compulsory... third subject can be...", UG FOREIGN Program_Process.pdf
+UG, Foreign, Boards Accepted, "GCE A-Level, Cambridge HSC, US High School, Canada Grade 12, ... AIU equivalence...", UG FOREIGN Program_Process.pdf
+UG, NRI,    Qualifying Examination, "...12 years of schooling... PCM/PCB... 60%... AIU certificate if outside listed boards...", UG NRI PROCESS.pdf
+UG, NRI,    Notes, "Applicants must provide qualifying mark statement... fraudulent docs revoked without refund...", UG NRI PROCESS.pdf
 
-# Chroma + pins that avoid pydantic conflicts on Windows
-pip uninstall -y pydantic pydantic-core || rem ok if not installed
-pip install "pydantic<2"
-pip install --only-binary=:all: "hnswlib==0.8.0" "chromadb==0.4.24"
 
-# LangChain (only needed if you want FAISS path or utility splitters)
-pip install "langchain==0.0.325"
-
-# Google’s Gemini SDK
-pip install google-generativeai
-
-# Optional local embeddings fallback (if Gemini Embeddings not allowed)
-pip install sentence-transformers
-
-# Optional: FAISS (Windows wheels are spotty; skip if it fails)
-pip install faiss-cpu
-
-# UI
-pip install streamlit tqdm scikit-learn joblib
+level, audience, program_family, subjects_required, min_aggregate, english_required, notes_short, source_file
+UG, Indian, B.Tech, PCM or PCB, 60%, Yes, Based on VITEEE rank; boards per brochure, UG NRI PROCESS.pdf
+UG, NRI,   B.Tech, PCM or PCB, 60%, Yes, Parents working abroad + VISA; AIU eq. if needed, UG NRI PROCESS.pdf
+UG, Foreign,B.Tech, PCM or PCB (third: Chem/CS/Electronics/Bio/BT), 55%, Yes, See detailed board equivalence, UG FOREIGN Program_Process.pdf
+...
