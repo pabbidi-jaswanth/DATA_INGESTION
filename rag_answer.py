@@ -1,332 +1,91 @@
-# app/rag_answer.py — SQL for hostel, FAISS for academics (fast, reliable)
-import os, re, sys, argparse, sqlite3
-from pathlib import Path
-from typing import List, Dict, Any, Tuple, Optional
+"""
+Router: SQL-first for anything tabular/structured (fees, programs, eligibility, docs, scholarships, hostel),
+RAG fallback (FAISS) for long-form “explain/what/how” questions.
 
-# ---------------- FAISS + Gemini embeddings ----------------
-from langchain_community.vectorstores import FAISS
-from langchain_core.embeddings import Embeddings as LCEmbeddings
+Outputs are intentionally crisp: a single table (when applicable) + short bullets.
+"""
 
-class GeminiLCEmbeddings(LCEmbeddings):
-    def __init__(self, model: str = "models/text-embedding-004", api_key_env: str = "GEMINI_API_KEY"):
-        import google.generativeai as genai
-        api_key = os.getenv(api_key_env)
-        if not api_key:
-            print("[ERROR] GEMINI_API_KEY not set.")
-            sys.exit(1)
-        genai.configure(api_key=api_key)
-        self.genai = genai
-        self.model = model
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        return [self.genai.embed_content(model=self.model, content=t)["embedding"] for t in texts]
-    def embed_query(self, text: str) -> List[float]:
-        return self.genai.embed_content(model=self.model, content=text)["embedding"]
+from app.sql_router import (
+    detect_structured_intent, parse_filters,
+    sql_hostel_overview, sql_block_contacts, sql_list_blocks,
+    sql_programs, sql_eligibility, sql_documents, sql_academic_fees, sql_scholarships
+)
 
-def load_store(index_dir: Path, collection: str, emb: LCEmbeddings) -> FAISS:
-    return FAISS.load_local(
-        str(index_dir), embeddings=emb, index_name=collection,
-        allow_dangerous_deserialization=True
-    )
+# Optional pretty rendering (keep simple to avoid deps on utils/render)
+def _fmt_table(tbl: dict) -> str:
+    if not tbl or not tbl.get("rows"):
+        return "_No matching rows._"
+    title  = f"**{tbl.get('title','Results')}**"
+    cols   = tbl["columns"]
+    header = " | ".join(cols)
+    sep    = " | ".join(["---"]*len(cols))
+    lines  = [title, "", header, sep]
+    for r in tbl["rows"]:
+        lines.append(" | ".join(str(x) if x is not None else "" for x in r))
+    return "\n".join(lines)
 
-def retrieve(store: FAISS, query: str, k: int = 40):
-    return store.similarity_search(query, k=k)
+def _fmt_bullets(bullets: list[str]) -> str:
+    return "\n".join(f"- {b}" for b in bullets) if bullets else ""
 
-def _keyword_score(text: str, q: str) -> int:
-    qwords = [w for w in re.findall(r"[a-z0-9]+", q.lower()) if len(w) > 2]
-    t = text.lower()
-    return sum(t.count(w) for w in qwords)
+def _pack(table_dict=None, bullets=None):
+    parts = []
+    if table_dict:
+        parts.append(_fmt_table(table_dict))
+    if bullets:
+        if parts: parts.append("")
+        parts.append(_fmt_bullets(bullets))
+    return "\n".join(parts) if parts else "_No results._"
 
-def _postfilter_and_rerank(docs, query: str, want_hostel: bool = False, topn: int = 12):
-    def tok(md):
-        name = (md.get("source_file") or "").lower()
-        return {
-            "lh": "lh" in name or "ladies" in name or "girls" in name or "women" in name,
-            "mh": "mh" in name or "mens" in name or "boys" in name,
-            "hostel": "hostel" in name,
-        }
-    scored = []
-    for d in docs:
-        md = d.metadata or {}
-        t = tok(md)
-        s = 0
-        if want_hostel and t["hostel"]: s += 2
-        s += _keyword_score(d.page_content or "", query)
-        scored.append((s, d))
-    scored.sort(key=lambda x: x[0], reverse=True)
-    return [d for s, d in scored][:topn]
+def _sql_route(q: str) -> str | None:
+    intent = detect_structured_intent(q)
+    f = parse_filters(q)
 
-DB_PATH = Path("Data/sql/vit_vellore.db")
-def _conn() -> Optional[sqlite3.Connection]:
+    # HOSTEL intents
+    if intent == "contacts":
+        res = sql_block_contacts(f)
+        return _pack(res.get("table"), res.get("bullets"))
+
+    if intent == "blocks":
+        res = sql_list_blocks(f)
+        return _pack(res.get("table"), res.get("bullets"))
+
+    if intent in ("hostel", "tabular"):
+        res = sql_hostel_overview(f)
+        return _pack(res.get("table"), res.get("bullets"))
+
+    # ACADEMICS intents
+    if intent == "programs":
+        res = sql_programs(f, q)
+        return _pack(res.get("table"), res.get("bullets"))
+    if intent == "eligibility":
+        res = sql_eligibility(f, q)
+        return _pack(res.get("table"), res.get("bullets"))
+    if intent == "documents":
+        res = sql_documents(f, q)
+        return _pack(res.get("table"), res.get("bullets"))
+    if intent == "fees":
+        res = sql_academic_fees(f, q)
+        return _pack(res.get("table"), res.get("bullets"))
+    if intent == "scholarships":
+        res = sql_scholarships(f, q)
+        return _pack(res.get("table"), res.get("bullets"))
+
+    return None  # let RAG decide
+
+def answer(query: str) -> str:
+    sql_text = _sql_route(query)
+    if sql_text is not None:
+        return sql_text
+
+    # --------- FAISS fallback (short & source-backed) ----------
     try:
-        con = sqlite3.connect(str(DB_PATH))
-        con.row_factory = sqlite3.Row
-        return con
+        from app.utils.fallback_rag import answer as rag_fallback
+        rag = rag_fallback(query, max_chunks=6, max_tokens=450)  # keep it tight
+        return rag or "_I couldn't find that in my sources._"
     except Exception:
-        return None
-
-# ---------------- simple renderers ----------------
-def md_table(title: str, cols: List[str], rows: List[List[str]]) -> str:
-    seen=set(); uniq=[]
-    for r in rows:
-        tup=tuple("" if c is None else str(c) for c in r)
-        if tup in seen: continue
-        seen.add(tup); uniq.append(r)
-    out = []
-    if title: out.append(f"**{title}**")
-    out.append("| " + " | ".join(cols) + " |")
-    out.append("|" + "|".join(["---"]*len(cols)) + "|")
-    for r in uniq:
-        out.append("| " + " | ".join("" if c is None else str(c) for c in r) + " |")
-    return "\n".join(out)
-
-def bullets(lines: List[str], title: Optional[str]=None) -> str:
-    if not lines: return ""
-    seen=set(); out_lines=[]
-    for ln in lines:
-        if ln in seen: continue
-        seen.add(ln); out_lines.append(ln)
-    out = [f"**{title}**" if title else ""]
-    out += [f"- {ln}" for ln in out_lines]
-    return "\n".join([x for x in out if x])
-
-# ---------------- hostel helpers (SQL) ----------------
-def _looks_like_phone(s: str) -> bool:
-    return bool(re.search(r"(?:\+?\d{1,3}[-\s]?)?\d{7,}", s or ""))
-
-def _looks_like_email(s: str) -> bool:
-    return "@" in (s or "") and "." in (s or "")
-
-def render_landlines(con, gender: Optional[str]) -> str:
-    if gender == "LH":
-        rows = con.execute("SELECT block_code AS code, block_code AS name, landline, '' AS email FROM lh_blocks ORDER BY block_code").fetchall()
-        return md_table("Ladies’ Hostel — Block-wise Landlines", ["Block Code","Block Name","Landline","Email"], [[r["code"],r["name"],r["landline"],""] for r in rows])
-    else:
-        rows = con.execute("SELECT block_code, COALESCE(block_name, block_code) AS block_name, landline, COALESCE(email,'') AS email FROM mh_blocks ORDER BY block_code").fetchall()
-        return md_table("Men’s Hostel — Block-wise Landlines", ["Block Code","Block Name","Landline","Email"], [[r["block_code"],r["block_name"],r["landline"],r["email"]] for r in rows])
-
-def render_block_list(con, gender: Optional[str]) -> str:
-    if gender == "LH":
-        rows = con.execute("SELECT block_code FROM lh_blocks ORDER BY block_code").fetchall()
-        return bullets([f'{r["block_code"]} — {r["block_code"]}' for r in rows], "Ladies’ Hostel Blocks")
-    elif gender == "MH":
-        rows = con.execute("SELECT block_code, COALESCE(block_name, block_code) AS nm FROM mh_blocks ORDER BY block_code").fetchall()
-        return bullets([f'{r["block_code"]} — {r["nm"]}' for r in rows], "Men’s Hostel Blocks")
-    else:
-        a = render_block_list(con, "MH")
-        b = render_block_list(con, "LH")
-        return a + "\n\n" + b
-
-def _reverse_lookup_phone(con, needle: str):
-    n = re.sub(r"\D", "", needle or "")
-    hits=[]
-    # hostel_contacts
-    cols = [c[1].lower() for c in con.execute("PRAGMA table_info(hostel_contacts)")]
-    if cols:
-        for r in con.execute("SELECT * FROM hostel_contacts"):
-            ph = re.sub(r"\D", "", (r[cols.index("phone")] if "phone" in cols else "") or "")
-            if n and ph.find(n) != -1:
-                hits.append(["Contact", r[cols.index('role')] if 'role' in cols else "",
-                             r[cols.index('name')] if 'name' in cols else "",
-                             r[cols.index('phone')] if 'phone' in cols else "",
-                             r[cols.index('email')] if 'email' in cols else ""])
-    # mh/lh landlines
-    for tname in ("mh_blocks","lh_blocks"):
-        cols = [c[1].lower() for c in con.execute(f"PRAGMA table_info({tname})")]
-        if not cols: continue
-        for r in con.execute(f"SELECT * FROM {tname}"):
-            ph = re.sub(r"\D", "", (r[cols.index("landline")] if "landline" in cols else "") or "")
-            if n and ph.find(n) != -1:
-                code = r[cols.index('block_code')] if 'block_code' in cols else ""
-                name = r[cols.index('block_name')] if 'block_name' in cols else code
-                mail = r[cols.index('email')] if 'email' in cols else ""
-                hits.append(["Block", code, name, ph, mail])
-    return hits
-
-def _reverse_lookup_email(con, needle: str):
-    mail = (needle or "").strip().lower()
-    hits=[]
-    for tname in ("hostel_contacts","mh_blocks"):
-        cols = [c[1].lower() for c in con.execute(f"PRAGMA table_info({tname})")]
-        if "email" not in cols: continue
-        for r in con.execute(f"SELECT * FROM {tname}"):
-            e = (r[cols.index("email")] or "").lower()
-            if e and e==mail:
-                if tname=="hostel_contacts":
-                    hits.append(["Contact", r[cols.index('role')], r[cols.index('name')], r[cols.index('phone')], e])
-                else:
-                    code = r[cols.index('block_code')]
-                    name = r[cols.index('block_name')] if 'block_name' in cols else code
-                    land = r[cols.index('landline')] if 'landline' in cols else ""
-                    hits.append(["Block", code, name, land, e])
-    return hits
-
-def render_reverse_phone(con, phone: str) -> str:
-    hits = _reverse_lookup_phone(con, phone)
-    if not hits: return "_No matches for that phone number._"
-    return md_table("Reverse lookup — phone", ["Type","Role/Code","Name","Phone","Email"], hits)
-
-def render_reverse_mail(con, mail: str) -> str:
-    hits = _reverse_lookup_email(con, mail)
-    if not hits: return "_No matches for that email._"
-    return md_table("Reverse lookup — email", ["Type","Role/Code","Name","Phone","Email"], hits)
-
-def render_hostel_overview_via_sql_router(query: str) -> Optional[str]:
-    try:
-        import sql_router as SR
-        sr_intent = SR.detect_structured_intent(query)
-        f = SR.parse_filters(query)
-        if sr_intent == "contacts":
-            data = SR.sql_block_contacts(f)
-        elif sr_intent == "blocks":
-            data = SR.sql_list_blocks(f)
-        else:
-            data = SR.sql_hostel_overview(f)
-        cols = data["table"]["columns"][:]
-        rows = [r[:] for r in data["table"]["rows"]]
-        if not rows:
-            return None
-        if "Source" in cols:
-            si = cols.index("Source")
-            cols = cols[:si] + cols[si+1:]
-            rows = [[c for j,c in enumerate(r) if j!=si] for r in rows]
-        return md_table(data["table"].get("title","Results"), cols, rows[:80])
-    except Exception:
-        return None
-
-# ---------------- intent detection ----------------
-def detect_hostel_intent(q: str) -> Dict[str, Any]:
-    qq = q.lower()
-    hostelish = any(w in qq for w in ["hostel","block","mh","lh","boys","girls","mens","ladies","warden","supervisor","director","manager","landline","mess","fee"])
-    g = None
-    if any(w in qq for w in ["men", "boys", "mh", "mens"]): g = "MH"
-    if any(w in qq for w in ["ladies", "girls", "women", "lh"]): g = "LH" if g is None else g
-    wants_landlines = hostelish and any(w in qq for w in ["landline", "land line", "std", "phone number", "contact number", "phone", "call"])
-    wants_blocks    = hostelish and "block" in qq and any(w in qq for w in ["name","names","code","codes","list"])
-    reverse_phone = None
-    m = re.search(r"(\+?\d[\d\s\-]{7,})", q)
-    if m and _looks_like_phone(m.group(1)): reverse_phone = m.group(1)
-    reverse_mail = None
-    m = re.search(r"([A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,})", q)
-    if m and _looks_like_email(m.group(1)): reverse_mail = m.group(1)
-    return {"hostelish": hostelish, "gender": g, "landlines": wants_landlines, "blocks": wants_blocks, "reverse_phone": reverse_phone, "reverse_mail": reverse_mail}
-
-# ---------------- FAISS academic extractors ----------------
-def _extract_lines(text: str) -> List[str]:
-    text = re.sub(r"[ \t]+", " ", text or "")
-    raw = re.split(r"[\r\n]+", text)
-    lines = []
-    for ln in raw:
-        ln = ln.strip(" -•\u2022\t")
-        if not ln: continue
-        lines.append(ln)
-    return lines
-
-def summarize_programs(text: str) -> List[str]:
-    lines = _extract_lines(text)
-    picks=[]
-    pat = re.compile(r"\b(B\.?Tech|B\.?Sc|B\.?Com|B\.?A|BBA|BCA|M\.?Tech|MCA|M\.?Sc|MBA|Integrated|Dual|Honours?)\b", re.I)
-    for ln in lines:
-        if pat.search(ln) and len(ln) <= 160:
-            picks.append(ln)
-    seen=set(); out=[]
-    for ln in picks:
-        k=re.sub(r"\W+","",ln.lower())
-        if k in seen: continue
-        seen.add(k); out.append(ln)
-        if len(out)>=30: break
-    return out
-
-def summarize_documents(text: str) -> List[str]:
-    lines = _extract_lines(text)
-    picks=[]
-    keys = ["class 12","xii","hsc","10","sslc","marksheet","mark statement","transfer certificate","tc","migration","provisional","aadhaar","aadhar","pan","passport","visa","id proof","photo","nativity","community","caste","bonafide","medical","blood","undertaking","anti ragging"]
-    for ln in lines:
-        ln_low = ln.lower()
-        if any(k in ln_low for k in keys) and len(ln)<=160:
-            picks.append(re.sub(r"^\d+\s*[\).\-\u2022]*\s*","",ln).strip())
-    seen=set(); out=[]
-    for ln in picks:
-        k=re.sub(r"\W+","",ln.lower())
-        if k in seen: continue
-        seen.add(k); out.append(ln)
-        if len(out)>=30: break
-    return out
-
-def summarize_generic(text: str) -> str:
-    blob = re.sub(r"\s+", " ", text or "").strip()
-    if not blob: return ""
-    parts = re.split(r"(?<=[.!?])\s+", blob)
-    return " ".join(parts[:8])
-
-def _faiss_bundle(index_dir: Path, collection: str, query: str, want_hostel_bias=False) -> Tuple[str,List[str]]:
-    emb = GeminiLCEmbeddings()
-    store = load_store(index_dir, collection, emb)
-    docs = retrieve(store, query, k=40)
-    docs = _postfilter_and_rerank(docs, query, want_hostel=want_hostel_bias, topn=12)
-    ctx_lines, sources = [], []
-    for d in docs:
-        md = d.metadata or {}
-        src = md.get("source_file") or md.get("source_title") or "unknown"
-        sources.append(src)
-        ctx_lines += [d.page_content or ""]
-    return "\n\n".join(ctx_lines), list(dict.fromkeys(sources))
-
-# ---------------- Main orchestrator ----------------
-def answer_query(index_dir: Path, collection: str, query: str) -> str:
-    con = _conn()
-    H = detect_hostel_intent(query)
-
-    # HOSTEL: reverse lookups & simple views first
-    if H["reverse_phone"]:
-        return render_reverse_phone(con, H["reverse_phone"])
-    if H["reverse_mail"]:
-        return render_reverse_mail(con, H["reverse_mail"])
-    if H["landlines"]:
-        if H["gender"] in (None,"MH"):
-            out = render_landlines(con, "MH")
-            if H["gender"] is None:
-                out += "\n\n" + render_landlines(con, "LH")
-            return out
-        else:
-            return render_landlines(con, "LH")
-    if H["blocks"]:
-        return render_block_list(con, H["gender"])
-
-    # HOSTEL: fee/contacts/blocks -> SQL router (uses your DB)
-    if H["hostelish"]:
-        sql_ans = render_hostel_overview_via_sql_router(query)
-        if sql_ans:
-            return sql_ans
-
-    # ACADEMICS (UG/PG/MCA/MSc, eligibility, docs, academic fees, vitree, rules) via FAISS
-    text, sources = _faiss_bundle(index_dir, collection, query, want_hostel_bias=False)
-    if not text.strip():
-        return "_I couldn’t find enough context to answer that from your PDFs._"
-    squery = query.lower()
-
-    if any(w in squery for w in ["program", "programme", "course", "list of programmes"]):
-        items = summarize_programs(text)
-        if items:
-            return bullets(items, "Programs Offered") + "\n\n*Sources:* " + ", ".join(sources[:5])
-
-    if any(w in squery for w in ["document", "certificate", "submit", "submission"]):
-        items = summarize_documents(text)
-        if items:
-            return bullets(items, "Documents to submit") + "\n\n*Tip:* Carry originals + 2–3 photocopies.\n*Sources:* " + ", ".join(sources[:5])
-
-    # generic fallback
-    para = summarize_generic(text)
-    return f"**Answer (from your PDFs):** {para}\n\n*Sources:* {', '.join(sources[:5])}\n*Note: Extracted from your ingested PDFs.*"
-
-def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--index_dir", required=True)
-    ap.add_argument("--collection", default="vit_faq_vellore")
-    ap.add_argument("--q", required=True)
-    # accept --emb to avoid errors, but currently unused
-    ap.add_argument("--emb", default="gemini")
-    args = ap.parse_args()
-    print("\n" + answer_query(Path(args.index_dir), args.collection, args.q) + "\n")
+        return "_I couldn't find that in my sources._"
 
 if __name__ == "__main__":
-    main()
+    import sys
+    q = " ".join(sys.argv[1:]) or "Show MH Senior NRI hostel fees 2025"
+    print(answer(q))
