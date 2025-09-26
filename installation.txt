@@ -531,3 +531,121 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+
+
+
+# app/sql_router.py
+import sqlite3, pathlib, re
+from typing import Dict, Any
+
+DB = pathlib.Path("Data/sql/vit_vellore.db")
+
+def detect_structured_intent(q: str) -> str:
+    ql = q.lower()
+    if any(k in ql for k in ["contact", "phone", "email", "supervisor", "warden", "director", "manager"]):
+        return "contacts"
+    if "block" in ql and any(k in ql for k in ["name","names","list","all","codes","code"]):
+        return "blocks"
+    if any(k in ql for k in ["hostel", "room", "block", "mess", "dhobi", "laundry", "fee", "fees", "tuition"]):
+        return "tabular"
+    return "text"
+
+def parse_filters(q: str) -> Dict[str, Any]:
+    ql = q.lower()
+    f = {"ay": None, "gender": None, "category": None, "level": None}
+    m = re.search(r"\b(20\d{2})\b", ql)
+    if m:
+        yr = m.group(1); f["ay"] = f"{yr}-{str(int(yr[-2:])+1).zfill(2)}"
+    if any(k in ql for k in ["boy", "boys", "men", "mh", "mens"]): f["gender"] = "Male"
+    if any(k in ql for k in ["girl", "girls", "ladies", "lh", "women"]): f["gender"] = "Female"
+    if "nri" in ql: f["category"] = "NRI"
+    elif "foreign" in ql: f["category"] = "Foreign"
+    elif "indian" in ql: f["category"] = "Indian"
+    if "senior" in ql: f["level"] = "Senior"
+    if "first year" in ql or "fresh" in ql: f["level"] = "First-Year"
+    return f
+
+def _mk():
+    con = sqlite3.connect(DB)
+    con.row_factory = sqlite3.Row
+    return con
+
+def sql_hostel_overview(f: Dict[str,Any], limit_blocks: int = 20) -> Dict[str, Any]:
+    con = _mk()
+    where = ["1=1"]; args=[]
+    if f["gender"]:   where.append("IFNULL(b.gender,'')=IFNULL(?, '')");   args.append(f["gender"])
+    if f["level"]:    where.append("IFNULL(b.level,'')=IFNULL(?, '')");    args.append(f["level"])
+    if f["ay"]:       where.append("IFNULL(hf.ay,'')=IFNULL(?, '')");      args.append(f["ay"])
+    if f["category"]: where.append("IFNULL(hf.category,'')=IFNULL(?, '')");args.append(f["category"])
+    where.append("""(
+        COALESCE(hf.total_fee,'')<>'' OR COALESCE(hf.room_mess_fee,'')<>'' OR
+        COALESCE(hf.admission_fee,'')<>'' OR COALESCE(hf.caution_deposit,'')<>'' OR
+        COALESCE(hf.occupancy,'')<>'' OR COALESCE(hf.mess_type,'')<>''
+    )""")
+    sql = f"""
+    SELECT b.block_name, b.display_name, b.gender, b.level, b.block_type,
+           hf.ay, hf.category, hf.occupancy, hf.ac, hf.mess_type,
+           hf.room_mess_fee, hf.admission_fee, hf.caution_deposit, hf.other_fee, hf.total_fee, hf.currency,
+           hf.source_file
+    FROM hostel_fees hf
+    JOIN blocks b ON b.id = hf.block_id
+    WHERE {' AND '.join(where)}
+    ORDER BY b.block_type, b.block_name, hf.occupancy, hf.ac DESC, hf.mess_type
+    """
+    rows = con.execute(sql, args).fetchall()
+    con.close()
+    columns = ["Block", "Gender", "Level", "Type", "AY", "Category", "Occ", "AC", "Mess",
+               "Room+Mess", "Admission", "Caution", "Other", "Total", "Curr", "Source"]
+    tbl = {"title": "Hostel Fee Details (Vellore)", "columns": columns, "rows": []}
+    for r in rows[:1000]:
+        tbl["rows"].append([
+            r["display_name"] or r["block_name"] or "",
+            r["gender"] or "", r["level"] or "", r["block_type"] or "",
+            r["ay"] or "", r["category"] or "", r["occupancy"] or "",
+            "AC" if (r["ac"]==1) else ("Non-AC" if (r["ac"]==0) else ""),
+            r["mess_type"] or "", r["room_mess_fee"] or "", r["admission_fee"] or "",
+            r["caution_deposit"] or "", r["other_fee"] or "", r["total_fee"] or "",
+            r["currency"] or "", r["source_file"] or ""
+        ])
+    return {"table": tbl, "bullets": [], "sources": []}
+
+def sql_block_contacts(f: Dict[str,Any]) -> Dict[str,Any]:
+    con = _mk()
+    # This reads your Hostel_info extraction table
+    rows = con.execute("""
+        SELECT '' AS block, name, role, phone, email
+        FROM hostel_contacts
+        ORDER BY role, name
+    """).fetchall()
+    con.close()
+    cols = ["Block","Name","Role","Phone","Email"]
+    tbl = {"title":"Hostel Contacts", "columns":cols, "rows":[
+        [r["block"], r["name"] or "", r["role"] or "", r["phone"] or "", r["email"] or ""]
+        for r in rows
+    ]}
+    return {"table": tbl, "bullets": [], "sources": []}
+
+def sql_list_blocks(f: Dict[str,Any]) -> Dict[str,Any]:
+    con = _mk()
+    where = ["1=1"]; args=[]
+    if f["gender"] == "Female":
+        sql = "SELECT block_code AS display_name, 'Female' AS gender, '' AS level, '' AS block_type FROM lh_blocks ORDER BY block_code"
+    elif f["gender"] == "Male":
+        sql = "SELECT COALESCE(block_name, block_code) AS display_name, 'Male' AS gender, '' AS level, '' AS block_type FROM mh_blocks ORDER BY block_code"
+    else:
+        sql = """
+        SELECT COALESCE(block_name, block_code) AS display_name, 'Male' AS gender, '' AS level, '' AS block_type FROM mh_blocks
+        UNION ALL
+        SELECT block_code AS display_name, 'Female' AS gender, '' AS level, '' AS block_type FROM lh_blocks
+        ORDER BY gender, display_name
+        """
+    rows = con.execute(sql, args).fetchall()
+    con.close()
+    cols = ["Block","Gender","Level","Type"]
+    tbl = {"title":"Hostel Blocks", "columns":cols, "rows":[
+        [r["display_name"] or "", r["gender"] or "", r["level"] or "", r["block_type"] or ""]
+        for r in rows
+    ]}
+    return {"table": tbl, "bullets": [], "sources": []}
