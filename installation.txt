@@ -1,1 +1,22 @@
-.\.venv\Scripts\python.exe .\app\rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --q "UG documents required"
+(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe app.rag_answer --q "what is B.Tech tutuon fee (Indian) ?"                                                               
+.\.venv\Scripts\python.exe: can't open file 'C:\\Users\\T8543\\Downloads\\project-2\\app.rag_answer': [Errno 2] No such file or directory
+
+(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe app.rag_answer.py --q "what is B.Tech tutuon f
+ee (Indian) ?"
+.\.venv\Scripts\python.exe: can't open file 'C:\\Users\\T8543\\Downloads\\project-2\\app.rag_answer.py': [Errno 2] No such file or directory
+
+(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe .\app\rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --q "UG documents required"
+Traceback (most recent call last):
+  File "C:\Users\T8543\Downloads\project-2\app\rag_answer.py", line 8, in <module>
+    from app.sql_router import (
+    ...<3 lines>...
+    )
+ModuleNotFoundError: No module named 'app'
+
+(.venv) C:\Users\T8543\Downloads\project-2>python -m app.rag_answer "UG NRI academic fees 2025 CSE"
+_No matching rows._
+
+(.venv) C:\Users\T8543\Downloads\project-2>python -m app.rag_answer "UG documents required"        
+_No matching rows._
+
+(.venv) C:\Users\T8543\Downloads\project-2>
