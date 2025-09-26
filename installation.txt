@@ -1,22 +1,103 @@
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe app.rag_answer --q "what is B.Tech tutuon fee (Indian) ?"                                                               
-.\.venv\Scripts\python.exe: can't open file 'C:\\Users\\T8543\\Downloads\\project-2\\app.rag_answer': [Errno 2] No such file or directory
+# --- add near top ---
+PROCESSED = BASE / "processed"
 
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe app.rag_answer.py --q "what is B.Tech tutuon f
-ee (Indian) ?"
-.\.venv\Scripts\python.exe: can't open file 'C:\\Users\\T8543\\Downloads\\project-2\\app.rag_answer.py': [Errno 2] No such file or directory
+# ... keep the rest of your file as-is until the Academics section ...
 
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe .\app\rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --q "UG documents required"
-Traceback (most recent call last):
-  File "C:\Users\T8543\Downloads\project-2\app\rag_answer.py", line 8, in <module>
-    from app.sql_router import (
-    ...<3 lines>...
-    )
-ModuleNotFoundError: No module named 'app'
+# ---------- Academics CSV ingestion ----------
+ACADEMIC_SPECS = {
+    "programs": {"required": ["level","program"], "optional": ["school","duration","campus","source_file"], "table": "programs"},
+    "eligibility": {"required": ["level","program","criteria"], "optional": ["source_file"], "table": "eligibility"},
+    "documents_required": {"required": ["level","program","item"], "optional": ["details","source_file"], "table": "documents_required"},
+    "academic_fees": {"required": ["level","program","category","ay"], "optional": ["tuition","one_time","caution","total","currency","source_file"], "table": "academic_fees"},
+    "scholarships": {"required": ["level","name"], "optional": ["criteria","amount","currency","source_file"], "table": "scholarships"}
+}
 
-(.venv) C:\Users\T8543\Downloads\project-2>python -m app.rag_answer "UG NRI academic fees 2025 CSE"
-_No matching rows._
+def _csv_has_headers(df: pd.DataFrame, need: list[str]) -> bool:
+    cols = [c.strip().lower() for c in df.columns]
+    return all(n in cols for n in need)
 
-(.venv) C:\Users\T8543\Downloads\project-2>python -m app.rag_answer "UG documents required"        
-_No matching rows._
+def _insert_dataframe(con, table: str, df: pd.DataFrame) -> int:
+    cols = [c for c in df.columns]
+    placeholders = ",".join(["?"]*len(cols))
+    sql = f"INSERT INTO {table} ({','.join(cols)}) VALUES ({placeholders})"
+    vals = df.where(pd.notna(df), "").values.tolist()
+    con.executemany(sql, vals)
+    return len(vals)
 
-(.venv) C:\Users\T8543\Downloads\project-2>
+def _load_single_academic_csv(con, path: pathlib.Path) -> int:
+    df = pd.read_csv(path, dtype=str).fillna("")
+    df.columns = [c.strip().lower() for c in df.columns]
+    stem = path.stem.lower()
+
+    # filename hint first
+    for key, spec in ACADEMIC_SPECS.items():
+        if stem.startswith(f"academics_{key}") or stem.endswith(f"_{key}") or stem == key:
+            if not _csv_has_headers(df, spec["required"]):
+                print(f"[SKIP] {path.name} missing headers for {key}: {spec['required']}")
+                return 0
+            n = _insert_dataframe(con, spec["table"], df)
+            print(f"[OK] {path.name} → {spec['table']} (+{n})")
+            return n
+
+    # header-based fallback
+    for key, spec in ACADEMIC_SPECS.items():
+        if _csv_has_headers(df, spec["required"]):
+            n = _insert_dataframe(con, spec["table"], df)
+            print(f"[OK] {path.name} (by header) → {spec['table']} (+{n})")
+            return n
+
+    print(f"[SKIP] {path.name} — no academic table matched")
+    return 0
+
+def _clear_academics(con):
+    for t in ["programs","eligibility","documents_required","academic_fees","scholarships"]:
+        con.execute(f"DELETE FROM {t}")
+
+def load_academics_from_processed(con):
+    if not PROCESSED.exists():
+        print(f"[WARN] {PROCESSED} not found; skipping processed academics.")
+        return
+    total = 0
+    files = sorted(PROCESSED.rglob("*.csv"))
+    if not files:
+        print(f"[WARN] No CSVs under {PROCESSED}")
+        return
+    for path in files:
+        try:
+            total += _load_single_academic_csv(con, path)
+        except Exception as e:
+            print(f"[ERR] {path.name}: {e}")
+    print(f"[OK] Loaded academics from processed CSVs (+{total} rows).")
+
+def load_academics_from_staging(con):
+    # keep this only if you still dump any academics into staging; otherwise you can remove it
+    files = sorted(STAGING.glob("*.csv"))
+    if not files:
+        print(f"[WARN] No CSVs found in {STAGING}")
+        return
+    for path in files:
+        s = path.stem.lower()
+        if (s.startswith("mh-") or s.startswith("lh-") or "hostel" in s or s.startswith("hostel_info__")):
+            continue
+        try:
+            _load_single_academic_csv(con, path)
+        except Exception as e:
+            print(f"[ERR] {path.name}: {e}")
+    print("[OK] Loaded academic CSVs from staging.")
+
+def main():
+    con = _mk_conn()
+    _schema(con)
+
+    # 1) Hostel (from staging) → required for hostel answers
+    load_staging_csvs_hostel(con)
+    load_hostel_info(con)
+
+    # 2) Academics (clear + load from processed/**)
+    _clear_academics(con)
+    load_academics_from_processed(con)
+    # (optional) also read from staging if you want
+    # load_academics_from_staging(con)
+
+    con.commit(); con.close()
+    print(f"[DONE] SQLite DB ready at: {DB_PATH}")
