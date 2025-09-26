@@ -1,73 +1,14 @@
 
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\activate.bat                                             
+(.venv) C:\Users\T8543\Downloads\project-2>type NUL > app\__init__.py
 
-(.venv) C:\Users\T8543\Downloads\project-2>type NULL > app\__init__.py
-The system cannot find the file specified.
+(.venv) C:\Users\T8543\Downloads\project-2>type NUL > app\handlers\__init__.py
 
-(.venv) C:\Users\T8543\Downloads\project-2>type NULL > app\handlers\__init__.py
-The system cannot find the file specified.
+(.venv) C:\Users\T8543\Downloads\project-2>tree /F > project_tree.txt
 
-(.venv) C:\Users\T8543\Downloads\project-2>type NULL > app\utils\__init__.py   
-The system cannot find the file specified.
+(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\activate.bat
 
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe ETL\stage_hostel_tables.py
-[STAGED] Data\staging\MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
-[STAGED] Data\staging\MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
-[STAGED] Data\staging\MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
-[STAGED] Data\staging\MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv
-[STAGED] Data\staging\MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_4.csv
-[STAGED] Data\staging\MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_5.csv
-[STAGED] Data\staging\MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
-[STAGED] Data\staging\MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
-[STAGED] Data\staging\MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
-[STAGED] Data\staging\MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv
-[STAGED] Data\staging\LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
-[STAGED] Data\staging\LH-FEE-structure-NRI-Foreign-Category-2025-26__camelot_0.csv
-[STAGED] Data\staging\Hostel_info__camelot_0.csv
-[STAGED] Data\staging\Hostel_info__camelot_1.csv
-[STAGED] Data\staging\Hostel_info__camelot_2.csv
-[STAGED] Data\staging\Hostel_info__camelot_3.csv
-[STAGED] Data\staging\Hostel_info__camelot_4.csv
-[STAGED] Data\staging\Hostel-joint-Affidavit-2025__camelot_0.csv
-Exception ignored in atexit callback <function rmtree at 0x0000020C58D2D6C0>:
-Traceback (most recent call last):
-  File "C:\Program Files\Python313\Lib\shutil.py", line 790, in rmtree
-    return _rmtree_unsafe(path, onexc)
-  File "C:\Program Files\Python313\Lib\shutil.py", line 629, in _rmtree_unsafe
-    onexc(os.unlink, fullname, err)
-  File "C:\Program Files\Python313\Lib\shutil.py", line 625, in _rmtree_unsafe
-    os.unlink(fullname)
-PermissionError: [WinError 32] The process cannot access the file because it is being used by another process: 'C:\\Users\\T8543\\AppData\\Local\\Temp\\tmp06rggo2l\\page-2.pdf'
+(.venv) C:\Users\T8543\Downloads\project-2>type NUL > app\__init__.py
 
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe ETL\load_sqlite.py        
-[OK] Loaded hostel fee CSVs into SQLITE.
-C:\Users\T8543\Downloads\project-2\ETL\load_sqlite.py:198: FutureWarning: Possible set difference at position 36
-  pat_mh = _re2.compile(
-[OK] Loaded Hostel Info (blocks + contacts).
-[OK] Loaded academic CSVs.
-[DONE] SQLite DB ready at: Data\sql\vit_vellore.db
-
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe - <<PY
-<< was unexpected at this time.
-
-(.venv) C:\Users\T8543\Downloads\project-2>import sqlite3; con=sqlite3.connect(r"Data/sql/vit_vellore.db")
-'import' is not recognized as an internal or external command,
-operable program or batch file.
-
-(.venv) C:\Users\T8543\Downloads\project-2>for t in ["programs","eligibility","documents_required","academic_fees","scholarships","hostel_fees"]:
-t was unexpected at this time.
-
-(.venv) C:\Users\T8543\Downloads\project-2>    print(t, con.execute(f"select count(*) from {t}").fetchone()[0])
-Unable to initialize device PRN
-
-(.venv) C:\Users\T8543\Downloads\project-2>con.close()
-'con.close' is not recognized as an internal or external command,
-operable program or batch file.
-
-(.venv) C:\Users\T8543\Downloads\project-2>python -m app.rag_answer --q "B.Tech tuition fee Indian 2025"
-_No matching rows._
-
-(.venv) C:\Users\T8543\Downloads\project-2>python -m app.rag_answer --q "UG programs CSE"               
-_No matching rows._
+(.venv) C:\Users\T8543\Downloads\project-2>type NUL > app\handlers\__init__.py
 
 (.venv) C:\Users\T8543\Downloads\project-2>
