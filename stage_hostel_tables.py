@@ -2,7 +2,7 @@
 # Stages tables from PDFs to CSVs you can eyeball before loading into SQLite.
 import pathlib, re, csv, sys
 
-IN = pathlib.Path("Data/raw")          # put your fee PDFs here (LH/MH/LH-NRI/... etc)
+IN = pathlib.Path("Data/Raw/HOSTEL")          # put your fee PDFs here (LH/MH/LH-NRI/... etc)
 OUT = pathlib.Path("Data/staging")     # will hold CSVs
 OUT.mkdir(parents=True, exist_ok=True)
 
@@ -11,6 +11,8 @@ PDFS = [
   "MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26.pdf",
   "LH-FEE-structure-Indian-Category-2025-26.pdf",
   "LH-FEE-structure-NRI-Foreign-Category-2025-26.pdf",
+  "Hostel_info.pdf",
+  "Hostel-joint-Affidavit-2025.pdf",
 ]
 
 def try_camelot(pdf_path: pathlib.Path):
