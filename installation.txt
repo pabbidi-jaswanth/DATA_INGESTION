@@ -1,14 +1,8 @@
-
-(.venv) C:\Users\T8543\Downloads\project-2>type NUL > app\__init__.py
-
-(.venv) C:\Users\T8543\Downloads\project-2>type NUL > app\handlers\__init__.py
-
-(.venv) C:\Users\T8543\Downloads\project-2>tree /F > project_tree.txt
-
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\activate.bat
-
-(.venv) C:\Users\T8543\Downloads\project-2>type NUL > app\__init__.py
-
-(.venv) C:\Users\T8543\Downloads\project-2>type NUL > app\handlers\__init__.py
-
-(.venv) C:\Users\T8543\Downloads\project-2>
+:: check table counts
+.\.venv\Scripts\python.exe -c "import sqlite3; con=sqlite3.connect(r'Data/sql/vit_vellore.db'); \
+print('programs      =',con.execute('select count(*) from programs').fetchone()[0]); \
+print('eligibility   =',con.execute('select count(*) from eligibility').fetchone()[0]); \
+print('documents_req =',con.execute('select count(*) from documents_required').fetchone()[0]); \
+print('academic_fees =',con.execute('select count(*) from academic_fees').fetchone()[0]); \
+print('scholarships  =',con.execute('select count(*) from scholarships').fetchone()[0]); \
+print('hostel_fees   =',con.execute('select count(*) from hostel_fees').fetchone()[0]); con.close()"
