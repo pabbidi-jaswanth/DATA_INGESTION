@@ -1,103 +1,75 @@
-# --- add near top ---
-PROCESSED = BASE / "processed"
+"""
+Router: SQL-first for fees/programs/eligibility/documents/scholarships/hostel.
+Terse tables + tiny bullets. FAISS fallback only for long-form explainers.
+"""
 
-# ... keep the rest of your file as-is until the Academics section ...
+from app.sql_router import (
+    detect_structured_intent, parse_filters,
+    sql_hostel_overview, sql_block_contacts, sql_list_blocks,
+    sql_programs, sql_eligibility, sql_documents, sql_academic_fees, sql_scholarships
+)
 
-# ---------- Academics CSV ingestion ----------
-ACADEMIC_SPECS = {
-    "programs": {"required": ["level","program"], "optional": ["school","duration","campus","source_file"], "table": "programs"},
-    "eligibility": {"required": ["level","program","criteria"], "optional": ["source_file"], "table": "eligibility"},
-    "documents_required": {"required": ["level","program","item"], "optional": ["details","source_file"], "table": "documents_required"},
-    "academic_fees": {"required": ["level","program","category","ay"], "optional": ["tuition","one_time","caution","total","currency","source_file"], "table": "academic_fees"},
-    "scholarships": {"required": ["level","name"], "optional": ["criteria","amount","currency","source_file"], "table": "scholarships"}
-}
+def _fmt_table(tbl: dict) -> str:
+    if not tbl or not tbl.get("rows"):
+        return "_No matching rows._"
+    title  = f"**{tbl.get('title','Results')}**"
+    cols   = tbl["columns"]
+    header = " | ".join(cols)
+    sep    = " | ".join(["---"]*len(cols))
+    lines  = [title, "", header, sep]
+    for r in tbl["rows"]:
+        lines.append(" | ".join(str(x) if x is not None else "" for x in r))
+    return "\n".join(lines)
 
-def _csv_has_headers(df: pd.DataFrame, need: list[str]) -> bool:
-    cols = [c.strip().lower() for c in df.columns]
-    return all(n in cols for n in need)
+def _fmt_bullets(bullets: list[str]) -> str:
+    return "\n".join(f"- {b}" for b in bullets) if bullets else ""
 
-def _insert_dataframe(con, table: str, df: pd.DataFrame) -> int:
-    cols = [c for c in df.columns]
-    placeholders = ",".join(["?"]*len(cols))
-    sql = f"INSERT INTO {table} ({','.join(cols)}) VALUES ({placeholders})"
-    vals = df.where(pd.notna(df), "").values.tolist()
-    con.executemany(sql, vals)
-    return len(vals)
+def _pack(table_dict=None, bullets=None):
+    parts = []
+    if table_dict: parts.append(_fmt_table(table_dict))
+    if bullets:    parts.append(_fmt_bullets(bullets))
+    return "\n\n".join(parts) if parts else "_No results._"
 
-def _load_single_academic_csv(con, path: pathlib.Path) -> int:
-    df = pd.read_csv(path, dtype=str).fillna("")
-    df.columns = [c.strip().lower() for c in df.columns]
-    stem = path.stem.lower()
+def _sql_route(q: str) -> str | None:
+    intent = detect_structured_intent(q)
+    f = parse_filters(q)
 
-    # filename hint first
-    for key, spec in ACADEMIC_SPECS.items():
-        if stem.startswith(f"academics_{key}") or stem.endswith(f"_{key}") or stem == key:
-            if not _csv_has_headers(df, spec["required"]):
-                print(f"[SKIP] {path.name} missing headers for {key}: {spec['required']}")
-                return 0
-            n = _insert_dataframe(con, spec["table"], df)
-            print(f"[OK] {path.name} → {spec['table']} (+{n})")
-            return n
+    # HOSTEL
+    if intent == "contacts":
+        return _pack(sql_block_contacts(f).get("table"))
+    if intent == "blocks":
+        return _pack(sql_list_blocks(f).get("table"))
+    if intent in ("hostel", "tabular"):
+        return _pack(sql_hostel_overview(f).get("table"))
 
-    # header-based fallback
-    for key, spec in ACADEMIC_SPECS.items():
-        if _csv_has_headers(df, spec["required"]):
-            n = _insert_dataframe(con, spec["table"], df)
-            print(f"[OK] {path.name} (by header) → {spec['table']} (+{n})")
-            return n
+    # ACADEMICS
+    if intent == "programs":
+        return _pack(sql_programs(f, q).get("table"))
+    if intent == "eligibility":
+        return _pack(sql_eligibility(f, q).get("table"))
+    if intent == "documents":
+        return _pack(sql_documents(f, q).get("table"))
+    if intent == "fees":
+        return _pack(sql_academic_fees(f, q).get("table"))
+    if intent == "scholarships":
+        return _pack(sql_scholarships(f, q).get("table"))
 
-    print(f"[SKIP] {path.name} — no academic table matched")
-    return 0
+    return None
 
-def _clear_academics(con):
-    for t in ["programs","eligibility","documents_required","academic_fees","scholarships"]:
-        con.execute(f"DELETE FROM {t}")
+def answer(query: str) -> str:
+    sql_text = _sql_route(query)
+    if sql_text is not None:
+        return sql_text
 
-def load_academics_from_processed(con):
-    if not PROCESSED.exists():
-        print(f"[WARN] {PROCESSED} not found; skipping processed academics.")
-        return
-    total = 0
-    files = sorted(PROCESSED.rglob("*.csv"))
-    if not files:
-        print(f"[WARN] No CSVs under {PROCESSED}")
-        return
-    for path in files:
-        try:
-            total += _load_single_academic_csv(con, path)
-        except Exception as e:
-            print(f"[ERR] {path.name}: {e}")
-    print(f"[OK] Loaded academics from processed CSVs (+{total} rows).")
+    # FAISS fallback (tight + sourcey)
+    try:
+        from app.utils.fallback_rag import answer as rag_fallback
+        rag = rag_fallback(query, max_chunks=6, max_tokens=450)
+        return rag or "_I couldn't find that in my sources._"
+    except Exception:
+        return "_I couldn't find that in my sources._"
 
-def load_academics_from_staging(con):
-    # keep this only if you still dump any academics into staging; otherwise you can remove it
-    files = sorted(STAGING.glob("*.csv"))
-    if not files:
-        print(f"[WARN] No CSVs found in {STAGING}")
-        return
-    for path in files:
-        s = path.stem.lower()
-        if (s.startswith("mh-") or s.startswith("lh-") or "hostel" in s or s.startswith("hostel_info__")):
-            continue
-        try:
-            _load_single_academic_csv(con, path)
-        except Exception as e:
-            print(f"[ERR] {path.name}: {e}")
-    print("[OK] Loaded academic CSVs from staging.")
-
-def main():
-    con = _mk_conn()
-    _schema(con)
-
-    # 1) Hostel (from staging) → required for hostel answers
-    load_staging_csvs_hostel(con)
-    load_hostel_info(con)
-
-    # 2) Academics (clear + load from processed/**)
-    _clear_academics(con)
-    load_academics_from_processed(con)
-    # (optional) also read from staging if you want
-    # load_academics_from_staging(con)
-
-    con.commit(); con.close()
-    print(f"[DONE] SQLite DB ready at: {DB_PATH}")
+if __name__ == "__main__":
+    import sys
+    q = " ".join(sys.argv[1:]) or "Show MH Senior NRI hostel fees 2025"
+    print(answer(q))
