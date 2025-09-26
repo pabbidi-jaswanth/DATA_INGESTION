@@ -1,8 +1,69 @@
-:: check table counts
-.\.venv\Scripts\python.exe -c "import sqlite3; con=sqlite3.connect(r'Data/sql/vit_vellore.db'); \
-print('programs      =',con.execute('select count(*) from programs').fetchone()[0]); \
-print('eligibility   =',con.execute('select count(*) from eligibility').fetchone()[0]); \
-print('documents_req =',con.execute('select count(*) from documents_required').fetchone()[0]); \
-print('academic_fees =',con.execute('select count(*) from academic_fees').fetchone()[0]); \
-print('scholarships  =',con.execute('select count(*) from scholarships').fetchone()[0]); \
-print('hostel_fees   =',con.execute('select count(*) from hostel_fees').fetchone()[0]); con.close()"
+
+(.venv) C:\Users\T8543\Downloads\project-2>dir Data\processed\ /s /b
+C:\Users\T8543\Downloads\project-2\Data\processed\catalog.csv
+C:\Users\T8543\Downloads\project-2\Data\processed\chunks.jsonl
+C:\Users\T8543\Downloads\project-2\Data\processed\chunks_clean.jsonl
+C:\Users\T8543\Downloads\project-2\Data\processed\chunks_clean_final.jsonl
+C:\Users\T8543\Downloads\project-2\Data\processed\clean_catalog.csv
+C:\Users\T8543\Downloads\project-2\Data\processed\MCA
+C:\Users\T8543\Downloads\project-2\Data\processed\MSC
+C:\Users\T8543\Downloads\project-2\Data\processed\PG
+C:\Users\T8543\Downloads\project-2\Data\processed\UG
+C:\Users\T8543\Downloads\project-2\Data\processed\MCA\mac_documents.csv
+C:\Users\T8543\Downloads\project-2\Data\processed\MCA\mca_eligibility (1).csv
+C:\Users\T8543\Downloads\project-2\Data\processed\MCA\mca_fees.csv
+C:\Users\T8543\Downloads\project-2\Data\processed\MCA\mca_links.csv
+C:\Users\T8543\Downloads\project-2\Data\processed\MCA\mca_programs.csv
+C:\Users\T8543\Downloads\project-2\Data\processed\MSC\msc_documents.csv
+C:\Users\T8543\Downloads\project-2\Data\processed\MSC\msc_eligibility (1).csv
+C:\Users\T8543\Downloads\project-2\Data\processed\MSC\msc_fees (1).csv
+C:\Users\T8543\Downloads\project-2\Data\processed\MSC\msc_programs (1).csv
+C:\Users\T8543\Downloads\project-2\Data\processed\PG\pg_documents.csv
+C:\Users\T8543\Downloads\project-2\Data\processed\PG\pg_eligibility.csv
+C:\Users\T8543\Downloads\project-2\Data\processed\PG\pg_fees.csv
+C:\Users\T8543\Downloads\project-2\Data\processed\PG\pg_fees_international.csv
+C:\Users\T8543\Downloads\project-2\Data\processed\PG\pg_programs.csv
+C:\Users\T8543\Downloads\project-2\Data\processed\UG\eligibility_2025_2026.csv
+C:\Users\T8543\Downloads\project-2\Data\processed\UG\fee_structure_2025_2026.csv
+C:\Users\T8543\Downloads\project-2\Data\processed\UG\programs_ug (1).csv
+C:\Users\T8543\Downloads\project-2\Data\processed\UG\scholarships_ug.csv
+C:\Users\T8543\Downloads\project-2\Data\processed\UG\ug_documents.csv
+C:\Users\T8543\Downloads\project-2\Data\processed\UG\ug_links.csv
+
+(.venv) C:\Users\T8543\Downloads\project-2>:: check table counts
+(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe -c "import sqlite3; con=sqlite3.connect(r'Data/sql/vit_vellore.db'); \
+  File "<string>", line 1
+    import sqlite3; con=sqlite3.connect(r'Data/sql/vit_vellore.db'); \
+                                                                      ^
+SyntaxError: unexpected EOF while parsing
+
+(.venv) C:\Users\T8543\Downloads\project-2>print('programs      =',con.execute('select count(*) from programs').fetchone()[0]); \
+Unable to initialize device PRN
+
+(.venv) C:\Users\T8543\Downloads\project-2>print('eligibility   =',con.execute('select count(*) from eligibility').fetchone()[0]); \
+Unable to initialize device PRN
+
+(.venv) C:\Users\T8543\Downloads\project-2>print('documents_req =',con.execute('select count(*) from documents_required').fetchone()[0]); \
+Unable to initialize device PRN
+
+(.venv) C:\Users\T8543\Downloads\project-2>print('academic_fees =',con.execute('select count(*) from academic_fees').fetchone()[0]); \
+Unable to initialize device PRN
+
+(.venv) C:\Users\T8543\Downloads\project-2>print('scholarships  =',con.execute('select count(*) from scholarships').fetchone()[0]); \
+Unable to initialize device PRN
+
+(.venv) C:\Users\T8543\Downloads\project-2>print('hostel_fees   =',con.execute('select count(*) from hostel_fees').fetchone()[0]); con.close()"
+
+(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe -c "import sqlite3; con=sqlite3.connect(r'Data
+/Sql/vit_vellore.db');\
+  File "<string>", line 1
+    import sqlite3; con=sqlite3.connect(r'Data/Sql/vit_vellore.db');\
+                                                                     ^
+SyntaxError: unexpected EOF while parsing
+
+(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe -c "import sqlite3; con=sqlite3.connect(r'Data/Sql/vit_vellore.db'); 
+
+(.venv) C:\Users\T8543\Downloads\project-2>python -m app.rag_answer --q "UG programs CSE"
+_No matching rows._
+
+(.venv) C:\Users\T8543\Downloads\project-2>
