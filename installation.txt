@@ -1,1 +1,1 @@
-.\.venv\Scripts\python.exe -c "import pandas as pd; print('UG programs columns:', pd.read_csv(r'Data/processed/UG/programs_ug (1).csv', nrows=0).columns.tolist())"
+.\.venv\Scripts\python.exe -c "import pandas as pd; print('PG fees columns:', pd.read_csv(r'Data/processed/PG/pg_fees.csv', nrows=0).columns.tolist())"
