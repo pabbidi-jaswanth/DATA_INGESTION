@@ -1,1 +1,1 @@
-.\.venv\Scripts\python.exe -c "import pandas as pd; print(pd.read_csv(r'Data/processed/UG/fee_structure_2025_2026.csv').head(3))"
+python -m app.rag_answer --q "UG documents required"
