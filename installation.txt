@@ -1,1 +1,51 @@
-.\.venv\Scripts\python.exe .\app\rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --q "What is B.Tech tuition fee (Indian)?"
+Microsoft Windows [Version 10.0.26100.6584]
+(c) Microsoft Corporation. All rights reserved.
+
+C:\Users\T8543\Downloads\project-2>C:/Users/T8543/Downloads/project-2/.venv/Scripts/activate.bat
+
+(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe .\ETL\stage_hostel_tables.py
+[STAGED] Data\staging\MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+[STAGED] Data\staging\MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
+[STAGED] Data\staging\MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
+[STAGED] Data\staging\MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv
+[STAGED] Data\staging\MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_4.csv
+[STAGED] Data\staging\MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_5.csv
+[STAGED] Data\staging\MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+[STAGED] Data\staging\MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
+[STAGED] Data\staging\MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
+[STAGED] Data\staging\MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv
+[STAGED] Data\staging\LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
+[STAGED] Data\staging\LH-FEE-structure-NRI-Foreign-Category-2025-26__camelot_0.csv
+[STAGED] Data\staging\Hostel_info__camelot_0.csv
+[STAGED] Data\staging\Hostel_info__camelot_1.csv
+[STAGED] Data\staging\Hostel_info__camelot_2.csv
+[STAGED] Data\staging\Hostel_info__camelot_3.csv
+[STAGED] Data\staging\Hostel_info__camelot_4.csv
+[STAGED] Data\staging\Hostel-joint-Affidavit-2025__camelot_0.csv
+Exception ignored in atexit callback <function rmtree at 0x000001DDA47CD800>:
+Traceback (most recent call last):
+  File "C:\Program Files\Python313\Lib\shutil.py", line 790, in rmtree
+    return _rmtree_unsafe(path, onexc)
+  File "C:\Program Files\Python313\Lib\shutil.py", line 629, in _rmtree_unsafe
+    onexc(os.unlink, fullname, err)
+  File "C:\Program Files\Python313\Lib\shutil.py", line 625, in _rmtree_unsafe
+    os.unlink(fullname)
+PermissionError: [WinError 32] The process cannot access the file because it is being used by another process: 'C:\\Users\\T8543\\AppData\\Local\\Temp\\tmpafg7nzn5\\page-2.pdf'
+
+(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe .\ETL\load_sqlite.py        
+[OK] Loaded hostel fee CSVs into SQLITE.
+C:\Users\T8543\Downloads\project-2\ETL\load_sqlite.py:313: FutureWarning: Possible set difference at position 36
+  pat_mh = re.compile(
+[OK] Loaded Hostel Info (blocks + contacts).
+[OK] Loaded academic CSVs.
+[DONE] SQLite DB ready at: Data\sql\vit_vellore.db
+
+(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe .\app\rag_answer.py --index_dir Data/index/faiss --collection vit_faq_vellore --q "What is B.Tech tuition fee (Indian)?"
+Traceback (most recent call last):
+  File "C:\Users\T8543\Downloads\project-2\app\rag_answer.py", line 8, in <module>
+    from app.sql_router import (
+    ...<3 lines>...
+    )
+ModuleNotFoundError: No module named 'app'
+
+(.venv) C:\Users\T8543\Downloads\project-2>  
