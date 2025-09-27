@@ -1,5 +1,22 @@
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe fix_router_and_test.py 
-.\.venv\Scripts\python.exe: can't open file 'C:\\Users\\T8543\\Downloads\\project-2\\fix_router_and_test.py': [Errno 2] No such file or directory
-
-(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe fix_router_and_test.py
-.\.venv\Scripts\python.exe: can't open file 'C:\\Users\\T8543\\Downloads\\project-2\\fix_router_and_test.py': [Errno 2] No such file or directory
+(base) PS C:\Users\T8543\Downloads\project-2> & C:/Users/T8543/Downloads/project-2/.venv/Scripts/Activate.ps1
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe fix_router_and_test.py             
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe rag_answer.py         
+C:\Users\T8543\Downloads\project-2\.venv\Scripts\python.exe: can't open file 'C:\\Users\\T8543\\Downloads\\project-2\\rag_answer.py': [Errno 2] No such file or directory
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe .\app rag_answer.py
+C:\Users\T8543\Downloads\project-2\.venv\Scripts\python.exe: can't find '__main__' module in 'C:\\Users\\T8543\\Downloads\\project-2\\app'
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe .\fix_router_and_test.py
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> python -m app.rag_answer --q "ug programs cse"
+[OK] Wrote app/sql_router.py and app/rag_answer.py
+[WARN] DB not found at C:\Users\T8543\Downloads\project-2\app\Data\sql\vit_vellore.db. Run ETL/load_sqlite.py first.
+[TEST] error: cannot import name 'detect_structured_intent' from partially initialized module 'app.sql_router' (most likely due to a circular import) (C:\Users\T8543\Downloads\project-2\app\sql_router.py)
+[ANSWER] error: cannot import name 'detect_structured_intent' from partially initialized module 'app.sql_router' (most likely due to a circular import) (C:\Users\T8543\Downloads\project-2\app\sql_router.py)
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Users\T8543\Downloads\project-2\app\rag_answer.py", line 6, in <module>
+    from app.sql_router import (
+    ...<3 lines>...
+    )
+ImportError: cannot import name 'detect_structured_intent' from 'app.sql_router' (C:\Users\T8543\Downloads\project-2\app\sql_router.py)
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> 
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> 
