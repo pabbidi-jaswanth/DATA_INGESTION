@@ -1,29 +1,49 @@
-findstr /C:"load_academics_from_processed" ETL\load_sqlite.py
+(.venv) C:\Users\T8543\Downloads\project-2>del /q Data\sql\vit_vellore.db
 
-if exist Data\sql\vit_vellore.db copy Data\sql\vit_vellore.db Data\sql\vit_vellore.bak
-del /q Data\sql\vit_vellore.db
+(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\activate.bat
 
-if exist Data\sql\vit_vellore.db copy Data\sql\vit_vellore.db Data\sql\vit_vellore.bak
-del /q Data\sql\vit_vellore.db
+(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe ETL\load_sqlite.py
+[OK] Loaded hostel fee CSVs into SQLITE.
+C:\Users\T8543\Downloads\project-2\ETL\load_sqlite.py:343: FutureWarning: Possible set difference at position 36
+  pat_mh = re.compile(
+[OK] Loaded Hostel Info (blocks + contacts).
+[DONE] SQLite DB ready at: Data\sql\vit_vellore.db
 
-.\.venv\Scripts\activate.bat
-.\.venv\Scripts\python.exe ETL\load_sqlite.py
+(.venv) C:\Users\T8543\Downloads\project-2>
+(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe -c "import sqlite3; c=sqlite3.connect(r'Data/sql/vit_vellore.db'); print({t:c.execute(f'select count(*) from {t}').fetchone()[0] for t in ['programs','eligibility','documents_required','academic_fees','scholarships','hostel_fees']}); c.close()"
+{'programs': 101, 'eligibility': 22, 'documents_required': 66, 'academic_fees': 103, 'scholarships': 10, 'hostel_fees': 225}
 
-.\.venv\Scripts\python.exe -c "import sqlite3; c=sqlite3.connect(r'Data/sql/vit_vellore.db'); print({t:c.execute(f'select count(*) from {t}').fetchone()[0] for t in ['programs','eligibility','documents_required','academic_fees','scholarships','hostel_fees']}); c.close()"
+(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe -c "import pandas as pd; print('UG programs rows =', len(pd.read_csv(r'Data/processed/UG/programs_ug (1).csv')))"
+UG programs rows = 69
 
-.\.venv\Scripts\python.exe -c "import pandas as pd; print('UG programs rows =', len(pd.read_csv(r'Data/processed/UG/programs_ug (1).csv')))"
-.\.venv\Scripts\python.exe -c "import pandas as pd; print('UG fees rows     =', len(pd.read_csv(r'Data/processed/UG/fee_structure_2025_2026.csv')))"
-.\.venv\Scripts\python.exe -c "import pandas as pd; print('PG fees rows     =', len(pd.read_csv(r'Data/processed/PG/pg_fees.csv')))"
-.\.venv\Scripts\python.exe -c "import pandas as pd; print('PG programs rows =', len(pd.read_csv(r'Data/processed/PG/pg_programs.csv')))"
+(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe -c "import pandas as pd; print('UG fees rows     =', len(pd.read_csv(r'Data/processed/UG/fee_structure_2025_2026.csv')))"
+UG fees rows     = 45
 
-.\.venv\Scripts\python.exe -c "import sqlite3; con=sqlite3.connect(r'Data/sql/vit_vellore.db'); con.execute(\"INSERT INTO academic_fees(level,program,category,ay,tuition,one_time,caution,total,currency,source_file) VALUES('UG','B.Tech - Group A','Indian','2025-26','176000','','','176000','INR','manual')\"); con.commit(); print('inserted'); con.close()"
-.\.venv\Scripts\python.exe -c "import sqlite3; c=sqlite3.connect(r'Data/sql/vit_vellore.db'); print('academic_fees =', c.execute('select count(*) from academic_fees').fetchone()[0]); c.close()"
+(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe -c "import pandas as pd; print('PG fees rows     =', len(pd.read_csv(r'Data/processed/PG/pg_fees.csv')))"
+PG fees rows     = 24
 
-.\.venv\Scripts\python.exe -c "import importlib.util, sys; p='ETL/load_sqlite.py'; s=importlib.util.spec_from_file_location('etl_mod', p); m=importlib.util.module_from_spec(s); s.loader.exec_module(m); con=m._mk_conn(); m._schema(con); m._clear_academics(con); m.load_academics_from_processed(con); con.commit(); con.close(); print('academics reloaded')"
+(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe -c "import pandas as pd; print('PG programs rows =', len(pd.read_csv(r'Data/processed/PG/pg_programs.csv')))"
+PG programs rows = 23
 
-.\.venv\Scripts\python.exe -c "import sqlite3; c=sqlite3.connect(r'Data/sql/vit_vellore.db'); print({t:c.execute(f'select count(*) from {t}').fetchone()[0] for t in ['programs','eligibility','documents_required','academic_fees','scholarships']}); c.close()"
+(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe -c "import sqlite3; con=sqlite3.connect(r'Data/sql/vit_vellore.db'); con.execute(\"INSERT INTO academic_fees(level,program,category,ay,tuition,one_time,caution,total,currency,source_file) VALUES('UG','B.Tech - Group A','Indian','2025-26','176000','','','176000','INR','manual')\"); con.commit(); print('inserted'); con.close()"
+inserted
 
+(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe -c "import sqlite3; c=sqlite3.connect(r'Data/sql/vit_vellore.db'); print('academic_fees =', c.execute('select count(*) from academic_fees').fetchone()[0]); c.close()"
+academic_fees = 104
 
+(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe -c "import importlib.util, sys; p='ETL/load_sqlite.py'; s=importlib.util.spec_from_file_location('etl_mod', p); m=importlib.util.module_from_spec(s); s.loader.exec_module(m); con=m._mk_conn(); m._schema(con); m._clear_academics(con); m.load_academics_from_processed(con); con.commit(); con.close(); print('academics reloaded')"
+academics reloaded
 
-.\.venv\Scripts\python.exe -c "import sqlite3; c=sqlite3.connect(r'Data/sql/vit_vellore.db'); print({t:c.execute(f'select count(*) from {t}').fetchone()[0] for t in ['programs','eligibility','documents_required','academic_fees','scholarships','hostel_fees']}); c.close()"
+(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe -c "import sqlite3; c=sqlite3.connect(r'Data/sql/vit_vellore.db'); print({t:c.execute(f'select count(*) from {t}').fetchone()[0] for t in ['programs','eligibility','documents_required','academic_fees','scholarships']}); c.close()"
+{'programs': 101, 'eligibility': 22, 'documents_required': 66, 'academic_fees': 103, 'scholarships': 10}
 
+(.venv) C:\Users\T8543\Downloads\project-2>.\.venv\Scripts\python.exe -c "import sqlite3; c=sqlite3.connect(r'Data/sql/vit_vellore.db'); print({t:c.execute(f'select count(*) from {t}').fetchone()[0] for t in ['programs','eligibility','documents_required','academic_fees','scholarships','hostel_fees']}); c.close()"
+{'programs': 101, 'eligibility': 22, 'documents_required': 66, 'academic_fees': 103, 'scholarships': 10, 'hostel_fees': 225}
+
+(.venv) C:\Users\T8543\Downloads\project-2>python -m app.rag_answer --q "UG documents required"
+_No matching rows._
+
+(.venv) C:\Users\T8543\Downloads\project-2>python -m app.rag_answer --q "UG programs CSE"      
+_No matching rows._
+
+(.venv) C:\Users\T8543\Downloads\project-2>
