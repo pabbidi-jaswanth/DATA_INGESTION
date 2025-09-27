@@ -1,15 +1,273 @@
-(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe fix_router_and_test.py  
-[INFO] assuming you replaced app/sql_router.py and app/rag_answer.py with the patched versions.
-[DB] counts: {'programs': 101, 'eligibility': 22, 'documents_required': 66, 'academic_fees': 103, 'scholarships': 10, 'hostel_fees': 225}
+# app/sql_router.py
+import sqlite3, re
+from pathlib import Path
+from typing import Dict, Any, List
 
-════ Q: UG documents required
-_No matching rows._
+DB = Path(__file__).resolve().parents[1] / "Data" / "sql" / "vit_vellore.db"
 
-════ Q: UG programs CSE
-_No matching rows._
+ACA_KEYWORDS = {
+    "programs":     ["program","programme","course","degree","b.tech","m.tech","mca","msc"],
+    "eligibility":  ["eligibility","qualify","criteria","requirements","min marks"],
+    "documents":    ["document","documents","docs","upload","certificate","proof","bonafide","submission"],
+    "fees":         ["tuition","fee","fees","academic fee","semester fee"],
+    "scholarships": ["scholarship","waiver","merit","financial aid"]
+}
 
-════ Q: B.Tech tuition fee Indian 2025
-_No matching rows._
-(.venv) (base) PS C:\Users\T8543\Downloads\project-2> python -m app.rag_answer --q "ug programs cse"   
-_No matching rows._
-(.venv) (base) PS C:\Users\T8543\Downloads\project-2> 
+# --- hint expansion & normalization helpers ---------------------------------
+PROG_ALIAS = {
+    "cse": "computer science",
+    "ai": "artificial intelligence",
+    "aiml": "artificial intelligence",
+    "ds": "data science",
+    "it": "information technology",
+    "ece": "electronics",
+    "eee": "electrical",
+    "mech": "mechanical",
+    "biotech": "biotechnology",
+    "btech": "b.tech",
+    "mtech": "m.tech",
+}
+
+def _expand_prog_hint(s: str|None) -> str|None:
+    if not s: return s
+    s = s.lower().strip().replace(".", "")
+    return PROG_ALIAS.get(s, s)
+
+# normalize SQL text: lower + strip punctuation/spaces so 'b.tech' ~ 'btech'
+# This returns an SQL expression you can use in SELECT/WHERE.
+def _norm_sql_expr(col: str) -> str:
+    e = f"LOWER({col})"
+    for ch in (".","-","&","/","(",")"):
+        e = f"REPLACE({e}, '{ch}', '')"
+    e = f"REPLACE({e}, ' ', '')"
+    return e
+
+def detect_structured_intent(q: str) -> str:
+    ql = q.lower()
+    if any(k in ql for k in ["contact","phone","email","supervisor","warden","director","manager"]):
+        return "contacts"
+    if "block" in ql and any(k in ql for k in ["name","names","list","all","codes","code"]):
+        return "blocks"
+    if any(k in ql for k in ["hostel","room","mess","laundry","mh","lh"]):
+        return "hostel"
+    for tag, words in ACA_KEYWORDS.items():
+        if any(w in ql for w in words): return tag
+    if any(k in ql for k in ["fee","fees","tuition"]):
+        return "fees"
+    return "text"
+
+def parse_filters(q: str) -> Dict[str, Any]:
+    ql = q.lower()
+    f = {"ay": None, "gender": None, "category": None, "level": None, "program_like": None, "level_like": None}
+
+    m = re.search(r"\b(20\d{2})\b", ql)
+    if m:
+        yr = m.group(1); f["ay"] = f"{yr}-{str(int(yr[-2:])+1).zfill(2)}"
+
+    if any(k in ql for k in ["boy","boys","men","mh","mens"]):     f["gender"] = "Male"
+    if any(k in ql for k in ["girl","girls","ladies","lh","women"]): f["gender"] = "Female"
+
+    if "nri" in ql:       f["category"] = "NRI"
+    elif "foreign" in ql: f["category"] = "Foreign"
+    elif "indian" in ql:  f["category"] = "Indian"
+
+    if "senior" in ql: f["level"] = "Senior"
+    if "first year" in ql or "fresh" in ql: f["level"] = "First-Year"
+
+    m = re.search(r"\b(b\.?tech|m\.?tech|mca|msc|cse|ece|eee|mechanical|biotech|ai|aiml|data|it|ds)\b", ql)
+    if m: f["program_like"] = _expand_prog_hint(m.group(1).replace(".", ""))
+    if "ug" in ql: f["level_like"] = "UG"
+    if "pg" in ql: f["level_like"] = "PG"
+    return f
+
+def _mk():
+    con = sqlite3.connect(DB)
+    con.row_factory = sqlite3.Row
+    return con
+
+def _safe_fetch(con, sql, args) -> List[sqlite3.Row]:
+    try:
+        return con.execute(sql, args).fetchall()
+    except sqlite3.OperationalError:
+        return []
+
+# ---------------- HOSTEL ----------------
+def sql_hostel_overview(f: Dict[str,Any], limit_rows: int = 800) -> Dict[str, Any]:
+    con = _mk()
+    where, args = ["1=1"], []
+    if f["gender"]:   where.append("IFNULL(b.gender,'')=IFNULL(?, '')");     args.append(f["gender"])
+    if f["level"]:    where.append("IFNULL(b.level,'')=IFNULL(?, '')");      args.append(f["level"])
+    if f["ay"]:       where.append("IFNULL(hf.ay,'')=IFNULL(?, '')");        args.append(f["ay"])
+    if f["category"]: where.append("IFNULL(hf.category,'')=IFNULL(?, '')");  args.append(f["category"])
+    where.append("""(
+        COALESCE(hf.total_fee,'')<>'' OR COALESCE(hf.room_mess_fee,'')<>'' OR
+        COALESCE(hf.admission_fee,'')<>'' OR COALESCE(hf.caution_deposit,'')<>'' OR
+        COALESCE(hf.occupancy,'')<>'' OR COALESCE(hf.mess_type,'')<>''
+    )""")
+    sql = f"""
+    SELECT b.display_name AS block, b.gender, b.level, b.block_type,
+           hf.ay, hf.category, hf.occupancy, hf.ac, hf.mess_type,
+           hf.room_mess_fee, hf.admission_fee, hf.caution_deposit, hf.other_fee, hf.total_fee, hf.currency,
+           hf.source_file
+    FROM hostel_fees hf
+    JOIN blocks b ON b.id = hf.block_id
+    WHERE {' AND '.join(where)}
+    ORDER BY b.block_type, block, hf.occupancy, hf.ac DESC, hf.mess_type
+    """
+    rows = _safe_fetch(con, sql, args); con.close()
+    cols = ["Block","Gender","Level","Type","AY","Category","Occ","AC","Mess",
+            "Room+Mess","Admission","Caution","Other","Total","Curr","Source"]
+    tbl = {"title":"Hostel Fee Details (Vellore)", "columns":cols, "rows":[]}
+    for r in rows[:limit_rows]:
+        tbl["rows"].append([
+            r["block"] or "", r["gender"] or "", r["level"] or "", r["block_type"] or "",
+            r["ay"] or "", r["category"] or "", r["occupancy"] or "",
+            "AC" if (r["ac"]==1) else ("Non-AC" if (r["ac"]==0) else ""),
+            r["mess_type"] or "", r["room_mess_fee"] or "", r["admission_fee"] or "",
+            r["caution_deposit"] or "", r["other_fee"] or "", r["total_fee"] or "",
+            r["currency"] or "", r["source_file"] or ""
+        ])
+    return {"table": tbl, "bullets": []}
+
+def sql_block_contacts(_f: Dict[str,Any]) -> Dict[str,Any]:
+    con = _mk()
+    rows = _safe_fetch(con, """
+        SELECT '' AS block, name, role, phone, email
+        FROM hostel_contacts
+        ORDER BY role, name
+    """, [])
+    con.close()
+    cols = ["Block","Name","Role","Phone","Email"]
+    return {"table":{"title":"Hostel Contacts","columns":cols,"rows":[
+        [r["block"], r["name"] or "", r["role"] or "", r["phone"] or "", r["email"] or ""]
+        for r in rows
+    ]}, "bullets":[]}
+
+def sql_list_blocks(f: Dict[str,Any]) -> Dict[str,Any]:
+    con = _mk()
+    if f["gender"] == "Female":
+        sql = "SELECT block_code AS display_name, 'Female' AS gender FROM lh_blocks ORDER BY block_code"
+    elif f["gender"] == "Male":
+        sql = "SELECT COALESCE(block_name, block_code) AS display_name, 'Male' AS gender FROM mh_blocks ORDER BY block_code"
+    else:
+        sql = """
+        SELECT COALESCE(block_name, block_code) AS display_name, 'Male' AS gender FROM mh_blocks
+        UNION ALL
+        SELECT block_code AS display_name, 'Female' AS gender FROM lh_blocks
+        ORDER BY gender, display_name
+        """
+    rows = _safe_fetch(con, sql, []); con.close()
+    cols = ["Block","Gender"]
+    return {"table":{"title":"Hostel Blocks","columns":cols,"rows":[
+        [r["display_name"] or "", r["gender"] or ""] for r in rows
+    ]}, "bullets":[]}
+
+# ---------------- ACADEMICS ----------------
+def sql_programs(f: Dict[str,Any], _q: str) -> Dict[str,Any]:
+    con = _mk()
+    where, args = ["1=1"], []
+    if f.get("level_like"):
+        where.append("LOWER(TRIM(level)) LIKE ?")
+        args.append(f["level_like"].lower() + "%")
+    prog = _expand_prog_hint(f.get("program_like"))
+    if prog:
+        # normalized LIKE
+        where.append(_norm_sql_expr("program") + " LIKE ?")
+        args.append("%" + re.sub(r"[.\-\s/&()]", "", prog.lower()) + "%")
+    rows = _safe_fetch(con, f"""
+        SELECT level, program, school, duration, campus, source_file
+        FROM programs
+        WHERE {' AND '.join(where)}
+        ORDER BY level, program
+    """, args); con.close()
+    cols = ["Level","Program","School","Duration","Campus","Source"]
+    return {"table":{"title":"Programs","columns":cols,"rows":[
+        [r["level"] or "", r["program"] or "", r["school"] or "", r["duration"] or "", r["campus"] or "", r["source_file"] or ""]
+        for r in rows
+    ]}, "bullets":[]}
+
+def sql_eligibility(f: Dict[str,Any], _q: str) -> Dict[str,Any]:
+    con = _mk()
+    where, args = ["1=1"], []
+    if f.get("level_like"):
+        where.append("LOWER(TRIM(level)) LIKE ?"); args.append(f["level_like"].lower() + "%")
+    prog = _expand_prog_hint(f.get("program_like"))
+    if prog:
+        where.append(_norm_sql_expr("program") + " LIKE ?")
+        args.append("%" + re.sub(r"[.\-\s/&()]", "", prog.lower()) + "%")
+    rows = _safe_fetch(con, f"""
+        SELECT level, program, criteria, source_file
+        FROM eligibility
+        WHERE {' AND '.join(where)}
+        ORDER BY level, program
+    """, args); con.close()
+    cols = ["Level","Program","Criteria","Source"]
+    return {"table":{"title":"Eligibility","columns":cols,"rows":[
+        [r["level"] or "", r["program"] or "", r["criteria"] or "", r["source_file"] or ""]
+        for r in rows
+    ]}, "bullets":[]}
+
+def sql_documents(f: Dict[str,Any], _q: str) -> Dict[str,Any]:
+    con = _mk()
+    where, args = ["1=1"], []
+    if f.get("level_like"):
+        where.append("LOWER(TRIM(level)) LIKE ?"); args.append(f["level_like"].lower() + "%")
+    prog = _expand_prog_hint(f.get("program_like"))
+    if prog:
+        where.append(_norm_sql_expr("program") + " LIKE ?")
+        args.append("%" + re.sub(r"[.\-\s/&()]", "", prog.lower()) + "%")
+    rows = _safe_fetch(con, f"""
+        SELECT level, program, item, details, source_file
+        FROM documents_required
+        WHERE {' AND '.join(where)}
+        ORDER BY level, program, item
+    """, args); con.close()
+    cols = ["Level","Program","Document","Details","Source"]
+    return {"table":{"title":"Documents Required","columns":cols,"rows":[
+        [r["level"] or "", r["program"] or "", r["item"] or "", r["details"] or "", r["source_file"] or ""]
+        for r in rows
+    ]}, "bullets":[]}
+
+def sql_academic_fees(f: Dict[str,Any], _q: str) -> Dict[str,Any]:
+    con = _mk()
+    where, args = ["1=1"], []
+    prog = _expand_prog_hint(f.get("program_like"))
+    if prog:
+        where.append(_norm_sql_expr("program") + " LIKE ?")
+        args.append("%" + re.sub(r"[.\-\s/&()]", "", prog.lower()) + "%")
+    if f.get("level_like"):
+        where.append("LOWER(TRIM(level)) LIKE ?"); args.append(f["level_like"].lower() + "%")
+    if f.get("category"):
+        where.append("LOWER(IFNULL(category,'')) = LOWER(IFNULL(?, ''))"); args.append(f["category"])
+    if f.get("ay"):
+        where.append("IFNULL(ay,'') = IFNULL(?, '')"); args.append(f["ay"])
+    rows = _safe_fetch(con, f"""
+        SELECT level, program, category, ay, tuition, one_time, caution, total, currency, source_file
+        FROM academic_fees
+        WHERE {' AND '.join(where)}
+        ORDER BY level, program, category, ay
+    """, args); con.close()
+    cols = ["Level","Program","Category","AY","Tuition","One-time","Caution","Total","Curr","Source"]
+    return {"table":{"title":"Academic Fees","columns":cols,"rows":[
+        [r["level"] or "", r["program"] or "", r["category"] or "", r["ay"] or "",
+         r["tuition"] or "", r["one_time"] or "", r["caution"] or "", r["total"] or "",
+         r["currency"] or "", r["source_file"] or ""]
+        for r in rows
+    ]}, "bullets":[]}
+
+def sql_scholarships(f: Dict[str,Any], _q: str) -> Dict[str,Any]:
+    con = _mk()
+    where, args = ["1=1"], []
+    if f.get("level_like"):
+        where.append("LOWER(TRIM(level)) LIKE ?"); args.append(f["level_like"].lower() + "%")
+    rows = _safe_fetch(con, f"""
+        SELECT level, name, criteria, amount, currency, source_file
+        FROM scholarships
+        WHERE {' AND '.join(where)}
+        ORDER BY level, name
+    """, args); con.close()
+    cols = ["Level","Name","Criteria","Amount","Curr","Source"]
+    return {"table":{"title":"Scholarships","columns":cols,"rows":[
+        [r["level"] or "", r["name"] or "", r["criteria"] or "", r["amount"] or "", r["currency"] or "", r["source_file"] or ""]
+        for r in rows
+    ]}, "bullets":[]}
