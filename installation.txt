@@ -1,98 +1,15 @@
-# app/rag_answer.py
-"""
-SQL-first router; FAISS fallback only for long-form when SQL doesn't apply.
-"""
-from app.sql_router import (
-    detect_structured_intent, parse_filters,
-    sql_hostel_overview, sql_block_contacts, sql_list_blocks,
-    sql_programs, sql_eligibility, sql_documents, sql_academic_fees, sql_scholarships
-)
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe fix_router_and_test.py  
+[INFO] assuming you replaced app/sql_router.py and app/rag_answer.py with the patched versions.
+[DB] counts: {'programs': 101, 'eligibility': 22, 'documents_required': 66, 'academic_fees': 103, 'scholarships': 10, 'hostel_fees': 225}
 
-def _fmt_table(tbl: dict) -> str:
-    if not tbl or not tbl.get("rows"):
-        return "_No matching rows._"
-    title  = f"**{tbl.get('title','Results')}**"
-    cols   = tbl["columns"]
-    header = " | ".join(cols)
-    sep    = " | ".join(["---"] * len(cols))
-    lines  = [title, "", header, sep]
-    for r in tbl["rows"]:
-        lines.append(" | ".join("" if x is None else str(x) for x in r))
-    return "\n".join(lines)
+════ Q: UG documents required
+_No matching rows._
 
-def _pack(table_dict=None, bullets=None):
-    parts = []
-    if table_dict: parts.append(_fmt_table(table_dict))
-    if bullets:    parts.append("\n".join(f"- {b}" for b in bullets))
-    return "\n\n".join(parts) if parts else "_No results._"
+════ Q: UG programs CSE
+_No matching rows._
 
-def _sql_route(q: str) -> str | None:
-    intent = detect_structured_intent(q)
-    f = parse_filters(q)
-
-    # HOSTEL
-    if intent == "contacts":   return _pack(sql_block_contacts(f).get("table"))
-    if intent == "blocks":     return _pack(sql_list_blocks(f).get("table"))
-    if intent in ("hostel","tabular"): return _pack(sql_hostel_overview(f).get("table"))
-
-    # ACADEMICS
-    if intent == "programs":     return _pack(sql_programs(f, q).get("table"))
-    if intent == "eligibility":  return _pack(sql_eligibility(f, q).get("table"))
-    if intent == "documents":    return _pack(sql_documents(f, q).get("table"))
-    if intent == "fees":         return _pack(sql_academic_fees(f, q).get("table"))
-    if intent == "scholarships": return _pack(sql_scholarships(f, q).get("table"))
-    return None
-
-def answer(query: str) -> str:
-    sql_text = _sql_route(query)
-    if sql_text is not None:
-        return sql_text
-    # FAISS fallback (optional; only if you built the index)
-    try:
-        from app.utils.fallback_rag import faiss_answer_or_summary
-        from pathlib import Path
-        return faiss_answer_or_summary(Path("Data/index/faiss"), "vit_faq_vellore", query)
-    except Exception:
-        return "_I couldn't find that in my sources._"
-
-if __name__ == "__main__":
-    import argparse
-    p = argparse.ArgumentParser()
-    p.add_argument("--q", "-q", dest="q", default="")
-    args = p.parse_args()
-    print(answer(args.q or "UG programs CSE"))
-
-
-
-
-# fix_router_and_test.py  (place in project root, same level as /app and /Data)
-from pathlib import Path
-import sqlite3, importlib, sys
-
-ROOT = Path(__file__).resolve().parent
-APP  = ROOT / "app"
-(APP / "__init__.py").write_text("", encoding="utf-8")  # ensure package
-
-# ----- write patched files if you pasted code above -----
-print("[INFO] assuming you replaced app/sql_router.py and app/rag_answer.py with the patched versions.")
-
-# ----- sanity: DB path -----
-DB = ROOT / "Data" / "sql" / "vit_vellore.db"
-if not DB.exists():
-    print(f"[WARN] DB not found at: {DB}  -> run ETL/load_sqlite.py")
-else:
-    con = sqlite3.connect(DB)
-    con.row_factory = sqlite3.Row
-    tables = ["programs","eligibility","documents_required","academic_fees","scholarships","hostel_fees"]
-    counts = {t: con.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0] for t in tables}
-    con.close()
-    print("[DB] counts:", counts)
-
-# ----- smoke tests -----
-sys.path.insert(0, str(ROOT))
-rag = importlib.import_module("app.rag_answer")
-for q in ["UG documents required", "UG programs CSE", "B.Tech tuition fee Indian 2025"]:
-    print("\n════ Q:", q)
-    out = rag.answer(q)
-    lines = out.splitlines()
-    print("\n".join(lines[:30] if len(lines) > 30 else lines))
+════ Q: B.Tech tuition fee Indian 2025
+_No matching rows._
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> python -m app.rag_answer --q "ug programs cse"   
+_No matching rows._
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> 
