@@ -22,3 +22,8 @@ del /q Data\sql\vit_vellore.db
 .\.venv\Scripts\python.exe -c "import importlib.util, sys; p='ETL/load_sqlite.py'; s=importlib.util.spec_from_file_location('etl_mod', p); m=importlib.util.module_from_spec(s); s.loader.exec_module(m); con=m._mk_conn(); m._schema(con); m._clear_academics(con); m.load_academics_from_processed(con); con.commit(); con.close(); print('academics reloaded')"
 
 .\.venv\Scripts\python.exe -c "import sqlite3; c=sqlite3.connect(r'Data/sql/vit_vellore.db'); print({t:c.execute(f'select count(*) from {t}').fetchone()[0] for t in ['programs','eligibility','documents_required','academic_fees','scholarships']}); c.close()"
+
+
+
+.\.venv\Scripts\python.exe -c "import sqlite3; c=sqlite3.connect(r'Data/sql/vit_vellore.db'); print({t:c.execute(f'select count(*) from {t}').fetchone()[0] for t in ['programs','eligibility','documents_required','academic_fees','scholarships','hostel_fees']}); c.close()"
+
