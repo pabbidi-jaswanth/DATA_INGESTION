@@ -1,15 +1,9 @@
-Module-1: Data Ingestion → PDF → staging CSVs (pdfplumber, Camelot).
+Standardized column names (lowercase, snake_case).
 
-Module-2: Preprocessing → curated processed CSVs (fees, eligibility, documents, hostel).
+Mapped hostel table headers consistently.
 
-Module-3: Embeddings & Indexing → heading-aware chunks → FAISS index.
+Detected currency (INR/USD), occupancy & AC categories.
 
-Module-4: Static Retrieval (Basic) → SQL router can fetch basic tables/answers, but exact retrieval formatting & polish still pending.
+Converted PG fees (cat1/cat2) into a single common table format.
 
-Outputs:
-
-Data/staging/*.csv (auto-extracted)
-
-Data/processed/** (curated truth)
-
-Data/processed/chunks_clean_final.jsonl (for embeddings)
+Removed duplicate rows and checked for missing or wrong values (basic validation).
