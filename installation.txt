@@ -1,9 +1,165 @@
-Standardized column names (lowercase, snake_case).
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> python -m app.rag_answer --q "ug programs cse"
+**Programs**
 
-Mapped hostel table headers consistently.
+Level | Program | School | Duration | Campus | Source
+--- | --- | --- | --- | --- | ---
+UG | B.Sc. Computer Science |  |  | Vellore; Chennai | UG Programmes Offered.pdf
+UG | B.Tech - Computer Science and Business Systems |  |  | VIT-AP | UG Programmes Offered.pdf
+UG | B.Tech - Computer Science and Engineering |  |  | Vellore; Chennai; VIT-AP; VIT-Bhopal | UG Programmes Offered.pdf
+UG | B.Tech - Electrical and Computer Science Engineering |  |  | Vellore; Chennai | UG Programmes Offered.pdf      
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> python -m app.rag_answer --q "B.tech tuition fee Indian 2025" 
+**Programs**
+    
+Level | Program | School | Duration | Campus | Source
+--- | --- | --- | --- | --- | ---
+UG | B.Tech - Aerospace Engineering |  |  | VIT-Bhopal | UG Programmes Offered.pdf
+UG | B.Tech - Bioengineering |  |  | VIT-Bhopal | UG Programmes Offered.pdf
+UG | B.Tech - Biotechnology |  |  | Vellore | UG Programmes Offered.pdf
+UG | B.Tech - CSE (AI & Data Engineering) |  |  | Vellore | UG Programmes Offered.pdf
+UG | B.Tech - CSE (AI & ML) |  |  | Vellore; Chennai; VIT-AP; VIT-Bhopal | UG Programmes Offered.pdf
+UG | B.Tech - CSE (AI & Robotics) |  |  | Chennai | UG Programmes Offered.pdf
+UG | B.Tech - CSE (Bioinformatics) |  |  | Vellore | UG Programmes Offered.pdf
+UG | B.Tech - CSE (Blockchain) |  |  | VIT-AP | UG Programmes Offered.pdf
+UG | B.Tech - CSE (Cloud Computing & Automation) |  |  | VIT-Bhopal | UG Programmes Offered.pdf
+UG | B.Tech - CSE (Cyber Physical Systems) |  |  | Chennai | UG Programmes Offered.pdf
+UG | B.Tech - CSE (Cyber Security & Digital Forensics) |  |  | VIT-Bhopal | UG Programmes Offered.pdf
+UG | B.Tech - CSE (Cyber Security) |  |  | Vellore; Chennai; VIT-AP | UG Programmes Offered.pdf
+UG | B.Tech - CSE (Data Analytics) |  |  | VIT-AP | UG Programmes Offered.pdf
+UG | B.Tech - CSE (Data Science) |  |  | Vellore; Chennai | UG Programmes Offered.pdf
+UG | B.Tech - CSE (E-Commerce Technology) |  |  | VIT-Bhopal | UG Programmes Offered.pdf
+UG | B.Tech - CSE (Education Technology) |  |  | VIT-Bhopal | UG Programmes Offered.pdf
+UG | B.Tech - CSE (Gaming Technology) |  |  | VIT-Bhopal | UG Programmes Offered.pdf
+UG | B.Tech - CSE (Health Informatics) |  |  | VIT-Bhopal | UG Programmes Offered.pdf
+UG | B.Tech - CSE (Software Engineering) |  |  | VIT-AP | UG Programmes Offered.pdf
+UG | B.Tech - CSE and Business Systems (with TCS) |  |  | Vellore | UG Programmes Offered.pdf
+UG | B.Tech - Chemical Engineering |  |  | Vellore | UG Programmes Offered.pdf
+UG | B.Tech - Civil Engineering |  |  | Vellore; Chennai | UG Programmes Offered.pdf
+UG | B.Tech - Civil Engineering (In Collaboration with L & T) |  |  | Vellore; Chennai | UG Programmes Offered.pdf  
+UG | B.Tech - Computer Science and Business Systems |  |  | VIT-AP | UG Programmes Offered.pdf
+UG | B.Tech - Computer Science and Engineering |  |  | Vellore; Chennai; VIT-AP; VIT-Bhopal | UG Programmes Offered.pdf
+UG | B.Tech - ECE (AI & Cybernetics) |  |  | VIT-Bhopal | UG Programmes Offered.pdf
+UG | B.Tech - ECE (Biomedical Engineering) |  |  | Vellore | UG Programmes Offered.pdf
+UG | B.Tech - ECE (Embedded Systems) |  |  | VIT-AP | UG Programmes Offered.pdf
+UG | B.Tech - ECE (VLSI) |  |  | VIT-AP | UG Programmes Offered.pdf
+UG | B.Tech - Electrical and Computer Science Engineering |  |  | Vellore; Chennai | UG Programmes Offered.pdf      
+UG | B.Tech - Electrical and Electronics Engineering |  |  | Vellore; Chennai | UG Programmes Offered.pdf
+UG | B.Tech - Electronics Engineering (VLSI Design and Technology) |  |  | Vellore; Chennai | UG Programmes Offered.pdf
+UG | B.Tech - Electronics and Communication Engineering |  |  | Vellore; Chennai; VIT-AP; VIT-Bhopal | UG Programmes Offered.pdf
+UG | B.Tech - Electronics and Computer Engineering |  |  | Chennai | UG Programmes Offered.pdf
+UG | B.Tech - Electronics and Instrumentation Engineering |  |  | Vellore | UG Programmes Offered.pdf
+UG | B.Tech - Fashion Technology |  |  | Chennai | UG Programmes Offered.pdf
+UG | B.Tech - Health Sciences and Technology |  |  | Vellore | UG Programmes Offered.pdf
+UG | B.Tech - Information Technology |  |  | Vellore | UG Programmes Offered.pdf
+UG | B.Tech - Mechanical Engineering |  |  | Vellore; Chennai; VIT-AP; VIT-Bhopal | UG Programmes Offered.pdf       
+UG | B.Tech - Mechanical Engineering (AI & Robotics) |  |  | VIT-Bhopal | UG Programmes Offered.pdf
+UG | B.Tech - Mechanical Engineering (Automotive Design) |  |  | VIT-AP | UG Programmes Offered.pdf
+UG | B.Tech - Mechanical Engineering (Electric Vehicles) |  |  | Vellore; Chennai | UG Programmes Offered.pdf       
+UG | B.Tech - Mechanical Engineering (Robotics) |  |  | VIT-AP | UG Programmes Offered.pdf
+UG | B.Tech - Mechanical Engineering (Smart Manufacturing) |  |  | Vellore | UG Programmes Offered.pdf
+UG | B.Tech - Mechatronics and Automation |  |  | Chennai | UG Programmes Offered.pdf
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> python -m app.rag_answer --q "B.tech tuition fee NRI 2025"   
+**Programs**
 
-Detected currency (INR/USD), occupancy & AC categories.
+Level | Program | School | Duration | Campus | Source
+--- | --- | --- | --- | --- | ---
+UG | B.Tech - Aerospace Engineering |  |  | VIT-Bhopal | UG Programmes Offered.pdf
+UG | B.Tech - Bioengineering |  |  | VIT-Bhopal | UG Programmes Offered.pdf
+UG | B.Tech - Biotechnology |  |  | Vellore | UG Programmes Offered.pdf
+UG | B.Tech - CSE (AI & Data Engineering) |  |  | Vellore | UG Programmes Offered.pdf
+UG | B.Tech - CSE (AI & ML) |  |  | Vellore; Chennai; VIT-AP; VIT-Bhopal | UG Programmes Offered.pdf
+UG | B.Tech - CSE (AI & Robotics) |  |  | Chennai | UG Programmes Offered.pdf
+UG | B.Tech - CSE (Bioinformatics) |  |  | Vellore | UG Programmes Offered.pdf
+UG | B.Tech - CSE (Blockchain) |  |  | VIT-AP | UG Programmes Offered.pdf
+UG | B.Tech - CSE (Cloud Computing & Automation) |  |  | VIT-Bhopal | UG Programmes Offered.pdf
+UG | B.Tech - CSE (Cyber Physical Systems) |  |  | Chennai | UG Programmes Offered.pdf
+UG | B.Tech - CSE (Cyber Security & Digital Forensics) |  |  | VIT-Bhopal | UG Programmes Offered.pdf
+UG | B.Tech - CSE (Cyber Security) |  |  | Vellore; Chennai; VIT-AP | UG Programmes Offered.pdf
+UG | B.Tech - CSE (Data Analytics) |  |  | VIT-AP | UG Programmes Offered.pdf
+UG | B.Tech - CSE (Data Science) |  |  | Vellore; Chennai | UG Programmes Offered.pdf
+UG | B.Tech - CSE (E-Commerce Technology) |  |  | VIT-Bhopal | UG Programmes Offered.pdf
+UG | B.Tech - CSE (Education Technology) |  |  | VIT-Bhopal | UG Programmes Offered.pdf
+UG | B.Tech - CSE (Gaming Technology) |  |  | VIT-Bhopal | UG Programmes Offered.pdf
+UG | B.Tech - CSE (Health Informatics) |  |  | VIT-Bhopal | UG Programmes Offered.pdf
+UG | B.Tech - CSE (Software Engineering) |  |  | VIT-AP | UG Programmes Offered.pdf
+UG | B.Tech - CSE and Business Systems (with TCS) |  |  | Vellore | UG Programmes Offered.pdf
+UG | B.Tech - Chemical Engineering |  |  | Vellore | UG Programmes Offered.pdf
+UG | B.Tech - Civil Engineering |  |  | Vellore; Chennai | UG Programmes Offered.pdf
+UG | B.Tech - Civil Engineering (In Collaboration with L & T) |  |  | Vellore; Chennai | UG Programmes Offered.pdf  
+UG | B.Tech - Computer Science and Business Systems |  |  | VIT-AP | UG Programmes Offered.pdf
+UG | B.Tech - Computer Science and Engineering |  |  | Vellore; Chennai; VIT-AP; VIT-Bhopal | UG Programmes Offered.pdf
+UG | B.Tech - ECE (AI & Cybernetics) |  |  | VIT-Bhopal | UG Programmes Offered.pdf
+UG | B.Tech - ECE (Biomedical Engineering) |  |  | Vellore | UG Programmes Offered.pdf
+UG | B.Tech - ECE (Embedded Systems) |  |  | VIT-AP | UG Programmes Offered.pdf
+UG | B.Tech - ECE (VLSI) |  |  | VIT-AP | UG Programmes Offered.pdf
+UG | B.Tech - Electrical and Computer Science Engineering |  |  | Vellore; Chennai | UG Programmes Offered.pdf      
+UG | B.Tech - Electrical and Electronics Engineering |  |  | Vellore; Chennai | UG Programmes Offered.pdf
+UG | B.Tech - Electronics Engineering (VLSI Design and Technology) |  |  | Vellore; Chennai | UG Programmes Offered.pdf
+UG | B.Tech - Electronics and Communication Engineering |  |  | Vellore; Chennai; VIT-AP; VIT-Bhopal | UG Programmes Offered.pdf
+UG | B.Tech - Electronics and Computer Engineering |  |  | Chennai | UG Programmes Offered.pdf
+UG | B.Tech - Electronics and Instrumentation Engineering |  |  | Vellore | UG Programmes Offered.pdf
+UG | B.Tech - Fashion Technology |  |  | Chennai | UG Programmes Offered.pdf
+UG | B.Tech - Health Sciences and Technology |  |  | Vellore | UG Programmes Offered.pdf
+UG | B.Tech - Information Technology |  |  | Vellore | UG Programmes Offered.pdf
+UG | B.Tech - Mechanical Engineering |  |  | Vellore; Chennai; VIT-AP; VIT-Bhopal | UG Programmes Offered.pdf       
+UG | B.Tech - Mechanical Engineering (AI & Robotics) |  |  | VIT-Bhopal | UG Programmes Offered.pdf
+UG | B.Tech - Mechanical Engineering (Automotive Design) |  |  | VIT-AP | UG Programmes Offered.pdf
+UG | B.Tech - Mechanical Engineering (Electric Vehicles) |  |  | Vellore; Chennai | UG Programmes Offered.pdf       
+UG | B.Tech - Mechanical Engineering (Robotics) |  |  | VIT-AP | UG Programmes Offered.pdf
+UG | B.Tech - Mechanical Engineering (Smart Manufacturing) |  |  | Vellore | UG Programmes Offered.pdf
+UG | B.Tech - Mechatronics and Automation |  |  | Chennai | UG Programmes Offered.pdf
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> python -m app.rag_answer --q "UG documents required"      
+**Documents Required**
 
-Converted PG fees (cat1/cat2) into a single common table format.
+Level | Program | Document | Details | Source
+--- | --- | --- | --- | ---
+UG | ALL | •  Affidavit by the Parent (Signed & Notarized) |  | Document Submission.pdf
+UG | ALL | •  Affidavit by the Student ( (Signed & Notarized): |  | Document Submission.pdf
+UG | ALL | •  Age proof (Birth certificate / Passport Copy) |  | Document Submission.pdf
+UG | ALL | •  Community Certificate (For SC/ST only) |  | Document Submission.pdf
+UG | ALL | •  Employer Certificate (original) |  | Document Submission.pdf
+UG | ALL | •  Hostel Affidavit (Signed & Notarized) |  | Document Submission.pdf
+UG | ALL | •  In case of submission of any fraudulent, incompetent certificate by the |  | Document Submission.pdf  
+UG | ALL | •  Migration Certificate |  | Document Submission.pdf
+UG | ALL | •  Migration Certificate (if issued by the board) |  | Document Submission.pdf
+UG | ALL | •  Nativity Certificate (For Applicants hailing from North Eastern States and Jammu & |  | Document Submission.pdf
+UG | ALL | •  Passport Copy (Student & Parent) |  | Document Submission.pdf
+UG | ALL | •  Recent passport size colour photos - 4 Nos. |  | Document Submission.pdf
+UG | ALL | •  The candidate should submit the qualifying mark statement from the board |  | Document Submission.pdf 
+UG | ALL | •  Transfer Certificate / School leaving Certificate |  | Document Submission.pdf
+UG | ALL | •  Transfer Certificate/School Leaving Certificate |  | Document Submission.pdf
+UG | ALL | •  Undertaking form (Signed by Student & Parent) |  | Document Submission.pdf
+UG | ALL | •  X & XII mark sheet |  | Document Submission.pdf
+UG | ALL | •  XII Mark statements of all attempts of qualifying examination |  | Document Submission.pdf
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> python -m app.rag_answer --q "what is fee for UG computer science"
+**Academic Fees**
 
-Removed duplicate rows and checked for missing or wrong values (basic validation).
+Level | Program | Category | AY | Tuition | One-time | Caution | Total | Curr | Source
+--- | --- | --- | --- | --- | --- | --- | --- | --- | ---
+UG | B.Arch | Indian | 2025-26 | 310000 |  |  | 315000 | INR | Academic Fee.pdf
+UG | B.Com | Indian | 2025-26 | 90000 |  |  | 95000 | INR | Academic Fee.pdf
+UG | B.Com | International | 2025-26 | 3450 |  |  | 3500 | USD | Academic Fee.pdf
+UG | B.Com (Banking and Capital Markets) | Indian | 2025-26 | 127000 |  |  | 132000 | INR | Academic Fee.pdf        
+UG | B.Com (Business Process Services) | Indian | 2025-26 | 90000 |  |  | 95000 | INR | Academic Fee.pdf
+UG | B.Com (Financial Technology) | Indian | 2025-26 | 127000 |  |  | 132000 | INR | Academic Fee.pdf
+UG | B.Des (Industrial Design) | Indian | 2025-26 | 173000 |  |  | 178000 | INR | Academic Fee.pdf
+UG | B.Sc. (Computer Science) | Indian | 2025-26 | 90000 |  |  | 95000 | INR | Academic Fee.pdf
+UG | B.Sc. (Computer Science) | International | 2025-26 | 3450 |  |  | 3500 | USD | Academic Fee.pdf
+UG | B.Sc. (Hons.) Agriculture | Indian | 2025-26 | 110000 |  |  | 115000 | INR | Academic Fee.pdf
+UG | B.Sc. (Hospitality and Hotel Administration) | Indian | 2025-26 | 77000 |  |  | 82000 | INR | Academic Fee.pdf 
+UG | B.Sc. (Multimedia and Animation) | Indian | 2025-26 | 99000 |  |  | 104000 | INR | Academic Fee.pdf
+UG | B.Sc. (Multimedia and Animation) | International | 2025-26 | 4250 |  |  | 4300 | USD | Academic Fee.pdf        
+UG | B.Sc. (Visual Communication) | Indian | 2025-26 | 128000 |  |  | 133000 | INR | Academic Fee.pdf
+UG | B.Tech | International | 2025-26 | 9000 |  |  | 9100 | USD | Academic Fee.pdf
+UG | B.Tech - Group A | Indian | 2025-26 | 173000 |  |  | 176000 | INR | Academic Fee.pdf
+UG | B.Tech - Group A (L&T Collaboration) | Indian | 2025-26 | 207000 |  |  | 210000 | INR | Academic Fee.pdf       
+UG | B.Tech - Group B | Indian | 2025-26 | 195000 |  |  | 198000 | INR | Academic Fee.pdf
+UG | B.Tech - Group B (Bhopal Campus) | Indian | 2025-26 | 198000 |  |  | 201000 | INR | Academic Fee.pdf
+UG | BBA | Indian | 2025-26 | 90000 |  |  | 95000 | INR | Academic Fee.pdf
+UG | BBA | International | 2025-26 | 3450 |  |  | 3500 | USD | Academic Fee.pdf
+UG | BCA | Indian | 2025-26 | 90000 |  |  | 95000 | INR | Academic Fee.pdf
+UG | BCA | International | 2025-26 | 3450 |  |  | 3500 | USD | Academic Fee.pdf
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> python -m app.rag_answer --q "what is the UG application process" 
+**Answer (from your PDFs):** (or its equivalent) - The candidates short-listed based on their merit will be called for the admission - Candidates will be allot the seat in the order of merit based on the U.G. marks. - The fact that a candidate has qualified is does not guarantee for admission. This depends upon the cut-off fixed on the merit list and the availability of seats - The short listed candidate list will be published on our website Will I be offered the option of choosing campus and program while filling application? 'No'. Only at the time of counseling you will be offered the option of choosing campus and programme. This would depend on the availability of the programme and campus as per your rank in the order of merit. What is the closing date for issue of applications?
+
+*Sources:* M.SC PROCESS.pdf, VITEEE FAQS.pdf, VITREE FAQS.pdf, POSTGRADUTE ADMISSIONS PROCESS.pdf, UG FOREIGN FAQ.pdf
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> 
