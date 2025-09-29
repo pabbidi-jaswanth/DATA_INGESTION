@@ -162,4 +162,143 @@ UG | BCA | International | 2025-26 | 3450 |  |  | 3500 | USD | Academic Fee.pdf
 **Answer (from your PDFs):** (or its equivalent) - The candidates short-listed based on their merit will be called for the admission - Candidates will be allot the seat in the order of merit based on the U.G. marks. - The fact that a candidate has qualified is does not guarantee for admission. This depends upon the cut-off fixed on the merit list and the availability of seats - The short listed candidate list will be published on our website Will I be offered the option of choosing campus and program while filling application? 'No'. Only at the time of counseling you will be offered the option of choosing campus and programme. This would depend on the availability of the programme and campus as per your rank in the order of merit. What is the closing date for issue of applications?
 
 *Sources:* M.SC PROCESS.pdf, VITEEE FAQS.pdf, VITREE FAQS.pdf, POSTGRADUTE ADMISSIONS PROCESS.pdf, UG FOREIGN FAQ.pdf
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> python -m app.rag_answer --q "what is MCA fee structure"      
+**Programs**
+
+Level | Program | School | Duration | Campus | Source
+--- | --- | --- | --- | --- | ---
+PG | Master of Computer Applications (MCA) | School of Computer Science & Engineering / Information Systems | 2 years (4 semesters) | Vellore | MCA 2 Years PG Program.pdf
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> python -m app.rag_answer --q "what is PG foreign fee structure"
+_No matching rows._
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> python -m app.rag_answer --q "what is fee for UG computer science"
+**Academic Fees**
+
+Level | Program | Category | AY | Tuition | One-time | Caution | Total | Curr | Source
+--- | --- | --- | --- | --- | --- | --- | --- | --- | ---
+UG | B.Arch | Indian | 2025-26 | 310000 |  |  | 315000 | INR | Academic Fee.pdf
+UG | B.Com | Indian | 2025-26 | 90000 |  |  | 95000 | INR | Academic Fee.pdf
+UG | B.Com | International | 2025-26 | 3450 |  |  | 3500 | USD | Academic Fee.pdf
+UG | B.Com (Banking and Capital Markets) | Indian | 2025-26 | 127000 |  |  | 132000 | INR | Academic Fee.pdf        
+UG | B.Com (Business Process Services) | Indian | 2025-26 | 90000 |  |  | 95000 | INR | Academic Fee.pdf
+UG | B.Com (Financial Technology) | Indian | 2025-26 | 127000 |  |  | 132000 | INR | Academic Fee.pdf
+UG | B.Des (Industrial Design) | Indian | 2025-26 | 173000 |  |  | 178000 | INR | Academic Fee.pdf
+UG | B.Sc. (Computer Science) | Indian | 2025-26 | 90000 |  |  | 95000 | INR | Academic Fee.pdf
+UG | B.Sc. (Computer Science) | International | 2025-26 | 3450 |  |  | 3500 | USD | Academic Fee.pdf
+UG | B.Sc. (Hons.) Agriculture | Indian | 2025-26 | 110000 |  |  | 115000 | INR | Academic Fee.pdf
+UG | B.Sc. (Hospitality and Hotel Administration) | Indian | 2025-26 | 77000 |  |  | 82000 | INR | Academic Fee.pdf 
+UG | B.Sc. (Multimedia and Animation) | Indian | 2025-26 | 99000 |  |  | 104000 | INR | Academic Fee.pdf
+UG | B.Sc. (Multimedia and Animation) | International | 2025-26 | 4250 |  |  | 4300 | USD | Academic Fee.pdf        
+UG | B.Sc. (Visual Communication) | Indian | 2025-26 | 128000 |  |  | 133000 | INR | Academic Fee.pdf
+UG | B.Tech | International | 2025-26 | 9000 |  |  | 9100 | USD | Academic Fee.pdf
+UG | B.Tech - Group A | Indian | 2025-26 | 173000 |  |  | 176000 | INR | Academic Fee.pdf
+UG | B.Tech - Group A (L&T Collaboration) | Indian | 2025-26 | 207000 |  |  | 210000 | INR | Academic Fee.pdf       
+UG | B.Tech - Group B | Indian | 2025-26 | 195000 |  |  | 198000 | INR | Academic Fee.pdf
+UG | B.Tech - Group B (Bhopal Campus) | Indian | 2025-26 | 198000 |  |  | 201000 | INR | Academic Fee.pdf
+UG | BBA | Indian | 2025-26 | 90000 |  |  | 95000 | INR | Academic Fee.pdf
+UG | BBA | International | 2025-26 | 3450 |  |  | 3500 | USD | Academic Fee.pdf
+UG | BCA | Indian | 2025-26 | 90000 |  |  | 95000 | INR | Academic Fee.pdf
+UG | BCA | International | 2025-26 | 3450 |  |  | 3500 | USD | Academic Fee.pdf
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> python -m app.rag_answer --q "what is PG fee structure"       
+**Academic Fees**
+
+Level | Program | Category | AY | Tuition | One-time | Caution | Total | Curr | Source
+--- | --- | --- | --- | --- | --- | --- | --- | --- | ---
+PG | M.Arch. | International | 2025-26 | 6450 |  |  | 6500 | USD | Academic Fee.pdf
+PG | M.Des (Industrial Design) | International | 2025-26 | 6450 |  |  | 6500 | USD | Academic Fee.pdf
+PG | M.Sc. | Indian | 2025-26 |  |  | 3,000 |  | INR | M.SC PROCESS.pdf
+PG | M.Sc. | Indian | 2025-26 |  |  | 3,000 |  | INR | M.SC PROCESS.pdf
+PG | M.Sc. | Indian | 2025-26 |  |  | 3,000 |  | INR | M.SC PROCESS.pdf
+PG | M.Sc. | Indian | 2025-26 |  |  | 3,000 |  | INR | M.SC PROCESS.pdf
+PG | M.Sc. | Indian | 2025-26 |  |  | 3,000 |  | INR | M.SC PROCESS.pdf
+PG | M.Sc. | Indian | 2025-26 |  |  | 3,000 |  | INR | M.SC PROCESS.pdf
+PG | M.Sc. | Indian | 2025-26 |  |  | 3,000 |  | INR | M.SC PROCESS.pdf
+PG | M.Sc. | Indian | 2025-26 |  |  | 3,000 |  | INR | M.SC PROCESS.pdf
+PG | M.Sc. | International | 2025-26 | 3450 |  |  | 3500 | USD | Academic Fee.pdf
+PG | M.Tech. | International | 2025-26 | 6450 |  |  | 6500 | USD | Academic Fee.pdf
+PG | M.Tech. AI & DS (In collaboration with LTIMindtree) | CAT1 | 2025-26 |  |  | 3000 |  | INR | pg_fees.csv       
+PG | M.Tech. AI & DS (In collaboration with LTIMindtree) | CAT2 | 2025-26 | 320000.0 |  | 3000 | 323000.0 | INR | pg_fees.csv
+PG | M.Tech. AI & ML (In collaboration with LTIMindtree) | CAT1 | 2025-26 |  |  | 3000 |  | INR | pg_fees.csv       
+PG | M.Tech. AI & ML (In collaboration with LTIMindtree) | CAT2 | 2025-26 | 320000.0 |  | 3000 | 323000.0 | INR | pg_fees.csv
+PG | M.Tech. Applied Computational Fluid Dynamics | CAT1 | 2025-26 | 150000.0 |  | 3000 | 153000.0 | INR | pg_fees.csv
+PG | M.Tech. Applied Computational Fluid Dynamics | CAT2 | 2025-26 |  |  | 3000 |  | INR | pg_fees.csv
+PG | M.Tech. Artificial Intelligence and Data Science | CAT1 | 2025-26 | 190000.0 |  | 3000 | 193000.0 | INR | pg_fees.csv
+PG | M.Tech. Artificial Intelligence and Data Science | CAT2 | 2025-26 | 299000.0 |  | 3000 | 302000.0 | INR | pg_fees.csv
+PG | M.Tech. Automotive Electronics | CAT1 | 2025-26 | 180000.0 |  | 3000 | 183000.0 | INR | pg_fees.csv
+PG | M.Tech. Automotive Electronics | CAT2 | 2025-26 | 260000.0 |  | 3000 | 263000.0 | INR | pg_fees.csv
+PG | M.Tech. Biomedical Engineering | CAT1 | 2025-26 | 150000.0 |  | 3000 | 153000.0 | INR | pg_fees.csv
+PG | M.Tech. Biomedical Engineering | CAT2 | 2025-26 | 230000.0 |  | 3000 | 233000.0 | INR | pg_fees.csv
+PG | M.Tech. Biotechnology | CAT1 | 2025-26 | 180000.0 |  | 3000 | 183000.0 | INR | pg_fees.csv
+PG | M.Tech. Biotechnology | CAT2 | 2025-26 | 296000.0 |  | 3000 | 299000.0 | INR | pg_fees.csv
+PG | M.Tech. CAD / CAM | CAT1 | 2025-26 | 150000.0 |  | 3000 | 153000.0 | INR | pg_fees.csv
+PG | M.Tech. CAD / CAM | CAT2 | 2025-26 | 230000.0 |  | 3000 | 233000.0 | INR | pg_fees.csv
+PG | M.Tech. CSE (Artificial Intelligence and Machine Learning) | CAT1 | 2025-26 | 190000.0 |  | 3000 | 193000.0 | INR | pg_fees.csv
+PG | M.Tech. CSE (Artificial Intelligence and Machine Learning) | CAT2 | 2025-26 | 299000.0 |  | 3000 | 302000.0 | INR | pg_fees.csv
+PG | M.Tech. CSE (Big Data Analytics) | CAT1 | 2025-26 | 190000.0 |  | 3000 | 193000.0 | INR | pg_fees.csv
+PG | M.Tech. CSE (Big Data Analytics) | CAT2 | 2025-26 | 299000.0 |  | 3000 | 302000.0 | INR | pg_fees.csv
+PG | M.Tech. CSE (Cyber Security & Digital Forensics) | CAT1 | 2025-26 | 190000.0 |  | 3000 | 193000.0 | INR | pg_fees.csv
+PG | M.Tech. CSE (Cyber Security & Digital Forensics) | CAT2 | 2025-26 | 299000.0 |  | 3000 | 302000.0 | INR | pg_fees.csv
+PG | M.Tech. CSE (Cyber Security) | CAT1 | 2025-26 | 190000.0 |  | 3000 | 193000.0 | INR | pg_fees.csv
+PG | M.Tech. CSE (Cyber Security) | CAT2 | 2025-26 | 299000.0 |  | 3000 | 302000.0 | INR | pg_fees.csv
+PG | M.Tech. Computer Science and Engineering | CAT1 | 2025-26 | 190000.0 |  | 3000 | 193000.0 | INR | pg_fees.csv  
+PG | M.Tech. Computer Science and Engineering | CAT2 | 2025-26 | 299000.0 |  | 3000 | 302000.0 | INR | pg_fees.csv  
+PG | M.Tech. Construction Technology and Management | CAT1 | 2025-26 | 150000.0 |  | 3000 | 153000.0 | INR | pg_fees.csv
+PG | M.Tech. Construction Technology and Management | CAT2 | 2025-26 | 230000.0 |  | 3000 | 233000.0 | INR | pg_fees.csv
+PG | M.Tech. Control and Automation | CAT1 | 2025-26 | 150000.0 |  | 3000 | 153000.0 | INR | pg_fees.csv
+PG | M.Tech. Control and Automation | CAT2 | 2025-26 | 230000.0 |  | 3000 | 233000.0 | INR | pg_fees.csv
+PG | M.Tech. Electric Mobility | CAT1 | 2025-26 | 150000.0 |  | 3000 | 153000.0 | INR | pg_fees.csv
+PG | M.Tech. Electric Mobility | CAT2 | 2025-26 | 230000.0 |  | 3000 | 233000.0 | INR | pg_fees.csv
+PG | M.Tech. Electronics & Communication Engineering (Intelligent Communication Systems) | CAT1 | 2025-26 | 180000.0 |  | 3000 | 183000.0 | INR | pg_fees.csv
+PG | M.Tech. Electronics & Communication Engineering (Intelligent Communication Systems) | CAT2 | 2025-26 | 260000.0 |  | 3000 | 263000.0 | INR | pg_fees.csv
+PG | M.Tech. Embedded Systems | CAT1 | 2025-26 | 190000.0 |  | 3000 | 193000.0 | INR | pg_fees.csv
+PG | M.Tech. Embedded Systems | CAT2 | 2025-26 | 299000.0 |  | 3000 | 302000.0 | INR | pg_fees.csv
+PG | M.Tech. Mechatronics | CAT1 | 2025-26 | 150000.0 |  | 3000 | 153000.0 | INR | pg_fees.csv
+PG | M.Tech. Mechatronics | CAT2 | 2025-26 | 230000.0 |  | 3000 | 233000.0 | INR | pg_fees.csv
+PG | M.Tech. Power Electronics and Drives | CAT1 | 2025-26 | 150000.0 |  | 3000 | 153000.0 | INR | pg_fees.csv      
+PG | M.Tech. Power Electronics and Drives | CAT2 | 2025-26 | 230000.0 |  | 3000 | 233000.0 | INR | pg_fees.csv      
+PG | M.Tech. Smart Manufacturing | CAT1 | 2025-26 | 180000.0 |  | 3000 | 183000.0 | INR | pg_fees.csv
+PG | M.Tech. Smart Manufacturing | CAT2 | 2025-26 | 260000.0 |  | 3000 | 263000.0 | INR | pg_fees.csv
+PG | M.Tech. Smart Mobility | CAT1 | 2025-26 | 180000.0 |  | 3000 | 183000.0 | INR | pg_fees.csv
+PG | M.Tech. Smart Mobility | CAT2 | 2025-26 | 260000.0 |  | 3000 | 263000.0 | INR | pg_fees.csv
+PG | M.Tech. Structural Engineering | CAT1 | 2025-26 | 150000.0 |  | 3000 | 153000.0 | INR | pg_fees.csv
+PG | M.Tech. Structural Engineering | CAT2 | 2025-26 | 230000.0 |  | 3000 | 233000.0 | INR | pg_fees.csv
+PG | M.Tech. VLSI Design | CAT1 | 2025-26 | 190000.0 |  | 3000 | 193000.0 | INR | pg_fees.csv
+PG | M.Tech. VLSI Design | CAT2 | 2025-26 | 299000.0 |  | 3000 | 302000.0 | INR | pg_fees.csv
+PG | MBA | International | 2025-26 | 6450 |  |  | 6500 | USD | Academic Fee.pdf
+PG | MCA | Indian | 2025-26 | 137,000 | 3,000 (Caution, refundable) | 3,000 | 140,000 | INR | MCA 2 Years PG Program.pdf
+PG | MCA | Indian | 2025-26 | 137,000 | NONE | NONE | 137,000 | INR | MCA 2 Years PG Program.pdf
+PG | MCA | International | 2025-26 | 6450 |  |  | 6500 | USD | Academic Fee.pdf
+PG | MSW (Master of Social Work) | International | 2025-26 | 3450 |  |  | 3500 | USD | Academic Fee.pdf
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> python -m app.rag_answer --q "what is UG foreign fee structure"
+_No matching rows._
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> python -m app.rag_answer --q "what is UG NRI fee structure"   
+_No matching rows._
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> python -m app.rag_answer --q "what is UG NRI eligibility"  
+**Eligibility**
+
+Level | Program | Criteria | Source
+--- | --- | --- | ---
+UG |  |  | UG Programmes Offered.pdf
+UG |  |  | UG NRI PROCESS.pdf
+UG |  |  | UG FOREIGN Program_Process.pdf
+UG |  |  | UG FOREIGN Program_Process.pdf
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> python -m app.rag_answer --q "provide all website links for MCA"
+**Programs**
+
+Level | Program | School | Duration | Campus | Source
+--- | --- | --- | --- | --- | ---
+PG | Master of Computer Applications (MCA) | School of Computer Science & Engineering / Information Systems | 2 years (4 semesters) | Vellore | MCA 2 Years PG Program.pdf
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> python -m app.rag_answer --q "MCA links"                      
+**Programs**
+
+Level | Program | School | Duration | Campus | Source
+--- | --- | --- | --- | --- | ---
+PG | Master of Computer Applications (MCA) | School of Computer Science & Engineering / Information Systems | 2 years (4 semesters) | Vellore | MCA 2 Years PG Program.pdf
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> python -m app.rag_answer --q "MSC documents to be submit"   
+_No matching rows._
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> python -m app.rag_answer --q "MSC documents to be sumbit"
+_No matching rows._
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> python -m app.rag_answer --q "msc documents to be sumbit"
+_No matching rows._
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> python -m app.rag_answer --q "msc fee structure"         
+_No matching rows._
 (.venv) (base) PS C:\Users\T8543\Downloads\project-2> 
