@@ -1,116 +1,267 @@
-# app/rag_answer.py
-"""
-SQL-first router; FAISS fallback for narrative; small-talk defaults; no "Try:" tips.
-"""
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "MCA fees"   
+I couldn’t find an exact match in the tables or PDFs.
 
-from app.sql_router import (
-    detect_structured_intent, parse_filters,
-    sql_hostel_overview, sql_block_contacts, sql_list_blocks,
-    sql_programs, sql_eligibility, sql_documents, sql_academic_fees, sql_scholarships
-)
+**Try:**
+• Rephrase (e.g., “MSc documents to be submitted” or “PG eligibility for CSE”).
+• Add a year/category (e.g., “UG NRI fee structure 2025”).
+• Ask for a specific program (e.g., “MCA fee structure 2025”).
 
-# ------------------ presentation ------------------
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "MCA fees"
+Sorry — I don’t have that in my current tables.
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "MCA fee structure"
+Sorry — I don’t have that in my current tables.
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "ug fee structure 2025"
+**Academic Fees**
 
-def _fmt_table(tbl: dict) -> str:
-    if not tbl or not tbl.get("rows"):
-        # neutral, short fallback; no "Try:" suggestions
-        return "Sorry — I don’t have that in my current tables."
-    title  = f"**{tbl.get('title','Results')}**"
-    cols   = tbl["columns"]
-    header = " | ".join(cols)
-    sep    = " | ".join(["---"] * len(cols))
-    lines  = [title, "", header, sep]
-    for r in tbl["rows"]:
-        lines.append(" | ".join("" if x is None else str(x) for x in r))
-    return "\n".join(lines)
+Level | Program | Category | AY | Tuition | One-time | Caution | Total | Curr | Source
+--- | --- | --- | --- | --- | --- | --- | --- | --- | ---
+UG | B.Arch | Indian | 2025-26 | 310000 |  |  | 315000 | INR | Academic Fee.pdf
+UG | B.Com | Indian | 2025-26 | 90000 |  |  | 95000 | INR | Academic Fee.pdf
+UG | B.Com | International | 2025-26 | 3450 |  |  | 3500 | USD | Academic Fee.pdf
+UG | B.Com (Banking and Capital Markets) | Indian | 2025-26 | 127000 |  |  | 132000 | INR | Academic Fee.pdf        
+UG | B.Com (Business Process Services) | Indian | 2025-26 | 90000 |  |  | 95000 | INR | Academic Fee.pdf
+UG | B.Com (Financial Technology) | Indian | 2025-26 | 127000 |  |  | 132000 | INR | Academic Fee.pdf
+UG | B.Des (Industrial Design) | Indian | 2025-26 | 173000 |  |  | 178000 | INR | Academic Fee.pdf
+UG | B.Sc. (Computer Science) | Indian | 2025-26 | 90000 |  |  | 95000 | INR | Academic Fee.pdf
+UG | B.Sc. (Computer Science) | International | 2025-26 | 3450 |  |  | 3500 | USD | Academic Fee.pdf
+UG | B.Sc. (Hons.) Agriculture | Indian | 2025-26 | 110000 |  |  | 115000 | INR | Academic Fee.pdf
+UG | B.Sc. (Hospitality and Hotel Administration) | Indian | 2025-26 | 77000 |  |  | 82000 | INR | Academic Fee.pdf 
+UG | B.Sc. (Multimedia and Animation) | Indian | 2025-26 | 99000 |  |  | 104000 | INR | Academic Fee.pdf
+UG | B.Sc. (Multimedia and Animation) | International | 2025-26 | 4250 |  |  | 4300 | USD | Academic Fee.pdf        
+UG | B.Sc. (Visual Communication) | Indian | 2025-26 | 128000 |  |  | 133000 | INR | Academic Fee.pdf
+UG | B.Tech | International | 2025-26 | 9000 |  |  | 9100 | USD | Academic Fee.pdf
+UG | B.Tech - Group A | Indian | 2025-26 | 173000 |  |  | 176000 | INR | Academic Fee.pdf
+UG | B.Tech - Group A (L&T Collaboration) | Indian | 2025-26 | 207000 |  |  | 210000 | INR | Academic Fee.pdf       
+UG | B.Tech - Group B | Indian | 2025-26 | 195000 |  |  | 198000 | INR | Academic Fee.pdf
+UG | B.Tech - Group B (Bhopal Campus) | Indian | 2025-26 | 198000 |  |  | 201000 | INR | Academic Fee.pdf
+UG | BBA | Indian | 2025-26 | 90000 |  |  | 95000 | INR | Academic Fee.pdf
+UG | BBA | International | 2025-26 | 3450 |  |  | 3500 | USD | Academic Fee.pdf
+UG | BCA | Indian | 2025-26 | 90000 |  |  | 95000 | INR | Academic Fee.pdf
+UG | BCA | International | 2025-26 | 3450 |  |  | 3500 | USD | Academic Fee.pdf
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "ug programs offerd 2025"
+**Programs**
 
-def _pack(table_dict=None, bullets=None):
-    parts = []
-    if table_dict: parts.append(_fmt_table(table_dict))
-    if bullets:    parts.append("\n".join(f"- {b}" for b in bullets))
-    return "\n\n".join(parts) if parts else "Sorry — I don’t have that in my current tables."
+Level | Program | School | Duration | Campus | Source
+--- | --- | --- | --- | --- | ---
+UG | B.Arch |  |  | Vellore; VIT-Bhopal | UG Programmes Offered.pdf
+UG | B.B.A (2+2 VSB->ASU | Degree from ASU) |  |  | VIT-AP | UG Programmes Offered.pdf
+UG | B.B.A (2+2 VSB->UMD | Degree from UMD) |  |  | VIT-AP | UG Programmes Offered.pdf
+UG | B.B.A (Bachelor of Business Administration) |  |  | Vellore; VIT-AP; VIT-Bhopal | UG Programmes Offered.pdf    
+UG | B.B.A (Business Analytics) |  |  | VIT-AP | UG Programmes Offered.pdf
+UG | B.B.A (Hons.) 2+2 with RIT |  |  | Chennai | UG Programmes Offered.pdf
+UG | B.B.A (Specialisation: Digital Marketing) |  |  | VIT-AP | UG Programmes Offered.pdf
+UG | B.B.A (Specialisation: FinTech) |  |  | VIT-AP | UG Programmes Offered.pdf
+UG | B.B.A (Specialisation: General Management) |  |  | VIT-AP | UG Programmes Offered.pdf
+UG | B.C.A (Bachelor of Computer Applications) |  |  | Vellore | UG Programmes Offered.pdf
+UG | B.Com (Bachelor of Commerce) |  |  | Vellore | UG Programmes Offered.pdf
+UG | B.Com (Finance) |  |  | VIT-AP | UG Programmes Offered.pdf
+UG | B.Com (Hons.) |  |  | Chennai | UG Programmes Offered.pdf
+UG | B.Com - Business Process Services |  |  | Vellore | UG Programmes Offered.pdf
+UG | B.Com – Banking and Capital Markets |  |  | Vellore | UG Programmes Offered.pdf
+UG | B.Com – Financial Technology |  |  | Vellore | UG Programmes Offered.pdf
+UG | B.Des. Industrial Design |  |  | Vellore | UG Programmes Offered.pdf
+UG | B.Sc. (Hons.) Agriculture |  |  | Vellore | UG Programmes Offered.pdf
+UG | B.Sc. Computer Science |  |  | Vellore; Chennai | UG Programmes Offered.pdf
+UG | B.Sc. Economics (Hons.) |  |  | Chennai | UG Programmes Offered.pdf
+UG | B.Sc. Fashion Design |  |  | Chennai | UG Programmes Offered.pdf
+UG | B.Sc. Multimedia & Animation |  |  | Vellore | UG Programmes Offered.pdf
+UG | B.Sc. Visual Communication |  |  | Vellore | UG Programmes Offered.pdf
+UG | B.Sc. in Hospitality and Hotel Administration |  |  | Vellore | UG Programmes Offered.pdf
+UG | B.Tech - Aerospace Engineering |  |  | VIT-Bhopal | UG Programmes Offered.pdf
+UG | B.Tech - Bioengineering |  |  | VIT-Bhopal | UG Programmes Offered.pdf
+UG | B.Tech - Biotechnology |  |  | Vellore | UG Programmes Offered.pdf
+UG | B.Tech - CSE (AI & Data Engineering) |  |  | Vellore | UG Programmes Offered.pdf
+UG | B.Tech - CSE (AI & ML) |  |  | Vellore; Chennai; VIT-AP; VIT-Bhopal | UG Programmes Offered.pdf
+UG | B.Tech - CSE (AI & Robotics) |  |  | Chennai | UG Programmes Offered.pdf
+UG | B.Tech - CSE (Bioinformatics) |  |  | Vellore | UG Programmes Offered.pdf
+UG | B.Tech - CSE (Blockchain) |  |  | VIT-AP | UG Programmes Offered.pdf
+UG | B.Tech - CSE (Cloud Computing & Automation) |  |  | VIT-Bhopal | UG Programmes Offered.pdf
+UG | B.Tech - CSE (Cyber Physical Systems) |  |  | Chennai | UG Programmes Offered.pdf
+UG | B.Tech - CSE (Cyber Security & Digital Forensics) |  |  | VIT-Bhopal | UG Programmes Offered.pdf
+UG | B.Tech - CSE (Cyber Security) |  |  | Vellore; Chennai; VIT-AP | UG Programmes Offered.pdf
+UG | B.Tech - CSE (Data Analytics) |  |  | VIT-AP | UG Programmes Offered.pdf
+UG | B.Tech - CSE (Data Science) |  |  | Vellore; Chennai | UG Programmes Offered.pdf
+UG | B.Tech - CSE (E-Commerce Technology) |  |  | VIT-Bhopal | UG Programmes Offered.pdf
+UG | B.Tech - CSE (Education Technology) |  |  | VIT-Bhopal | UG Programmes Offered.pdf
+UG | B.Tech - CSE (Gaming Technology) |  |  | VIT-Bhopal | UG Programmes Offered.pdf
+UG | B.Tech - CSE (Health Informatics) |  |  | VIT-Bhopal | UG Programmes Offered.pdf
+UG | B.Tech - CSE (Software Engineering) |  |  | VIT-AP | UG Programmes Offered.pdf
+UG | B.Tech - CSE and Business Systems (with TCS) |  |  | Vellore | UG Programmes Offered.pdf
+UG | B.Tech - Chemical Engineering |  |  | Vellore | UG Programmes Offered.pdf
+UG | B.Tech - Civil Engineering |  |  | Vellore; Chennai | UG Programmes Offered.pdf
+UG | B.Tech - Civil Engineering (In Collaboration with L & T) |  |  | Vellore; Chennai | UG Programmes Offered.pdf  
+UG | B.Tech - Computer Science and Business Systems |  |  | VIT-AP | UG Programmes Offered.pdf
+UG | B.Tech - Computer Science and Engineering |  |  | Vellore; Chennai; VIT-AP; VIT-Bhopal | UG Programmes Offered.pdf
+UG | B.Tech - ECE (AI & Cybernetics) |  |  | VIT-Bhopal | UG Programmes Offered.pdf
+UG | B.Tech - ECE (Biomedical Engineering) |  |  | Vellore | UG Programmes Offered.pdf
+UG | B.Tech - ECE (Embedded Systems) |  |  | VIT-AP | UG Programmes Offered.pdf
+UG | B.Tech - ECE (VLSI) |  |  | VIT-AP | UG Programmes Offered.pdf
+UG | B.Tech - Electrical and Computer Science Engineering |  |  | Vellore; Chennai | UG Programmes Offered.pdf      
+UG | B.Tech - Electrical and Electronics Engineering |  |  | Vellore; Chennai | UG Programmes Offered.pdf
+UG | B.Tech - Electronics Engineering (VLSI Design and Technology) |  |  | Vellore; Chennai | UG Programmes Offered.pdf
+UG | B.Tech - Electronics and Communication Engineering |  |  | Vellore; Chennai; VIT-AP; VIT-Bhopal | UG Programmes Offered.pdf
+UG | B.Tech - Electronics and Computer Engineering |  |  | Chennai | UG Programmes Offered.pdf
+UG | B.Tech - Electronics and Instrumentation Engineering |  |  | Vellore | UG Programmes Offered.pdf
+UG | B.Tech - Fashion Technology |  |  | Chennai | UG Programmes Offered.pdf
+UG | B.Tech - Health Sciences and Technology |  |  | Vellore | UG Programmes Offered.pdf
+UG | B.Tech - Information Technology |  |  | Vellore | UG Programmes Offered.pdf
+UG | B.Tech - Mechanical Engineering |  |  | Vellore; Chennai; VIT-AP; VIT-Bhopal | UG Programmes Offered.pdf       
+UG | B.Tech - Mechanical Engineering (AI & Robotics) |  |  | VIT-Bhopal | UG Programmes Offered.pdf
+UG | B.Tech - Mechanical Engineering (Automotive Design) |  |  | VIT-AP | UG Programmes Offered.pdf
+UG | B.Tech - Mechanical Engineering (Electric Vehicles) |  |  | Vellore; Chennai | UG Programmes Offered.pdf       
+UG | B.Tech - Mechanical Engineering (Robotics) |  |  | VIT-AP | UG Programmes Offered.pdf
+UG | B.Tech - Mechanical Engineering (Smart Manufacturing) |  |  | Vellore | UG Programmes Offered.pdf
+UG | B.Tech - Mechatronics and Automation |  |  | Chennai | UG Programmes Offered.pdf
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "pg fee structure 2025"  
+**Academic Fees**
 
-# ------------------ smalltalk defaults ------------------
+Level | Program | Category | AY | Tuition | One-time | Caution | Total | Curr | Source
+--- | --- | --- | --- | --- | --- | --- | --- | --- | ---
+PG | M.Arch. | International | 2025-26 | 6450 |  |  | 6500 | USD | Academic Fee.pdf
+PG | M.Des (Industrial Design) | International | 2025-26 | 6450 |  |  | 6500 | USD | Academic Fee.pdf
+PG | M.Sc. | Indian | 2025-26 |  |  | 3,000 |  | INR | M.SC PROCESS.pdf
+PG | M.Sc. | Indian | 2025-26 |  |  | 3,000 |  | INR | M.SC PROCESS.pdf
+PG | M.Sc. | Indian | 2025-26 |  |  | 3,000 |  | INR | M.SC PROCESS.pdf
+PG | M.Sc. | Indian | 2025-26 |  |  | 3,000 |  | INR | M.SC PROCESS.pdf
+PG | M.Sc. | Indian | 2025-26 |  |  | 3,000 |  | INR | M.SC PROCESS.pdf
+PG | M.Sc. | Indian | 2025-26 |  |  | 3,000 |  | INR | M.SC PROCESS.pdf
+PG | M.Sc. | Indian | 2025-26 |  |  | 3,000 |  | INR | M.SC PROCESS.pdf
+PG | M.Sc. | Indian | 2025-26 |  |  | 3,000 |  | INR | M.SC PROCESS.pdf
+PG | M.Sc. | International | 2025-26 | 3450 |  |  | 3500 | USD | Academic Fee.pdf
+PG | M.Tech. | International | 2025-26 | 6450 |  |  | 6500 | USD | Academic Fee.pdf
+PG | M.Tech. AI & DS (In collaboration with LTIMindtree) | CAT1 | 2025-26 |  |  | 3000 |  | INR | pg_fees.csv       
+PG | M.Tech. AI & DS (In collaboration with LTIMindtree) | CAT2 | 2025-26 | 320000.0 |  | 3000 | 323000.0 | INR | pg_fees.csv
+PG | M.Tech. AI & ML (In collaboration with LTIMindtree) | CAT1 | 2025-26 |  |  | 3000 |  | INR | pg_fees.csv       
+PG | M.Tech. AI & ML (In collaboration with LTIMindtree) | CAT2 | 2025-26 | 320000.0 |  | 3000 | 323000.0 | INR | pg_fees.csv
+PG | M.Tech. Applied Computational Fluid Dynamics | CAT1 | 2025-26 | 150000.0 |  | 3000 | 153000.0 | INR | pg_fees.csv
+PG | M.Tech. Applied Computational Fluid Dynamics | CAT2 | 2025-26 |  |  | 3000 |  | INR | pg_fees.csv
+PG | M.Tech. Artificial Intelligence and Data Science | CAT1 | 2025-26 | 190000.0 |  | 3000 | 193000.0 | INR | pg_fees.csv
+PG | M.Tech. Artificial Intelligence and Data Science | CAT2 | 2025-26 | 299000.0 |  | 3000 | 302000.0 | INR | pg_fees.csv
+PG | M.Tech. Automotive Electronics | CAT1 | 2025-26 | 180000.0 |  | 3000 | 183000.0 | INR | pg_fees.csv
+PG | M.Tech. Automotive Electronics | CAT2 | 2025-26 | 260000.0 |  | 3000 | 263000.0 | INR | pg_fees.csv
+PG | M.Tech. Biomedical Engineering | CAT1 | 2025-26 | 150000.0 |  | 3000 | 153000.0 | INR | pg_fees.csv
+PG | M.Tech. Biomedical Engineering | CAT2 | 2025-26 | 230000.0 |  | 3000 | 233000.0 | INR | pg_fees.csv
+PG | M.Tech. Biotechnology | CAT1 | 2025-26 | 180000.0 |  | 3000 | 183000.0 | INR | pg_fees.csv
+PG | M.Tech. Biotechnology | CAT2 | 2025-26 | 296000.0 |  | 3000 | 299000.0 | INR | pg_fees.csv
+PG | M.Tech. CAD / CAM | CAT1 | 2025-26 | 150000.0 |  | 3000 | 153000.0 | INR | pg_fees.csv
+PG | M.Tech. CAD / CAM | CAT2 | 2025-26 | 230000.0 |  | 3000 | 233000.0 | INR | pg_fees.csv
+PG | M.Tech. CSE (Artificial Intelligence and Machine Learning) | CAT1 | 2025-26 | 190000.0 |  | 3000 | 193000.0 | INR | pg_fees.csv
+PG | M.Tech. CSE (Artificial Intelligence and Machine Learning) | CAT2 | 2025-26 | 299000.0 |  | 3000 | 302000.0 | INR | pg_fees.csv
+PG | M.Tech. CSE (Big Data Analytics) | CAT1 | 2025-26 | 190000.0 |  | 3000 | 193000.0 | INR | pg_fees.csv
+PG | M.Tech. CSE (Big Data Analytics) | CAT2 | 2025-26 | 299000.0 |  | 3000 | 302000.0 | INR | pg_fees.csv
+PG | M.Tech. CSE (Cyber Security & Digital Forensics) | CAT1 | 2025-26 | 190000.0 |  | 3000 | 193000.0 | INR | pg_fees.csv
+PG | M.Tech. CSE (Cyber Security & Digital Forensics) | CAT2 | 2025-26 | 299000.0 |  | 3000 | 302000.0 | INR | pg_fees.csv
+PG | M.Tech. CSE (Cyber Security) | CAT1 | 2025-26 | 190000.0 |  | 3000 | 193000.0 | INR | pg_fees.csv
+PG | M.Tech. CSE (Cyber Security) | CAT2 | 2025-26 | 299000.0 |  | 3000 | 302000.0 | INR | pg_fees.csv
+PG | M.Tech. Computer Science and Engineering | CAT1 | 2025-26 | 190000.0 |  | 3000 | 193000.0 | INR | pg_fees.csv  
+PG | M.Tech. Computer Science and Engineering | CAT2 | 2025-26 | 299000.0 |  | 3000 | 302000.0 | INR | pg_fees.csv  
+PG | M.Tech. Construction Technology and Management | CAT1 | 2025-26 | 150000.0 |  | 3000 | 153000.0 | INR | pg_fees.csv
+PG | M.Tech. Construction Technology and Management | CAT2 | 2025-26 | 230000.0 |  | 3000 | 233000.0 | INR | pg_fees.csv
+PG | M.Tech. Control and Automation | CAT1 | 2025-26 | 150000.0 |  | 3000 | 153000.0 | INR | pg_fees.csv
+PG | M.Tech. Control and Automation | CAT2 | 2025-26 | 230000.0 |  | 3000 | 233000.0 | INR | pg_fees.csv
+PG | M.Tech. Electric Mobility | CAT1 | 2025-26 | 150000.0 |  | 3000 | 153000.0 | INR | pg_fees.csv
+PG | M.Tech. Electric Mobility | CAT2 | 2025-26 | 230000.0 |  | 3000 | 233000.0 | INR | pg_fees.csv
+PG | M.Tech. Electronics & Communication Engineering (Intelligent Communication Systems) | CAT1 | 2025-26 | 180000.0 |  | 3000 | 183000.0 | INR | pg_fees.csv
+PG | M.Tech. Electronics & Communication Engineering (Intelligent Communication Systems) | CAT2 | 2025-26 | 260000.0 |  | 3000 | 263000.0 | INR | pg_fees.csv
+PG | M.Tech. Embedded Systems | CAT1 | 2025-26 | 190000.0 |  | 3000 | 193000.0 | INR | pg_fees.csv
+PG | M.Tech. Embedded Systems | CAT2 | 2025-26 | 299000.0 |  | 3000 | 302000.0 | INR | pg_fees.csv
+PG | M.Tech. Mechatronics | CAT1 | 2025-26 | 150000.0 |  | 3000 | 153000.0 | INR | pg_fees.csv
+PG | M.Tech. Mechatronics | CAT2 | 2025-26 | 230000.0 |  | 3000 | 233000.0 | INR | pg_fees.csv
+PG | M.Tech. Power Electronics and Drives | CAT1 | 2025-26 | 150000.0 |  | 3000 | 153000.0 | INR | pg_fees.csv      
+PG | M.Tech. Power Electronics and Drives | CAT2 | 2025-26 | 230000.0 |  | 3000 | 233000.0 | INR | pg_fees.csv      
+PG | M.Tech. Smart Manufacturing | CAT1 | 2025-26 | 180000.0 |  | 3000 | 183000.0 | INR | pg_fees.csv
+PG | M.Tech. Smart Manufacturing | CAT2 | 2025-26 | 260000.0 |  | 3000 | 263000.0 | INR | pg_fees.csv
+PG | M.Tech. Smart Mobility | CAT1 | 2025-26 | 180000.0 |  | 3000 | 183000.0 | INR | pg_fees.csv
+PG | M.Tech. Smart Mobility | CAT2 | 2025-26 | 260000.0 |  | 3000 | 263000.0 | INR | pg_fees.csv
+PG | M.Tech. Structural Engineering | CAT1 | 2025-26 | 150000.0 |  | 3000 | 153000.0 | INR | pg_fees.csv
+PG | M.Tech. Structural Engineering | CAT2 | 2025-26 | 230000.0 |  | 3000 | 233000.0 | INR | pg_fees.csv
+PG | M.Tech. VLSI Design | CAT1 | 2025-26 | 190000.0 |  | 3000 | 193000.0 | INR | pg_fees.csv
+PG | M.Tech. VLSI Design | CAT2 | 2025-26 | 299000.0 |  | 3000 | 302000.0 | INR | pg_fees.csv
+PG | MBA | International | 2025-26 | 6450 |  |  | 6500 | USD | Academic Fee.pdf
+PG | MCA | Indian | 2025-26 | 137,000 | 3,000 (Caution, refundable) | 3,000 | 140,000 | INR | MCA 2 Years PG Program.pdf
+PG | MCA | Indian | 2025-26 | 137,000 | NONE | NONE | 137,000 | INR | MCA 2 Years PG Program.pdf
+PG | MCA | International | 2025-26 | 6450 |  |  | 6500 | USD | Academic Fee.pdf
+PG | MSW (Master of Social Work) | International | 2025-26 | 3450 |  |  | 3500 | USD | Academic Fee.pdf
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "PG programs offerd"   
+**Programs**
 
-SMALLTALK_ANSWERS = {
-    "who": "I’m the **VIT Admissions Chatbot** for your project. I answer from your curated PDFs (FAISS) and your SQLite tables built from CSVs.",
-    "what": "I help with VIT admissions info: fees, eligibility, documents, scholarships, programmes, hostel details, and official links.",
-    "how": "I first look in your SQLite tables (fees/programmes/eligibility/documents/scholarships/hostel). If not found, I search your FAISS index of PDFs. If it’s still not there, I return a short, neutral message.",
-    "why": "So students get quick, structured answers from official data, with PDFs as backup for narrative questions.",
-    "when": "I answer instantly using the data packaged with your bot (no live web browse).",
-    "where": "Data comes from your project’s `Data/sql/*.db` and `Data/index/faiss` built from your PDFs."
-}
+Level | Program | School | Duration | Campus | Source
+--- | --- | --- | --- | --- | ---
+PG |  |  | 2 years | Vellore | M.SC PROCESS.pdf
+PG |  |  | 2 years | Vellore | M.SC PROCESS.pdf
+PG |  |  | 2 years | Vellore | M.SC PROCESS.pdf
+PG |  |  | 2 years | Vellore | M.SC PROCESS.pdf
+PG |  |  | 2 years | Vellore | M.SC PROCESS.pdf
+PG |  |  | 2 years | Vellore | M.SC PROCESS.pdf
+PG |  |  | 2 years | Vellore | M.SC PROCESS.pdf
+PG |  |  | 2 years | Vellore | M.SC PROCESS.pdf
+PG | M.Tech. Applied Computational Fluid Dynamics |  |  |  |
+PG | M.Tech. Artificial Intelligence and Data Science |  |  |  |
+PG | M.Tech. Artificial Intelligence and Data Science (In collaboration with LTIMindtree) |  |  |  |
+PG | M.Tech. Artificial Intelligence and Machine Learning (In collaboration with LTIMindtree) |  |  |  |
+PG | M.Tech. Automotive Electronics |  |  |  |
+PG | M.Tech. Biomedical Engineering |  |  |  |
+PG | M.Tech. Biotechnology |  |  |  |
+PG | M.Tech. CAD / CAM |  |  |  |
+PG | M.Tech. Computer Science and Engineering |  |  |  |
+PG | M.Tech. Computer Science and Engineering (Artificial Intelligence and Machine Learning) |  |  |  |
+PG | M.Tech. Computer Science and Engineering (Big Data Analytics) |  |  |  |
+PG | M.Tech. Computer Science and Engineering (Cyber Security & Digital Forensics) |  |  |  |
+PG | M.Tech. Computer Science and Engineering (Cyber Security) |  |  |  |
+PG | M.Tech. Construction Technology and Management |  |  |  |
+PG | M.Tech. Control and Automation |  |  |  |
+PG | M.Tech. Electric Mobility |  |  |  |
+PG | M.Tech. Electronics and Communication Engineering (Intelligent Communication Systems) |  |  |  |
+PG | M.Tech. Embedded Systems |  |  |  |
+PG | M.Tech. Mechatronics |  |  |  |
+PG | M.Tech. Power Electronics and Drives |  |  |  |
+PG | M.Tech. Smart Mobility |  |  |  |
+PG | M.Tech. Structural Engineering |  |  |  |
+PG | M.Tech. VLSI Design |  |  |  |
+PG | Master of Computer Applications (MCA) | School of Computer Science & Engineering / Information Systems | 2 years (4 semesters) | Vellore | MCA 2 Years PG Program.pdf
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "PG programs offerd 2025"
+**Programs**
 
-def _is_smalltalk(q: str) -> str | None:
-    ql = q.strip().lower()
-    if not ql:
-        return None
-    # very lightweight checks
-    if any(kw in ql for kw in ["who are you","who r u","your name"]): return "who"
-    if any(kw in ql for kw in ["what can you do","what do you do","what can u do","what are you"]): return "what"
-    if any(kw in ql for kw in ["how do you work","how it works","how will you work","how you work"]): return "how"
-    if ql.startswith("who "): return "who"
-    if ql.startswith("what "): return "what"
-    if ql.startswith("how "): return "how"
-    if ql.startswith("why "): return "why"
-    if ql.startswith("when "): return "when"
-    if ql.startswith("where "): return "where"
-    return None
-
-def _smalltalk_answer(kind: str) -> str:
-    return SMALLTALK_ANSWERS.get(kind, "I’m the VIT Admissions Chatbot. Ask me about fees, eligibility, documents, programmes, scholarships, or hostel info.")
-
-# ------------------ SQL routing (same intents as sql_router) ------------------
-
-def _sql_route(q: str) -> str | None:
-    intent = detect_structured_intent(q)
-    f = parse_filters(q)
-
-    # HOSTEL
-    if intent == "contacts":   return _pack(sql_block_contacts(f).get("table"))
-    if intent == "blocks":     return _pack(sql_list_blocks(f).get("table"))
-    if intent in ("hostel","tabular"): return _pack(sql_hostel_overview(f).get("table"))
-
-    # ACADEMICS
-    if intent == "programs":     return _pack(sql_programs(f, q).get("table"))
-    if intent == "eligibility":  return _pack(sql_eligibility(f, q).get("table"))
-    if intent == "documents":    return _pack(sql_documents(f, q).get("table"))
-    if intent == "fees":         return _pack(sql_academic_fees(f, q).get("table"))
-    if intent == "scholarships": return _pack(sql_scholarships(f, q).get("table"))
-
-    # narrative/links: let FAISS or smalltalk handle outside
-    return None
-
-# ------------------ public ------------------
-
-def answer(query: str) -> str:
-    # 1) smalltalk defaults first
-    st = _is_smalltalk(query)
-    if st:
-        return _smalltalk_answer(st)
-
-    # 2) SQL-first
-    sql_text = _sql_route(query)
-    if sql_text is not None:
-        return sql_text
-
-    # 3) FAISS narrative fallback (no “Try:” suggestions)
-    try:
-        # prefer your existing helper if present
-        from app.utils.fallback_rag import faiss_answer_or_summary
-        from pathlib import Path
-        resp = faiss_answer_or_summary(Path("Data/index/faiss"), "vit_faq_vellore", query)
-        if resp and resp.strip():
-            return resp.strip()
-    except Exception:
-        pass
-
-    # 4) final neutral message (short; no tips)
-    return "Sorry — I don’t have that in my current sources."
-
-if __name__ == "__main__":
-    import argparse
-    p = argparse.ArgumentParser()
-    p.add_argument("--q", "-q", dest="q", default="")
-    args = p.parse_args()
-    print(answer(args.q or "who are you"))
+Level | Program | School | Duration | Campus | Source
+--- | --- | --- | --- | --- | ---
+PG |  |  | 2 years | Vellore | M.SC PROCESS.pdf
+PG |  |  | 2 years | Vellore | M.SC PROCESS.pdf
+PG |  |  | 2 years | Vellore | M.SC PROCESS.pdf
+PG |  |  | 2 years | Vellore | M.SC PROCESS.pdf
+PG |  |  | 2 years | Vellore | M.SC PROCESS.pdf
+PG |  |  | 2 years | Vellore | M.SC PROCESS.pdf
+PG |  |  | 2 years | Vellore | M.SC PROCESS.pdf
+PG |  |  | 2 years | Vellore | M.SC PROCESS.pdf
+PG | M.Tech. Applied Computational Fluid Dynamics |  |  |  |
+PG | M.Tech. Artificial Intelligence and Data Science |  |  |  |
+PG | M.Tech. Artificial Intelligence and Data Science (In collaboration with LTIMindtree) |  |  |  |
+PG | M.Tech. Artificial Intelligence and Machine Learning (In collaboration with LTIMindtree) |  |  |  |
+PG | M.Tech. Automotive Electronics |  |  |  |
+PG | M.Tech. Biomedical Engineering |  |  |  |
+PG | M.Tech. Biotechnology |  |  |  |
+PG | M.Tech. CAD / CAM |  |  |  |
+PG | M.Tech. Computer Science and Engineering |  |  |  |
+PG | M.Tech. Computer Science and Engineering (Artificial Intelligence and Machine Learning) |  |  |  |
+PG | M.Tech. Computer Science and Engineering (Big Data Analytics) |  |  |  |
+PG | M.Tech. Computer Science and Engineering (Cyber Security & Digital Forensics) |  |  |  |
+PG | M.Tech. Computer Science and Engineering (Cyber Security) |  |  |  |
+PG | M.Tech. Construction Technology and Management |  |  |  |
+PG | M.Tech. Control and Automation |  |  |  |
+PG | M.Tech. Electric Mobility |  |  |  |
+PG | M.Tech. Electronics and Communication Engineering (Intelligent Communication Systems) |  |  |  |
+PG | M.Tech. Embedded Systems |  |  |  |
+PG | M.Tech. Mechatronics |  |  |  |
+PG | M.Tech. Power Electronics and Drives |  |  |  |
+PG | M.Tech. Smart Mobility |  |  |  |
+PG | M.Tech. Structural Engineering |  |  |  |
+PG | M.Tech. VLSI Design |  |  |  |
+PG | Master of Computer Applications (MCA) | School of Computer Science & Engineering / Information Systems | 2 years (4 semesters) | Vellore | MCA 2 Years PG Program.pdf
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "PG eligibility"         
+Sorry — I don’t have that in my current tables.
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "UG eligibility"         
+Sorry — I don’t have that in my current tables.
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "provide all UG links"   
+Sorry — I don’t have that in my current sources.
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "UG application process"
+Sorry — I don’t have that in my current sources.
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> 
