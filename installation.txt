@@ -1,8 +1,244 @@
-(.venv) (base) PS C:\Users\T8543\Downloads\project-2> python -m app.rag_answer --q "MCA fees"
-did not find executable at 'C:\Program Files\Python313\python.exe': The system cannot find the path specified.
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> & .\.venv\Scripts\Activate.ps1
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> where python
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> python -c "import sys; print(sys.executable)"
+C:\Users\T8543\Downloads\project-2\.venv\Scripts\python.exe
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "MCA fees"
+I couldn’t find an exact match in the tables or PDFs.
 
-(.venv) (base) PS C:\Users\T8543\Downloads\project-2> python -m app.rag_answer --q "B.Tech tuition fee indian 2025" 
-did not find executable at 'C:\Program Files\Python313\python.exe': The system cannot find the path specified.
+**Try:**
+• Rephrase (e.g., “MSc documents to be submitted” or “PG eligibility for CSE”).
+• Add a year/category (e.g., “UG NRI fee structure 2025”).
+• Ask for a specific program (e.g., “MCA fee structure 2025”).
 
-(.venv) (base) PS C:\Users\T8543\Downloads\project-2> python -m app.rag_answer --q "UG programs offered 2025"       
-did not find executable at 'C:\Program Files\Python313\python.exe': The system cannot find the path specified.
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "MCA fee structure 2025"
+I couldn’t find an exact match in the tables or PDFs.
+
+**Try:**
+• Rephrase (e.g., “MSc documents to be submitted” or “PG eligibility for CSE”).
+• Add a year/category (e.g., “UG NRI fee structure 2025”).
+• Ask for a specific program (e.g., “MCA fee structure 2025”).
+
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "UG NRI fee structure 2025"
+**Academic Fees**
+
+Level | Program | Category | AY | Tuition | One-time | Caution | Total | Curr | Source
+--- | --- | --- | --- | --- | --- | --- | --- | --- | ---
+UG | B.Com | International | 2025-26 | 3450 |  |  | 3500 | USD | Academic Fee.pdf
+UG | B.Sc. (Computer Science) | International | 2025-26 | 3450 |  |  | 3500 | USD | Academic Fee.pdf
+UG | B.Sc. (Multimedia and Animation) | International | 2025-26 | 4250 |  |  | 4300 | USD | Academic Fee.pdf        
+UG | B.Tech | International | 2025-26 | 9000 |  |  | 9100 | USD | Academic Fee.pdf
+UG | BBA | International | 2025-26 | 3450 |  |  | 3500 | USD | Academic Fee.pdf
+UG | BCA | International | 2025-26 | 3450 |  |  | 3500 | USD | Academic Fee.pdf
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "who are you"
+                                                                                                                   I’m the **VIT Admissions Chatbot** built for your project. I answer from your curated PDFs (FAISS) and structured CSSV→SQLite data.
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "msc fee structure"
+I couldn’t find an exact match in the tables or PDFs.
+
+**Try:**
+• Rephrase (e.g., “MSc documents to be submitted” or “PG eligibility for CSE”).
+• Add a year/category (e.g., “UG NRI fee structure 2025”).
+• Ask for a specific program (e.g., “MCA fee structure 2025”).
+
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "PG eligibility for CSE"
+I couldn’t find an exact match in the tables or PDFs.
+
+**Try:**
+• Rephrase (e.g., “MSc documents to be submitted” or “PG eligibility for CSE”).
+• Add a year/category (e.g., “UG NRI fee structure 2025”).
+• Ask for a specific program (e.g., “MCA fee structure 2025”).
+
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "PG eligibility for CSE"
+I couldn’t find an exact match in the tables or PDFs.
+
+**Try:**
+• Rephrase (e.g., “MSc documents to be submitted” or “PG eligibility for CSE”).
+• Add a year/category (e.g., “UG NRI fee structure 2025”).
+• Ask for a specific program (e.g., “MCA fee structure 2025”).
+
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "mens hostel fee structure"
+**Hostel Fee Details (Vellore)**
+
+Block | Gender | Level | Type | AY | Category | Occ | AC | Mess | Room+Mess | Admission | Caution | Other | Total | Curr | Source
+--- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | ---
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 136,800 | 15,000 | 15,000 |  | 166,800 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 146,300 | 15,000 | 15,000 |  | 176,300 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 158,200 | 15,000 | 15,000 |  | 188,200 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 145,300 | 15,000 | 15,000 |  | 175,300 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 154,800 | 15,000 | 15,000 |  | 184,800 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 166,700 | 15,000 | 15,000 |  | 196,700 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 158,200 | 15,000 | 15,000 |  | 188,200 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 167,700 | 15,000 | 15,000 |  | 197,700 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 179,600 | 15,000 | 15,000 |  | 209,600 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 165,000 | 15,000 | 15,000 |  | 195,000 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 174,500 | 15,000 | 15,000 |  | 204,500 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 186,400 | 15,000 | 15,000 |  | 216,400 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 198,900 | 15,000 | 15,000 |  | 228,900 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 208,400 | 15,000 | 15,000 |  | 238,400 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 220,300 | 15,000 | 15,000 |  | 250,300 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 146,700 | 15,000 | 15,000 |  | 176,700 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 156,200 | 15,000 | 15,000 |  | 186,200 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 168,100 | 15,000 | 15,000 |  | 198,100 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 156,400 | 15,000 | 15,000 |  | 186,400 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 165,900 | 15,000 | 15,000 |  | 195,900 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 177,800 | 15,000 | 15,000 |  | 207,800 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 167,300 | 15,000 | 15,000 |  | 197,300 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 176,800 | 15,000 | 15,000 |  | 206,800 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 188,700 | 15,000 | 15,000 |  | 218,700 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 182,600 | 15,000 | 15,000 |  | 212,600 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 192,100 | 15,000 | 15,000 |  | 222,100 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 204,000 | 15,000 | 15,000 |  | 234,000 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 196,800 | 15,000 | 15,000 |  | 226,800 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 206,300 | 15,000 | 15,000 |  | 236,300 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 218,200 | 15,000 | 15,000 |  | 248,200 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 2,790 | 250 | 400 |  | 3,440 | USD | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 3,060 | 250 | 400 |  | 3,710 | USD | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 3,430 | 250 | 400 |  | 4,080 | USD | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 3,720 | 250 | 400 |  | 4,370 | USD | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 4,270 | 250 | 400 |  | 4,920 | USD | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 3,070 | 250 | 400 |  | 3,720 | USD | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 3,220 | 250 | 400 |  | 3,870 | USD | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 3,660 | 250 | 400 |  | 4,310 | USD | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 4,020 | 250 | 400 |  | 4,670 | USD | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 4,550 | 250 | 400 |  | 5,200 | USD | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  |  | 112,400 | 15,000 | 15,000 |  | 142,400 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  |  | 121,900 | 15,000 | 15,000 |  | 151,900 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  |  | 133,800 | 15,000 | 15,000 |  | 163,800 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  |  | 117,500 | 15,000 | 15,000 |  | 147,500 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  |  | 127,000 | 15,000 | 15,000 |  | 157,000 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  |  | 138,900 | 15,000 | 15,000 |  | 168,900 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  |  | 124,100 | 15,000 | 15,000 |  | 154,100 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  |  | 133,600 | 15,000 | 15,000 |  | 163,600 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  |  | 145,500 | 15,000 | 15,000 |  | 175,500 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  |  | 131,100 | 15,000 | 15,000 |  | 161,100 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  |  | 140,600 | 15,000 | 15,000 |  | 170,600 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  |  | 152,500 | 15,000 | 15,000 |  | 182,500 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  |  | 149,100 | 15,000 | 15,000 |  | 179,100 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  |  | 158,600 | 15,000 | 15,000 |  | 188,600 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  |  | 170,500 | 15,000 | 15,000 |  | 200,500 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  |  | 2,290 | 250 | 400 |  | 2,940 | USD | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  |  | 2,430 | 250 | 400 |  | 3,080 | USD | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  |  | 2,630 | 250 | 400 |  | 3,280 | USD | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  |  | 2,830 | 250 | 400 |  | 3,480 | USD | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  |  | 3,170 | 250 | 400 |  | 3,820 | USD | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 136,800 | 15,000 | 15,000 |  | 166,800 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 146,300 | 15,000 | 15,000 |  | 176,300 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 158,200 | 15,000 | 15,000 |  | 188,200 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 145,300 | 15,000 | 15,000 |  | 175,300 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 154,800 | 15,000 | 15,000 |  | 184,800 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 166,700 | 15,000 | 15,000 |  | 196,700 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 158,200 | 15,000 | 15,000 |  | 188,200 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 167,700 | 15,000 | 15,000 |  | 197,700 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 179,600 | 15,000 | 15,000 |  | 209,600 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 165,000 | 15,000 | 15,000 |  | 195,000 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 174,500 | 15,000 | 15,000 |  | 204,500 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 186,400 | 15,000 | 15,000 |  | 216,400 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 198,900 | 15,000 | 15,000 |  | 228,900 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 208,400 | 15,000 | 15,000 |  | 238,400 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 220,300 | 15,000 | 15,000 |  | 250,300 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 167,300 | 15,000 | 15,000 |  | 197,300 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 176,800 | 15,000 | 15,000 |  | 206,800 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 188,700 | 15,000 | 15,000 |  | 218,700 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 182,600 | 15,000 | 15,000 |  | 212,600 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 192,100 | 15,000 | 15,000 |  | 222,100 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 204,000 | 15,000 | 15,000 |  | 234,000 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 196,800 | 15,000 | 15,000 |  | 226,800 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 206,300 | 15,000 | 15,000 |  | 236,300 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 218,200 | 15,000 | 15,000 |  | 248,200 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 199,900 | 15,000 | 15,000 |  | 229,900 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 209,400 | 15,000 | 15,000 |  | 239,400 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 221,300 | 15,000 | 15,000 |  | 251,300 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 210,300 | 15,000 | 15,000 |  | 240,300 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 219,800 | 15,000 | 15,000 |  | 249,800 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 231,700 | 15,000 | 15,000 |  | 261,700 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 223,600 | 15,000 | 15,000 |  | 253,600 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 233,100 | 15,000 | 15,000 |  | 263,100 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 245,000 | 15,000 | 15,000 |  | 275,000 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 2,790 | 250 | 400 |  | 3,440 | USD | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 3,060 | 250 | 400 |  | 3,710 | USD | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 3,430 | 250 | 400 |  | 4,080 | USD | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 3,720 | 250 | 400 |  | 4,370 | USD | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 4,270 | 250 | 400 |  | 4,920 | USD | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 3,660 | 250 | 400 |  | 4,310 | USD | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_4.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 4,020 | 250 | 400 |  | 4,670 | USD | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_4.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 4,550 | 250 | 400 |  | 5,200 | USD | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_4.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 4,380 | 250 | 400 |  | 5,030 | USD | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_5.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 4,690 | 250 | 400 |  | 5,340 | USD | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_5.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 5,120 | 250 | 400 |  | 5,770 | USD | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_5.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  |  | 112,400 | 15,000 | 15,000 |  | 142,400 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  |  | 121,900 | 15,000 | 15,000 |  | 151,900 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  |  | 133,800 | 15,000 | 15,000 |  | 163,800 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  |  | 117,500 | 15,000 | 15,000 |  | 147,500 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  |  | 127,000 | 15,000 | 15,000 |  | 157,000 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  |  | 138,900 | 15,000 | 15,000 |  | 168,900 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  |  | 124,100 | 15,000 | 15,000 |  | 154,100 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  |  | 133,600 | 15,000 | 15,000 |  | 163,600 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  |  | 145,500 | 15,000 | 15,000 |  | 175,500 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  |  | 131,100 | 15,000 | 15,000 |  | 161,100 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  |  | 140,600 | 15,000 | 15,000 |  | 170,600 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  |  | 152,500 | 15,000 | 15,000 |  | 182,500 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  |  | 149,100 | 15,000 | 15,000 |  | 179,100 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  |  | 158,600 | 15,000 | 15,000 |  | 188,600 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  |  | 170,500 | 15,000 | 15,000 |  | 200,500 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  |  | 2,290 | 250 | 400 |  | 2,940 | USD | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  |  | 2,430 | 250 | 400 |  | 3,080 | USD | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  |  | 2,630 | 250 | 400 |  | 3,280 | USD | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  |  | 2,830 | 250 | 400 |  | 3,480 | USD | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  |  | 3,170 | 250 | 400 |  | 3,820 | USD | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "mens hostel director number"
+**Hostel Contacts**
+
+Block | Name | Role | Phone | Email
+--- | --- | --- | --- | ---
+ | Ms. Mythily A | Residential Block Supervisor (LH, Transport) | 9488839864, 9791297375 | mythily.a@vit.ac.in      
+ | Ms. G. Subbulakshmi | Section Supervisor (LH) | 0416-220-2711 | gsubbulakshmi@vit.ac.in
+ | Mr. Arasu R | Section Supervisor (MH) | 0416-220-2523 | rarasu@vit.ac.in
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "ladies hostel fee structure"
+**Hostel Fee Details (Vellore)**
+
+Block | Gender | Level | Type | AY | Category | Occ | AC | Mess | Room+Mess | Admission | Caution | Other | Total | Curr | Source
+--- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | ---
+Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,36,800 | 15,000 | 15,000 |  | 1,66,800 | INR | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
+Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,46,300 | 15,000 | 15,000 |  | 1,76,300 | INR | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
+Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,58,200 | 15,000 | 15,000 |  | 1,88,200 | INR | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
+Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,45,300 | 15,000 | 15,000 |  | 1,75,300 | INR | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
+Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,54,800 | 15,000 | 15,000 |  | 1,84,800 | INR | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
+Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,66,700 | 15,000 | 15,000 |  | 1,96,700 | INR | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
+Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,65,000 | 15,000 | 15,000 |  | 1,95,000 | INR | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
+Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,74,500 | 15,000 | 15,000 |  | 2,04,500 | INR | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
+Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,86,400 | 15,000 | 15,000 |  | 2,16,400 | INR | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
+Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 1,98,900 | 15,000 | 15,000 |  | 2,28,900 | INR | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
+Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 2,08,400 | 15,000 | 15,000 |  | 2,38,400 | INR | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
+Ladies Hostel | Female |  |  | 2025-26 | Indian |  | AC |  | 2,20,300 | 15,000 | 15,000 |  | 2,50,300 | INR | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
+Ladies Hostel | Female |  |  | 2025-26 | NRI |  | AC | 3,060 |  | 250 | 400 |  | 3,710 | USD | LH-FEE-structure-NRI-Foreign-Category-2025-26__camelot_0.csv
+Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,12,400 | 15,000 | 15,000 |  | 1,42,400 | INR | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
+Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,21,900 | 15,000 | 15,000 |  | 1,51,900 | INR | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
+Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,33,800 | 15,000 | 15,000 |  | 1,63,800 | INR | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
+Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,17,500 | 15,000 | 15,000 |  | 1,47,500 | INR | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
+Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,27,000 | 15,000 | 15,000 |  | 1,57,000 | INR | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
+Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,38,900 | 15,000 | 15,000 |  | 1,68,900 | INR | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
+Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,31,100 | 15,000 | 15,000 |  | 1,61,100 | INR | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
+Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,40,600 | 15,000 | 15,000 |  | 1,70,600 | INR | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
+Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,52,500 | 15,000 | 15,000 |  | 1,82,500 | INR | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
+Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,49,100 | 15,000 | 15,000 |  | 1,79,100 | INR | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
+Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,58,600 | 15,000 | 15,000 |  | 1,88,600 | INR | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
+Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,70,500 | 15,000 | 15,000 |  | 2,00,500 | INR | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
+Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,79,500 | 15,000 | 15,000 |  | 2,09,500 | INR | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
+Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,89,000 | 15,000 | 15,000 |  | 2,19,000 | INR | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
+Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 2,00,900 | 15,000 | 15,000 |  | 2,30,900 | INR | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
+Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,91,100 | 15,000 | 15,000 |  | 2,21,100 | INR | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
+Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 2,00,600 | 15,000 | 15,000 |  | 2,30,600 | INR | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
+Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 2,12,500 | 15,000 | 15,000 |  | 2,42,500 | INR | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
+Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 2,03,800 | 15,000 | 15,000 |  | 2,33,800 | INR | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
+Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 2,13,300 | 15,000 | 15,000 |  | 2,43,300 | INR | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
+Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 2,25,200 | 15,000 | 15,000 |  | 2,55,200 | INR | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
+Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 1,99,900 | 15,000 | 15,000 |  | 2,29,900 | INR | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
+Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 2,09,400 | 15,000 | 15,000 |  | 2,39,400 | INR | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
+Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 2,21,300 | 15,000 | 15,000 |  | 2,51,300 | INR | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
+Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 2,10,300 | 15,000 | 15,000 |  | 2,40,300 | INR | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
+Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 2,19,800 | 15,000 | 15,000 |  | 2,49,800 | INR | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
+Ladies Hostel | Female |  |  | 2025-26 | Indian |  |  |  | 2,31,700 | 15,000 | 15,000 |  | 2,61,700 | INR | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
+Ladies Hostel | Female |  |  | 2025-26 | NRI |  |  | 4,310 |  | 250 | 400 |  | 4,960 | USD | LH-FEE-structure-NRI-Foreign-Category-2025-26__camelot_0.csv
+Ladies Hostel | Female |  |  | 2025-26 | NRI |  |  | 4,380 |  | 250 | 400 |  | 5,030 | USD | LH-FEE-structure-NRI-Foreign-Category-2025-26__camelot_0.csv
+Ladies Hostel | Female |  |  | 2025-26 | NRI |  |  | 4,600 |  | 250 | 400 |  | 5,250 | USD | LH-FEE-structure-NRI-Foreign-Category-2025-26__camelot_0.csv
+Ladies Hostel | Female |  |  | 2025-26 | NRI |  |  | 4,690 |  | 250 | 400 |  | 5,340 | USD | LH-FEE-structure-NRI-Foreign-Category-2025-26__camelot_0.csv
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> 
