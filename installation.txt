@@ -1,267 +1,490 @@
-(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "MCA fees"   
-I couldn’t find an exact match in the tables or PDFs.
+"""
+Router: SQL-first for fees/programs/eligibility/documents/scholarships/hostel/links.
+Upgrades:
+- Degree tokens map to LEVEL only; specializations map to PROGRAM.
+- Robust intent for documents/eligibility/links/fees; narrative to RAG.
+- Auto-relax for MSc/MCA/UG/PG: strict -> PG -> global (no level filter).
+- Punctuation-insensitive LIKE matching.
+- 'nri'/'foreign'/'international' => category=International.
+- Contacts: if user asks "men/mens/MH" only show MH roles; likewise for LH.
+- Programs: suppress rows with empty Program to avoid ugly blanks from PDFs.
+- Links: if table absent, let caller fall back to RAG.
+"""
 
-**Try:**
-• Rephrase (e.g., “MSc documents to be submitted” or “PG eligibility for CSE”).
-• Add a year/category (e.g., “UG NRI fee structure 2025”).
-• Ask for a specific program (e.g., “MCA fee structure 2025”).
+import sqlite3, pathlib, re
+from typing import Dict, Any, List, Optional, Tuple
 
-(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "MCA fees"
-Sorry — I don’t have that in my current tables.
-(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "MCA fee structure"
-Sorry — I don’t have that in my current tables.
-(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "ug fee structure 2025"
-**Academic Fees**
+DB = pathlib.Path("Data/sql/vit_vellore.db")
 
-Level | Program | Category | AY | Tuition | One-time | Caution | Total | Curr | Source
---- | --- | --- | --- | --- | --- | --- | --- | --- | ---
-UG | B.Arch | Indian | 2025-26 | 310000 |  |  | 315000 | INR | Academic Fee.pdf
-UG | B.Com | Indian | 2025-26 | 90000 |  |  | 95000 | INR | Academic Fee.pdf
-UG | B.Com | International | 2025-26 | 3450 |  |  | 3500 | USD | Academic Fee.pdf
-UG | B.Com (Banking and Capital Markets) | Indian | 2025-26 | 127000 |  |  | 132000 | INR | Academic Fee.pdf        
-UG | B.Com (Business Process Services) | Indian | 2025-26 | 90000 |  |  | 95000 | INR | Academic Fee.pdf
-UG | B.Com (Financial Technology) | Indian | 2025-26 | 127000 |  |  | 132000 | INR | Academic Fee.pdf
-UG | B.Des (Industrial Design) | Indian | 2025-26 | 173000 |  |  | 178000 | INR | Academic Fee.pdf
-UG | B.Sc. (Computer Science) | Indian | 2025-26 | 90000 |  |  | 95000 | INR | Academic Fee.pdf
-UG | B.Sc. (Computer Science) | International | 2025-26 | 3450 |  |  | 3500 | USD | Academic Fee.pdf
-UG | B.Sc. (Hons.) Agriculture | Indian | 2025-26 | 110000 |  |  | 115000 | INR | Academic Fee.pdf
-UG | B.Sc. (Hospitality and Hotel Administration) | Indian | 2025-26 | 77000 |  |  | 82000 | INR | Academic Fee.pdf 
-UG | B.Sc. (Multimedia and Animation) | Indian | 2025-26 | 99000 |  |  | 104000 | INR | Academic Fee.pdf
-UG | B.Sc. (Multimedia and Animation) | International | 2025-26 | 4250 |  |  | 4300 | USD | Academic Fee.pdf        
-UG | B.Sc. (Visual Communication) | Indian | 2025-26 | 128000 |  |  | 133000 | INR | Academic Fee.pdf
-UG | B.Tech | International | 2025-26 | 9000 |  |  | 9100 | USD | Academic Fee.pdf
-UG | B.Tech - Group A | Indian | 2025-26 | 173000 |  |  | 176000 | INR | Academic Fee.pdf
-UG | B.Tech - Group A (L&T Collaboration) | Indian | 2025-26 | 207000 |  |  | 210000 | INR | Academic Fee.pdf       
-UG | B.Tech - Group B | Indian | 2025-26 | 195000 |  |  | 198000 | INR | Academic Fee.pdf
-UG | B.Tech - Group B (Bhopal Campus) | Indian | 2025-26 | 198000 |  |  | 201000 | INR | Academic Fee.pdf
-UG | BBA | Indian | 2025-26 | 90000 |  |  | 95000 | INR | Academic Fee.pdf
-UG | BBA | International | 2025-26 | 3450 |  |  | 3500 | USD | Academic Fee.pdf
-UG | BCA | Indian | 2025-26 | 90000 |  |  | 95000 | INR | Academic Fee.pdf
-UG | BCA | International | 2025-26 | 3450 |  |  | 3500 | USD | Academic Fee.pdf
-(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "ug programs offerd 2025"
-**Programs**
+# ------------------ helpers ------------------
 
-Level | Program | School | Duration | Campus | Source
---- | --- | --- | --- | --- | ---
-UG | B.Arch |  |  | Vellore; VIT-Bhopal | UG Programmes Offered.pdf
-UG | B.B.A (2+2 VSB->ASU | Degree from ASU) |  |  | VIT-AP | UG Programmes Offered.pdf
-UG | B.B.A (2+2 VSB->UMD | Degree from UMD) |  |  | VIT-AP | UG Programmes Offered.pdf
-UG | B.B.A (Bachelor of Business Administration) |  |  | Vellore; VIT-AP; VIT-Bhopal | UG Programmes Offered.pdf    
-UG | B.B.A (Business Analytics) |  |  | VIT-AP | UG Programmes Offered.pdf
-UG | B.B.A (Hons.) 2+2 with RIT |  |  | Chennai | UG Programmes Offered.pdf
-UG | B.B.A (Specialisation: Digital Marketing) |  |  | VIT-AP | UG Programmes Offered.pdf
-UG | B.B.A (Specialisation: FinTech) |  |  | VIT-AP | UG Programmes Offered.pdf
-UG | B.B.A (Specialisation: General Management) |  |  | VIT-AP | UG Programmes Offered.pdf
-UG | B.C.A (Bachelor of Computer Applications) |  |  | Vellore | UG Programmes Offered.pdf
-UG | B.Com (Bachelor of Commerce) |  |  | Vellore | UG Programmes Offered.pdf
-UG | B.Com (Finance) |  |  | VIT-AP | UG Programmes Offered.pdf
-UG | B.Com (Hons.) |  |  | Chennai | UG Programmes Offered.pdf
-UG | B.Com - Business Process Services |  |  | Vellore | UG Programmes Offered.pdf
-UG | B.Com – Banking and Capital Markets |  |  | Vellore | UG Programmes Offered.pdf
-UG | B.Com – Financial Technology |  |  | Vellore | UG Programmes Offered.pdf
-UG | B.Des. Industrial Design |  |  | Vellore | UG Programmes Offered.pdf
-UG | B.Sc. (Hons.) Agriculture |  |  | Vellore | UG Programmes Offered.pdf
-UG | B.Sc. Computer Science |  |  | Vellore; Chennai | UG Programmes Offered.pdf
-UG | B.Sc. Economics (Hons.) |  |  | Chennai | UG Programmes Offered.pdf
-UG | B.Sc. Fashion Design |  |  | Chennai | UG Programmes Offered.pdf
-UG | B.Sc. Multimedia & Animation |  |  | Vellore | UG Programmes Offered.pdf
-UG | B.Sc. Visual Communication |  |  | Vellore | UG Programmes Offered.pdf
-UG | B.Sc. in Hospitality and Hotel Administration |  |  | Vellore | UG Programmes Offered.pdf
-UG | B.Tech - Aerospace Engineering |  |  | VIT-Bhopal | UG Programmes Offered.pdf
-UG | B.Tech - Bioengineering |  |  | VIT-Bhopal | UG Programmes Offered.pdf
-UG | B.Tech - Biotechnology |  |  | Vellore | UG Programmes Offered.pdf
-UG | B.Tech - CSE (AI & Data Engineering) |  |  | Vellore | UG Programmes Offered.pdf
-UG | B.Tech - CSE (AI & ML) |  |  | Vellore; Chennai; VIT-AP; VIT-Bhopal | UG Programmes Offered.pdf
-UG | B.Tech - CSE (AI & Robotics) |  |  | Chennai | UG Programmes Offered.pdf
-UG | B.Tech - CSE (Bioinformatics) |  |  | Vellore | UG Programmes Offered.pdf
-UG | B.Tech - CSE (Blockchain) |  |  | VIT-AP | UG Programmes Offered.pdf
-UG | B.Tech - CSE (Cloud Computing & Automation) |  |  | VIT-Bhopal | UG Programmes Offered.pdf
-UG | B.Tech - CSE (Cyber Physical Systems) |  |  | Chennai | UG Programmes Offered.pdf
-UG | B.Tech - CSE (Cyber Security & Digital Forensics) |  |  | VIT-Bhopal | UG Programmes Offered.pdf
-UG | B.Tech - CSE (Cyber Security) |  |  | Vellore; Chennai; VIT-AP | UG Programmes Offered.pdf
-UG | B.Tech - CSE (Data Analytics) |  |  | VIT-AP | UG Programmes Offered.pdf
-UG | B.Tech - CSE (Data Science) |  |  | Vellore; Chennai | UG Programmes Offered.pdf
-UG | B.Tech - CSE (E-Commerce Technology) |  |  | VIT-Bhopal | UG Programmes Offered.pdf
-UG | B.Tech - CSE (Education Technology) |  |  | VIT-Bhopal | UG Programmes Offered.pdf
-UG | B.Tech - CSE (Gaming Technology) |  |  | VIT-Bhopal | UG Programmes Offered.pdf
-UG | B.Tech - CSE (Health Informatics) |  |  | VIT-Bhopal | UG Programmes Offered.pdf
-UG | B.Tech - CSE (Software Engineering) |  |  | VIT-AP | UG Programmes Offered.pdf
-UG | B.Tech - CSE and Business Systems (with TCS) |  |  | Vellore | UG Programmes Offered.pdf
-UG | B.Tech - Chemical Engineering |  |  | Vellore | UG Programmes Offered.pdf
-UG | B.Tech - Civil Engineering |  |  | Vellore; Chennai | UG Programmes Offered.pdf
-UG | B.Tech - Civil Engineering (In Collaboration with L & T) |  |  | Vellore; Chennai | UG Programmes Offered.pdf  
-UG | B.Tech - Computer Science and Business Systems |  |  | VIT-AP | UG Programmes Offered.pdf
-UG | B.Tech - Computer Science and Engineering |  |  | Vellore; Chennai; VIT-AP; VIT-Bhopal | UG Programmes Offered.pdf
-UG | B.Tech - ECE (AI & Cybernetics) |  |  | VIT-Bhopal | UG Programmes Offered.pdf
-UG | B.Tech - ECE (Biomedical Engineering) |  |  | Vellore | UG Programmes Offered.pdf
-UG | B.Tech - ECE (Embedded Systems) |  |  | VIT-AP | UG Programmes Offered.pdf
-UG | B.Tech - ECE (VLSI) |  |  | VIT-AP | UG Programmes Offered.pdf
-UG | B.Tech - Electrical and Computer Science Engineering |  |  | Vellore; Chennai | UG Programmes Offered.pdf      
-UG | B.Tech - Electrical and Electronics Engineering |  |  | Vellore; Chennai | UG Programmes Offered.pdf
-UG | B.Tech - Electronics Engineering (VLSI Design and Technology) |  |  | Vellore; Chennai | UG Programmes Offered.pdf
-UG | B.Tech - Electronics and Communication Engineering |  |  | Vellore; Chennai; VIT-AP; VIT-Bhopal | UG Programmes Offered.pdf
-UG | B.Tech - Electronics and Computer Engineering |  |  | Chennai | UG Programmes Offered.pdf
-UG | B.Tech - Electronics and Instrumentation Engineering |  |  | Vellore | UG Programmes Offered.pdf
-UG | B.Tech - Fashion Technology |  |  | Chennai | UG Programmes Offered.pdf
-UG | B.Tech - Health Sciences and Technology |  |  | Vellore | UG Programmes Offered.pdf
-UG | B.Tech - Information Technology |  |  | Vellore | UG Programmes Offered.pdf
-UG | B.Tech - Mechanical Engineering |  |  | Vellore; Chennai; VIT-AP; VIT-Bhopal | UG Programmes Offered.pdf       
-UG | B.Tech - Mechanical Engineering (AI & Robotics) |  |  | VIT-Bhopal | UG Programmes Offered.pdf
-UG | B.Tech - Mechanical Engineering (Automotive Design) |  |  | VIT-AP | UG Programmes Offered.pdf
-UG | B.Tech - Mechanical Engineering (Electric Vehicles) |  |  | Vellore; Chennai | UG Programmes Offered.pdf       
-UG | B.Tech - Mechanical Engineering (Robotics) |  |  | VIT-AP | UG Programmes Offered.pdf
-UG | B.Tech - Mechanical Engineering (Smart Manufacturing) |  |  | Vellore | UG Programmes Offered.pdf
-UG | B.Tech - Mechatronics and Automation |  |  | Chennai | UG Programmes Offered.pdf
-(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "pg fee structure 2025"  
-**Academic Fees**
+def _norm_text(s: str) -> str:
+    s = s.lower().replace("&", "and")
+    return re.sub(r"[^a-z0-9]+", "", s)
 
-Level | Program | Category | AY | Tuition | One-time | Caution | Total | Curr | Source
---- | --- | --- | --- | --- | --- | --- | --- | --- | ---
-PG | M.Arch. | International | 2025-26 | 6450 |  |  | 6500 | USD | Academic Fee.pdf
-PG | M.Des (Industrial Design) | International | 2025-26 | 6450 |  |  | 6500 | USD | Academic Fee.pdf
-PG | M.Sc. | Indian | 2025-26 |  |  | 3,000 |  | INR | M.SC PROCESS.pdf
-PG | M.Sc. | Indian | 2025-26 |  |  | 3,000 |  | INR | M.SC PROCESS.pdf
-PG | M.Sc. | Indian | 2025-26 |  |  | 3,000 |  | INR | M.SC PROCESS.pdf
-PG | M.Sc. | Indian | 2025-26 |  |  | 3,000 |  | INR | M.SC PROCESS.pdf
-PG | M.Sc. | Indian | 2025-26 |  |  | 3,000 |  | INR | M.SC PROCESS.pdf
-PG | M.Sc. | Indian | 2025-26 |  |  | 3,000 |  | INR | M.SC PROCESS.pdf
-PG | M.Sc. | Indian | 2025-26 |  |  | 3,000 |  | INR | M.SC PROCESS.pdf
-PG | M.Sc. | Indian | 2025-26 |  |  | 3,000 |  | INR | M.SC PROCESS.pdf
-PG | M.Sc. | International | 2025-26 | 3450 |  |  | 3500 | USD | Academic Fee.pdf
-PG | M.Tech. | International | 2025-26 | 6450 |  |  | 6500 | USD | Academic Fee.pdf
-PG | M.Tech. AI & DS (In collaboration with LTIMindtree) | CAT1 | 2025-26 |  |  | 3000 |  | INR | pg_fees.csv       
-PG | M.Tech. AI & DS (In collaboration with LTIMindtree) | CAT2 | 2025-26 | 320000.0 |  | 3000 | 323000.0 | INR | pg_fees.csv
-PG | M.Tech. AI & ML (In collaboration with LTIMindtree) | CAT1 | 2025-26 |  |  | 3000 |  | INR | pg_fees.csv       
-PG | M.Tech. AI & ML (In collaboration with LTIMindtree) | CAT2 | 2025-26 | 320000.0 |  | 3000 | 323000.0 | INR | pg_fees.csv
-PG | M.Tech. Applied Computational Fluid Dynamics | CAT1 | 2025-26 | 150000.0 |  | 3000 | 153000.0 | INR | pg_fees.csv
-PG | M.Tech. Applied Computational Fluid Dynamics | CAT2 | 2025-26 |  |  | 3000 |  | INR | pg_fees.csv
-PG | M.Tech. Artificial Intelligence and Data Science | CAT1 | 2025-26 | 190000.0 |  | 3000 | 193000.0 | INR | pg_fees.csv
-PG | M.Tech. Artificial Intelligence and Data Science | CAT2 | 2025-26 | 299000.0 |  | 3000 | 302000.0 | INR | pg_fees.csv
-PG | M.Tech. Automotive Electronics | CAT1 | 2025-26 | 180000.0 |  | 3000 | 183000.0 | INR | pg_fees.csv
-PG | M.Tech. Automotive Electronics | CAT2 | 2025-26 | 260000.0 |  | 3000 | 263000.0 | INR | pg_fees.csv
-PG | M.Tech. Biomedical Engineering | CAT1 | 2025-26 | 150000.0 |  | 3000 | 153000.0 | INR | pg_fees.csv
-PG | M.Tech. Biomedical Engineering | CAT2 | 2025-26 | 230000.0 |  | 3000 | 233000.0 | INR | pg_fees.csv
-PG | M.Tech. Biotechnology | CAT1 | 2025-26 | 180000.0 |  | 3000 | 183000.0 | INR | pg_fees.csv
-PG | M.Tech. Biotechnology | CAT2 | 2025-26 | 296000.0 |  | 3000 | 299000.0 | INR | pg_fees.csv
-PG | M.Tech. CAD / CAM | CAT1 | 2025-26 | 150000.0 |  | 3000 | 153000.0 | INR | pg_fees.csv
-PG | M.Tech. CAD / CAM | CAT2 | 2025-26 | 230000.0 |  | 3000 | 233000.0 | INR | pg_fees.csv
-PG | M.Tech. CSE (Artificial Intelligence and Machine Learning) | CAT1 | 2025-26 | 190000.0 |  | 3000 | 193000.0 | INR | pg_fees.csv
-PG | M.Tech. CSE (Artificial Intelligence and Machine Learning) | CAT2 | 2025-26 | 299000.0 |  | 3000 | 302000.0 | INR | pg_fees.csv
-PG | M.Tech. CSE (Big Data Analytics) | CAT1 | 2025-26 | 190000.0 |  | 3000 | 193000.0 | INR | pg_fees.csv
-PG | M.Tech. CSE (Big Data Analytics) | CAT2 | 2025-26 | 299000.0 |  | 3000 | 302000.0 | INR | pg_fees.csv
-PG | M.Tech. CSE (Cyber Security & Digital Forensics) | CAT1 | 2025-26 | 190000.0 |  | 3000 | 193000.0 | INR | pg_fees.csv
-PG | M.Tech. CSE (Cyber Security & Digital Forensics) | CAT2 | 2025-26 | 299000.0 |  | 3000 | 302000.0 | INR | pg_fees.csv
-PG | M.Tech. CSE (Cyber Security) | CAT1 | 2025-26 | 190000.0 |  | 3000 | 193000.0 | INR | pg_fees.csv
-PG | M.Tech. CSE (Cyber Security) | CAT2 | 2025-26 | 299000.0 |  | 3000 | 302000.0 | INR | pg_fees.csv
-PG | M.Tech. Computer Science and Engineering | CAT1 | 2025-26 | 190000.0 |  | 3000 | 193000.0 | INR | pg_fees.csv  
-PG | M.Tech. Computer Science and Engineering | CAT2 | 2025-26 | 299000.0 |  | 3000 | 302000.0 | INR | pg_fees.csv  
-PG | M.Tech. Construction Technology and Management | CAT1 | 2025-26 | 150000.0 |  | 3000 | 153000.0 | INR | pg_fees.csv
-PG | M.Tech. Construction Technology and Management | CAT2 | 2025-26 | 230000.0 |  | 3000 | 233000.0 | INR | pg_fees.csv
-PG | M.Tech. Control and Automation | CAT1 | 2025-26 | 150000.0 |  | 3000 | 153000.0 | INR | pg_fees.csv
-PG | M.Tech. Control and Automation | CAT2 | 2025-26 | 230000.0 |  | 3000 | 233000.0 | INR | pg_fees.csv
-PG | M.Tech. Electric Mobility | CAT1 | 2025-26 | 150000.0 |  | 3000 | 153000.0 | INR | pg_fees.csv
-PG | M.Tech. Electric Mobility | CAT2 | 2025-26 | 230000.0 |  | 3000 | 233000.0 | INR | pg_fees.csv
-PG | M.Tech. Electronics & Communication Engineering (Intelligent Communication Systems) | CAT1 | 2025-26 | 180000.0 |  | 3000 | 183000.0 | INR | pg_fees.csv
-PG | M.Tech. Electronics & Communication Engineering (Intelligent Communication Systems) | CAT2 | 2025-26 | 260000.0 |  | 3000 | 263000.0 | INR | pg_fees.csv
-PG | M.Tech. Embedded Systems | CAT1 | 2025-26 | 190000.0 |  | 3000 | 193000.0 | INR | pg_fees.csv
-PG | M.Tech. Embedded Systems | CAT2 | 2025-26 | 299000.0 |  | 3000 | 302000.0 | INR | pg_fees.csv
-PG | M.Tech. Mechatronics | CAT1 | 2025-26 | 150000.0 |  | 3000 | 153000.0 | INR | pg_fees.csv
-PG | M.Tech. Mechatronics | CAT2 | 2025-26 | 230000.0 |  | 3000 | 233000.0 | INR | pg_fees.csv
-PG | M.Tech. Power Electronics and Drives | CAT1 | 2025-26 | 150000.0 |  | 3000 | 153000.0 | INR | pg_fees.csv      
-PG | M.Tech. Power Electronics and Drives | CAT2 | 2025-26 | 230000.0 |  | 3000 | 233000.0 | INR | pg_fees.csv      
-PG | M.Tech. Smart Manufacturing | CAT1 | 2025-26 | 180000.0 |  | 3000 | 183000.0 | INR | pg_fees.csv
-PG | M.Tech. Smart Manufacturing | CAT2 | 2025-26 | 260000.0 |  | 3000 | 263000.0 | INR | pg_fees.csv
-PG | M.Tech. Smart Mobility | CAT1 | 2025-26 | 180000.0 |  | 3000 | 183000.0 | INR | pg_fees.csv
-PG | M.Tech. Smart Mobility | CAT2 | 2025-26 | 260000.0 |  | 3000 | 263000.0 | INR | pg_fees.csv
-PG | M.Tech. Structural Engineering | CAT1 | 2025-26 | 150000.0 |  | 3000 | 153000.0 | INR | pg_fees.csv
-PG | M.Tech. Structural Engineering | CAT2 | 2025-26 | 230000.0 |  | 3000 | 233000.0 | INR | pg_fees.csv
-PG | M.Tech. VLSI Design | CAT1 | 2025-26 | 190000.0 |  | 3000 | 193000.0 | INR | pg_fees.csv
-PG | M.Tech. VLSI Design | CAT2 | 2025-26 | 299000.0 |  | 3000 | 302000.0 | INR | pg_fees.csv
-PG | MBA | International | 2025-26 | 6450 |  |  | 6500 | USD | Academic Fee.pdf
-PG | MCA | Indian | 2025-26 | 137,000 | 3,000 (Caution, refundable) | 3,000 | 140,000 | INR | MCA 2 Years PG Program.pdf
-PG | MCA | Indian | 2025-26 | 137,000 | NONE | NONE | 137,000 | INR | MCA 2 Years PG Program.pdf
-PG | MCA | International | 2025-26 | 6450 |  |  | 6500 | USD | Academic Fee.pdf
-PG | MSW (Master of Social Work) | International | 2025-26 | 3450 |  |  | 3500 | USD | Academic Fee.pdf
-(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "PG programs offerd"   
-**Programs**
+def _norm_like(value: Optional[str]) -> Optional[str]:
+    return f"%{_norm_text(value)}%" if value else None
 
-Level | Program | School | Duration | Campus | Source
---- | --- | --- | --- | --- | ---
-PG |  |  | 2 years | Vellore | M.SC PROCESS.pdf
-PG |  |  | 2 years | Vellore | M.SC PROCESS.pdf
-PG |  |  | 2 years | Vellore | M.SC PROCESS.pdf
-PG |  |  | 2 years | Vellore | M.SC PROCESS.pdf
-PG |  |  | 2 years | Vellore | M.SC PROCESS.pdf
-PG |  |  | 2 years | Vellore | M.SC PROCESS.pdf
-PG |  |  | 2 years | Vellore | M.SC PROCESS.pdf
-PG |  |  | 2 years | Vellore | M.SC PROCESS.pdf
-PG | M.Tech. Applied Computational Fluid Dynamics |  |  |  |
-PG | M.Tech. Artificial Intelligence and Data Science |  |  |  |
-PG | M.Tech. Artificial Intelligence and Data Science (In collaboration with LTIMindtree) |  |  |  |
-PG | M.Tech. Artificial Intelligence and Machine Learning (In collaboration with LTIMindtree) |  |  |  |
-PG | M.Tech. Automotive Electronics |  |  |  |
-PG | M.Tech. Biomedical Engineering |  |  |  |
-PG | M.Tech. Biotechnology |  |  |  |
-PG | M.Tech. CAD / CAM |  |  |  |
-PG | M.Tech. Computer Science and Engineering |  |  |  |
-PG | M.Tech. Computer Science and Engineering (Artificial Intelligence and Machine Learning) |  |  |  |
-PG | M.Tech. Computer Science and Engineering (Big Data Analytics) |  |  |  |
-PG | M.Tech. Computer Science and Engineering (Cyber Security & Digital Forensics) |  |  |  |
-PG | M.Tech. Computer Science and Engineering (Cyber Security) |  |  |  |
-PG | M.Tech. Construction Technology and Management |  |  |  |
-PG | M.Tech. Control and Automation |  |  |  |
-PG | M.Tech. Electric Mobility |  |  |  |
-PG | M.Tech. Electronics and Communication Engineering (Intelligent Communication Systems) |  |  |  |
-PG | M.Tech. Embedded Systems |  |  |  |
-PG | M.Tech. Mechatronics |  |  |  |
-PG | M.Tech. Power Electronics and Drives |  |  |  |
-PG | M.Tech. Smart Mobility |  |  |  |
-PG | M.Tech. Structural Engineering |  |  |  |
-PG | M.Tech. VLSI Design |  |  |  |
-PG | Master of Computer Applications (MCA) | School of Computer Science & Engineering / Information Systems | 2 years (4 semesters) | Vellore | MCA 2 Years PG Program.pdf
-(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "PG programs offerd 2025"
-**Programs**
+def _add_norm_like_clause(col: str, val: Optional[str], where: list, args: list):
+    if not val:
+        return
+    expr = (
+        f"REPLACE(REPLACE(REPLACE(REPLACE(LOWER({col}),'.',''),'-',''),'&','and'),' ','')"
+    )
+    where.append(f"{expr} LIKE ?")
+    args.append(_norm_like(val))
 
-Level | Program | School | Duration | Campus | Source
---- | --- | --- | --- | --- | ---
-PG |  |  | 2 years | Vellore | M.SC PROCESS.pdf
-PG |  |  | 2 years | Vellore | M.SC PROCESS.pdf
-PG |  |  | 2 years | Vellore | M.SC PROCESS.pdf
-PG |  |  | 2 years | Vellore | M.SC PROCESS.pdf
-PG |  |  | 2 years | Vellore | M.SC PROCESS.pdf
-PG |  |  | 2 years | Vellore | M.SC PROCESS.pdf
-PG |  |  | 2 years | Vellore | M.SC PROCESS.pdf
-PG |  |  | 2 years | Vellore | M.SC PROCESS.pdf
-PG | M.Tech. Applied Computational Fluid Dynamics |  |  |  |
-PG | M.Tech. Artificial Intelligence and Data Science |  |  |  |
-PG | M.Tech. Artificial Intelligence and Data Science (In collaboration with LTIMindtree) |  |  |  |
-PG | M.Tech. Artificial Intelligence and Machine Learning (In collaboration with LTIMindtree) |  |  |  |
-PG | M.Tech. Automotive Electronics |  |  |  |
-PG | M.Tech. Biomedical Engineering |  |  |  |
-PG | M.Tech. Biotechnology |  |  |  |
-PG | M.Tech. CAD / CAM |  |  |  |
-PG | M.Tech. Computer Science and Engineering |  |  |  |
-PG | M.Tech. Computer Science and Engineering (Artificial Intelligence and Machine Learning) |  |  |  |
-PG | M.Tech. Computer Science and Engineering (Big Data Analytics) |  |  |  |
-PG | M.Tech. Computer Science and Engineering (Cyber Security & Digital Forensics) |  |  |  |
-PG | M.Tech. Computer Science and Engineering (Cyber Security) |  |  |  |
-PG | M.Tech. Construction Technology and Management |  |  |  |
-PG | M.Tech. Control and Automation |  |  |  |
-PG | M.Tech. Electric Mobility |  |  |  |
-PG | M.Tech. Electronics and Communication Engineering (Intelligent Communication Systems) |  |  |  |
-PG | M.Tech. Embedded Systems |  |  |  |
-PG | M.Tech. Mechatronics |  |  |  |
-PG | M.Tech. Power Electronics and Drives |  |  |  |
-PG | M.Tech. Smart Mobility |  |  |  |
-PG | M.Tech. Structural Engineering |  |  |  |
-PG | M.Tech. VLSI Design |  |  |  |
-PG | Master of Computer Applications (MCA) | School of Computer Science & Engineering / Information Systems | 2 years (4 semesters) | Vellore | MCA 2 Years PG Program.pdf
-(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "PG eligibility"         
-Sorry — I don’t have that in my current tables.
-(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "UG eligibility"         
-Sorry — I don’t have that in my current tables.
-(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "provide all UG links"   
-Sorry — I don’t have that in my current sources.
-(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "UG application process"
-Sorry — I don’t have that in my current sources.
-(.venv) (base) PS C:\Users\T8543\Downloads\project-2> 
+def _mk():
+    con = sqlite3.connect(DB)
+    con.row_factory = sqlite3.Row
+    return con
+
+def _safe_fetch(con, sql, args):
+    try:
+        return con.execute(sql, args).fetchall()
+    except sqlite3.OperationalError:
+        return []
+
+# ------------------ intent ------------------
+
+ACA_KEYWORDS = {
+    "programs": ["program","course","degree","b.tech","m.tech","mca","msc","btech","mtech","offered","programmes","programs","offer"],
+    "eligibility": ["eligibility","qualify","criteria","requirement","requirements","min marks","minimum marks","cutoff","cut-off"],
+    "documents": ["document","documents","docs","upload","certificate","proof","bonafide","to be submit","to be submitted","submission","sumbit","symbited","submit"],
+    "fees": ["tuition","fee","fees","academic fee","semester fee","fee structure","structure","charges","cost","price"],
+    "scholarships": ["scholarship","waiver","merit","financial aid","fee concession","freeship"],
+    "links": ["link","links","url","website","apply link","application link","brochure","portal"]
+}
+
+def _contains_any(q: str, words: List[str]) -> bool:
+    ql = q.lower()
+    return any(w in ql for w in words)
+
+def detect_structured_intent(q: str) -> str:
+    ql = q.lower()
+
+    # Narrative topics -> RAG
+    if any(w in ql for w in [
+        "application process","admission process","how to apply",
+        "refund","cancellation","withdrawal","deadline","last date"
+    ]):
+        return "text"
+
+    # Small hostel narrrative like laundry -> RAG
+    if any(w in ql for w in ["laundry","dhobi","washing","wash"]):
+        return "text"
+
+    # Hostel (tabular)
+    if any(k in ql for k in ["contact","phone","email","supervisor","warden","director","manager"]):
+        return "contacts"
+    if "block" in ql and any(k in ql for k in ["name","names","list","all","codes","code"]):
+        return "blocks"
+    if any(k in ql for k in ["hostel","room","mess","mh","lh","ac","non-ac","canteen","block"]):
+        return "hostel"
+
+    # Academics
+    if _contains_any(ql, ACA_KEYWORDS["fees"]): return "fees"
+    if _contains_any(ql, ACA_KEYWORDS["links"]): return "links"
+    for tag in ("programs","eligibility","documents","scholarships"):
+        if _contains_any(ql, ACA_KEYWORDS[tag]): return tag
+
+    return "text"  # default to RAG
+
+# ------------------ query parsing ------------------
+
+DEGREE_TOKENS = {
+    "btech": [r"b\.?\s*tech", r"\bbtech\b"],
+    "mtech": [r"m\.?\s*tech", r"\bmtech\b"],
+    "mca":   [r"\bmca\b"],
+    "msc":   [r"m\.?\s*sc", r"\bmsc\b"],
+}
+
+SPECIALIZATION_TOKENS = [
+    "computer science","cse","it","information technology","ece","eee","mechanical","mech",
+    "civil","biotech","biotechnology","ai","data","vlsi","cyber","software","chemistry",
+    "physics","mathematics","maths","bioinformatics","blockchain","robotics",
+    "data science","gaming","health informatics","education technology","smart manufacturing"
+]
+
+def _find_degree_token(q: str) -> Optional[str]:
+    ql = q.lower()
+    for norm, pats in DEGREE_TOKENS.items():
+        for p in pats:
+            if re.search(p, ql, flags=re.I):
+                return norm
+    return None
+
+def _find_specialization(q: str) -> Optional[str]:
+    ql = q.lower()
+    for term in sorted(SPECIALIZATION_TOKENS, key=len, reverse=True):
+        if term in ql:
+            return term
+    return None
+
+def _ay_from_text(q: str) -> Optional[str]:
+    m = re.search(r"\b(20\d{2})\b", q)
+    if not m: return None
+    yr = m.group(1)
+    return f"{yr}-{str(int(yr[-2:])+1).zfill(2)}"
+
+def parse_filters(q: str) -> Dict[str, Any]:
+    ql = q.lower()
+    f: Dict[str, Any] = {
+        "ay": _ay_from_text(q),
+        "gender": None,
+        "category": None,
+        "level_like": None,
+        "program_like": None,
+        "prog_is_degree": False,
+        "raw_degree": None,
+    }
+    # gender hints (hostel)
+    if any(k in ql for k in ["boy","boys","men","mh","mens","male"]): f["gender"] = "Male"
+    if any(k in ql for k in ["girl","girls","ladies","lh","women","female"]): f["gender"] = "Female"
+    # category
+    if any(k in ql for k in ["nri","foreign","international"]):
+        f["category"] = "International"
+    elif "indian" in ql:
+        f["category"] = "Indian"
+    # degree -> level_like
+    deg = _find_degree_token(q); f["raw_degree"] = deg
+    if deg == "btech":
+        f["level_like"] = "UG"
+        f["prog_is_degree"] = True
+    elif deg == "mtech":
+        f["level_like"] = "PG"
+        f["prog_is_degree"] = True
+    elif deg == "mca":
+        f["level_like"] = "mca"
+        f["prog_is_degree"] = True
+    elif deg == "msc":
+        f["level_like"] = "msc"
+        f["prog_is_degree"] = True
+    # explicit UG/PG words
+    if " ug" in f" {ql}": f["level_like"] = f["level_like"] or "UG"
+    if " pg" in f" {ql}": f["level_like"] = f["level_like"] or "PG"
+    # specialization -> program_like
+    spec = _find_specialization(q)
+    if spec:
+        f["program_like"] = spec
+        f["prog_is_degree"] = False
+    return f
+
+# ------------------ table formatter ------------------
+
+def _fmt_table(tbl: dict) -> str:
+    if not tbl or not tbl.get("rows"):
+        return "_No matching rows._"
+    title  = f"**{tbl.get('title','Results')}**"
+    cols   = tbl["columns"]
+    header = " | ".join(cols)
+    sep    = " | ".join(["---"]*len(cols))
+    lines  = [title, "", header, sep]
+    for r in tbl["rows"]:
+        lines.append(" | ".join("" if x is None else str(x) for x in r))
+    return "\n".join(lines)
+
+def _pack(table_dict=None, bullets=None) -> str:
+    parts = []
+    if table_dict: parts.append(_fmt_table(table_dict))
+    if bullets:    parts.append("\n".join(f"- {b}" for b in bullets))
+    return "\n".join(parts) if parts else "_No matching rows._"
+
+# ------------------ hostel SQL ------------------
+
+def sql_hostel_overview(f: Dict[str,Any], limit_rows: int = 800) -> Dict[str, Any]:
+    con = _mk()
+    where = ["1=1"]; args=[]
+    if f["gender"]:     where.append("IFNULL(b.gender,'')=IFNULL(?, '')");     args.append(f["gender"])
+    if f["level_like"]: where.append("IFNULL(b.level,'') LIKE IFNULL(?, '')"); args.append(f"%{f['level_like']}%")
+    if f["ay"]:         where.append("IFNULL(hf.ay,'')=IFNULL(?, '')");        args.append(f["ay"])
+    if f["category"]:   where.append("IFNULL(hf.category,'')=IFNULL(?, '')");  args.append(f["category"])
+    sql = f"""
+    SELECT b.display_name AS block, b.gender, b.level, b.block_type,
+           hf.ay, hf.category, hf.occupancy, hf.ac, hf.mess_type,
+           hf.room_mess_fee, hf.admission_fee, hf.caution_deposit, hf.other_fee, hf.total_fee, hf.currency,
+           hf.source_file
+    FROM hostel_fees hf
+    JOIN blocks b ON b.id = hf.block_id
+    WHERE {' AND '.join(where)}
+    ORDER BY b.block_type, block, hf.occupancy, hf.ac DESC, hf.mess_type
+    """
+    rows = _safe_fetch(con, sql, args); con.close()
+    columns = ["Block","Gender","Level","Type","AY","Category","Occ","AC","Mess",
+               "Room+Mess","Admission","Caution","Other","Total","Curr","Source"]
+    tbl = {"title":"Hostel Fee Details (Vellore)", "columns":columns, "rows":[]}
+    for r in rows[:limit_rows]:
+        tbl["rows"].append([
+            r["block"] or "", r["gender"] or "", r["level"] or "", r["block_type"] or "",
+            r["ay"] or "", r["category"] or "", r["occupancy"] or "",
+            "AC" if (r["ac"]==1) else ("Non-AC" if (r["ac"]==0) else ""),
+            r["mess_type"] or "", r["room_mess_fee"] or "", r["admission_fee"] or "",
+            r["caution_deposit"] or "", r["other_fee"] or "", r["total_fee"] or "",
+            r["currency"] or "", r["source_file"] or ""
+        ])
+    return {"table": tbl, "bullets": []}
+
+def sql_block_contacts(f: Dict[str,Any]) -> Dict[str,Any]:
+    con = _mk()
+    # roles have (LH) / (MH) in your data; filter when user hinted gender.
+    rows = _safe_fetch(con, """
+        SELECT '' AS block, name, role, phone, email
+        FROM hostel_contacts
+        ORDER BY role, name
+    """, [])
+    con.close()
+
+    def _keep(row):
+        role = (row["role"] or "").lower()
+        if f["gender"] == "Male":
+            # keep MH-only if marked; else keep if no marker
+            if "(mh" in role or " (mh" in role or "mh)" in role: return True
+            if "(lh" in role or "lh)" in role: return False
+            return True
+        if f["gender"] == "Female":
+            if "(lh" in role or " (lh" in role or "lh)" in role: return True
+            if "(mh" in role or "mh)" in role: return False
+            return True
+        return True
+
+    filtered = [r for r in rows if _keep(r)]
+
+    cols = ["Block","Name","Role","Phone","Email"]
+    tbl = {"title":"Hostel Contacts", "columns":cols, "rows":[
+        [r["block"], r["name"] or "", r["role"] or "", r["phone"] or "", r["email"] or ""]
+        for r in filtered
+    ]}
+    return {"table": tbl, "bullets": []}
+
+def sql_list_blocks(f: Dict[str,Any]) -> Dict[str,Any]:
+    con = _mk()
+    if f["gender"] == "Female":
+        sql = "SELECT block_code AS display_name, 'Female' AS gender FROM lh_blocks ORDER BY block_code"
+    elif f["gender"] == "Male":
+        sql = "SELECT COALESCE(block_name, block_code) AS display_name, 'Male' AS gender FROM mh_blocks ORDER BY block_code"
+    else:
+        sql = """
+        SELECT COALESCE(block_name, block_code) AS display_name, 'Male' AS gender FROM mh_blocks
+        UNION ALL
+        SELECT block_code AS display_name, 'Female' AS gender FROM lh_blocks
+        ORDER BY gender, display_name
+        """
+    rows = _safe_fetch(con, sql, []); con.close()
+    cols = ["Block","Gender"]
+    tbl = {"title":"Hostel Blocks", "columns":cols, "rows":[
+        [r["display_name"] or "", r["gender"] or ""]
+        for r in rows
+    ]}
+    return {"table": tbl, "bullets": []}
+
+# ------------------ academics SQL ------------------
+
+def _relaxed_levels_sequence(f: Dict[str,Any]) -> List[Optional[str]]:
+    """
+    Return a sequence of level filters to try: strict -> PG -> global.
+    """
+    seq: List[Optional[str]] = []
+    if f.get("level_like"):
+        seq.append(f["level_like"])
+    # For MSc/MCA and many mixed tables, PG is a useful fallback
+    if f.get("raw_degree") in {"msc","mca"} or (f.get("level_like") and f["level_like"].lower() not in ("pg",)):
+        seq.append("pg")
+    # Final: no level filter
+    seq.append(None)
+    # Deduplicate while preserving order
+    out: List[Optional[str]] = []
+    for s in seq:
+        if s not in out:
+            out.append(s)
+    return out
+
+def sql_programs(f: Dict[str,Any], _q: str) -> Dict[str,Any]:
+    con = _mk()
+    rows_all = []
+    for lv in _relaxed_levels_sequence(f):
+        where, args = ["1=1"], []
+        _add_norm_like_clause("level", lv, where, args)
+        if f["program_like"] and not f["prog_is_degree"]:
+            _add_norm_like_clause("program", f["program_like"], where, args)
+        rows = _safe_fetch(con, f"""
+            SELECT level, program, school, duration, campus, source_file
+            FROM programs
+            WHERE {' AND '.join(where)}
+            ORDER BY level, program
+        """, args)
+        # Filter out empty Program rows
+        rows = [r for r in rows if (r["program"] or "").strip() != ""]
+        if rows:
+            rows_all = rows
+            break
+    con.close()
+    cols = ["Level","Program","School","Duration","Campus","Source"]
+    return {"table":{"title":"Programs","columns":cols,"rows":[
+        [r["level"] or "", r["program"] or "", r["school"] or "", r["duration"] or "", r["campus"] or "", r["source_file"] or ""]
+        for r in rows_all
+    ]}}
+
+def sql_eligibility(f: Dict[str,Any], q: str) -> Dict[str,Any]:
+    con = _mk()
+    rows_all = []
+    for lv in _relaxed_levels_sequence(f):
+        where, args = ["1=1"], []
+        _add_norm_like_clause("level", lv, where, args)
+        if f["program_like"] and not f["prog_is_degree"]:
+            _add_norm_like_clause("program", f["program_like"], where, args)
+        if q:
+            _add_norm_like_clause("criteria", q, where, args)
+        rows = _safe_fetch(con, f"""
+            SELECT level, program, criteria, source_file
+            FROM eligibility
+            WHERE {' AND '.join(where)}
+            ORDER BY level, program
+        """, args)
+        if rows:
+            rows_all = rows
+            break
+    con.close()
+    cols = ["Level","Program","Criteria","Source"]
+    return {"table":{"title":"Eligibility","columns":cols,"rows":[
+        [r["level"] or "", r["program"] or "", r["criteria"] or "", r["source_file"] or ""]
+        for r in rows_all
+    ]}}
+
+def sql_documents(f: Dict[str,Any], q: str) -> Dict[str,Any]:
+    con = _mk()
+    rows_all = []
+    for lv in _relaxed_levels_sequence(f):
+        where, args = ["1=1"], []
+        _add_norm_like_clause("level", lv, where, args)
+        if f["program_like"] and not f["prog_is_degree"]:
+            _add_norm_like_clause("program", f["program_like"], where, args)
+        if q:
+            _add_norm_like_clause("item", q, where, args)
+        rows = _safe_fetch(con, f"""
+            SELECT level, program, item, details, source_file
+            FROM documents_required
+            WHERE {' AND '.join(where)}
+            ORDER BY level, program, item
+        """, args)
+        if rows:
+            rows_all = rows
+            break
+    con.close()
+    cols = ["Level","Program","Document","Details","Source"]
+    return {"table":{"title":"Documents Required","columns":cols,"rows":[
+        [r["level"] or "", r["program"] or "", r["item"] or "", r["details"] or "", r["source_file"] or ""]
+        for r in rows_all
+    ]}}
+
+def sql_academic_fees(f: Dict[str,Any], _q: str) -> Dict[str,Any]:
+    con = _mk()
+    rows_all = []
+    for lv in _relaxed_levels_sequence(f):
+        where, args = ["1=1"], []
+        if f["program_like"] and not f["prog_is_degree"]:
+            _add_norm_like_clause("program", f["program_like"], where, args)
+        _add_norm_like_clause("level", lv, where, args)
+        if f["ay"]:       where.append("IFNULL(ay,'')=IFNULL(?, '')");        args.append(f["ay"])
+        if f["category"]: where.append("IFNULL(category,'')=IFNULL(?, '')");  args.append(f["category"])
+        rows = _safe_fetch(con, f"""
+            SELECT level, program, category, ay, tuition, one_time, caution, total, currency, source_file
+            FROM academic_fees
+            WHERE {' AND '.join(where)}
+            ORDER BY level, program, category, ay
+        """, args)
+        if rows:
+            rows_all = rows
+            break
+    con.close()
+    cols = ["Level","Program","Category","AY","Tuition","One-time","Caution","Total","Curr","Source"]
+    return {"table":{"title":"Academic Fees","columns":cols,"rows":[
+        [r["level"] or "", r["program"] or "", r["category"] or "", r["ay"] or "",
+         r["tuition"] or "", r["one_time"] or "", r["caution"] or "", r["total"] or "",
+         r["currency"] or "", r["source_file"] or ""]
+        for r in rows_all
+    ]}}
+
+def sql_scholarships(f: Dict[str,Any], q: str) -> Dict[str,Any]:
+    con = _mk()
+    rows_all = []
+    for lv in _relaxed_levels_sequence(f):
+        where, args = ["1=1"], []
+        _add_norm_like_clause("level", lv, where, args)
+        if q: _add_norm_like_clause("name", q, where, args)
+        rows = _safe_fetch(con, f"""
+            SELECT level, name, criteria, amount, currency, source_file
+            FROM scholarships
+            WHERE {' AND '.join(where)}
+            ORDER BY level, name
+        """, args)
+        if rows:
+            rows_all = rows
+            break
+    con.close()
+    cols = ["Level","Name","Criteria","Amount","Curr","Source"]
+    return {"table":{"title":"Scholarships","columns":cols,"rows":[
+        [r["level"] or "", r["name"] or "", r["criteria"] or "", r["amount"] or "", r["currency"] or "", r["source_file"] or ""]
+        for r in rows_all
+    ]}}
+
+def sql_links(f: Dict[str,Any], _q: str) -> Dict[str,Any]:
+    """
+    Optional table links(level, program, name, url, source_file).
+    If table missing -> return empty so caller can RAG fallback.
+    """
+    con = _mk()
+    try:
+        con.execute("SELECT 1 FROM links LIMIT 1")
+    except sqlite3.OperationalError:
+        con.close()
+        return {"table":{"title":"Links","columns":["Level","Program","Name","URL","Source"],"rows":[]}}
+
+    where, args = ["1=1"], []
+    _add_norm_like_clause("level", f["level_like"], where, args)
+    if f["program_like"] and not f["prog_is_degree"]:
+        _add_norm_like_clause("program", f["program_like"], where, args)
+    rows = _safe_fetch(con, f"""
+        SELECT level, program, name, url, source_file
+        FROM links
+        WHERE {' AND '.join(where)}
+        ORDER BY level, program, name
+    """, args); con.close()
+    cols = ["Level","Program","Name","URL","Source"]
+    return {"table":{"title":"Links","columns":cols,"rows":[
+        [r["level"] or "", r["program"] or "", r["name"] or "", r["url"] or "", r["source_file"] or ""]
+        for r in rows
+    ]}}
+
+# ------------------ router ------------------
+
+def _sql_route(q: str) -> str | None:
+    intent = detect_structured_intent(q)
+    f = parse_filters(q)
+
+    # hostel
+    if intent == "contacts": return _pack(sql_block_contacts(f).get("table"))
+    if intent == "blocks":   return _pack(sql_list_blocks(f).get("table"))
+    if intent == "hostel":   return _pack(sql_hostel_overview(f).get("table"))
+
+    # academics
+    if intent == "links":        return _pack(sql_links(f, q).get("table"))
+    if intent == "programs":     return _pack(sql_programs(f, q).get("table"))
+    if intent == "eligibility":  return _pack(sql_eligibility(f, q).get("table"))
+    if intent == "documents":    return _pack(sql_documents(f, q).get("table"))
+    if intent == "fees":         return _pack(sql_academic_fees(f, q).get("table"))
+    if intent == "scholarships": return _pack(sql_scholarships(f, q).get("table"))
+    return None  # narrative or smalltalk -> let caller handle
+
+# ------------------ public ------------------
+
+def answer(query: str) -> str:
+    sql_text = _sql_route(query)
+    if sql_text is not None and sql_text.strip() != "_No matching rows._":
+        return sql_text
+    # leave final resolution to rag_answer
+    return "_No matching rows._"
+
+if __name__ == "__main__":
+    import sys
+    q = " ".join(sys.argv[1:]) or "Show MH Senior NRI hostel fees 2025"
+    print(answer(q))
