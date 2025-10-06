@@ -1,84 +1,13 @@
-from pathlib import Path
-from sentence_transformers import SentenceTransformer
-import faiss
-import pickle
-import PyPDF2
-import re
-
-ROOT = Path(__file__).resolve().parent.parent
-PDF_DIR = ROOT / "Data" / "PDFs"  # Adjust to your PDF location
-INDEX_DIR = ROOT / "Data" / "faiss_index"
-INDEX_DIR.mkdir(exist_ok=True)
-
-# Load embedding model
-print("Loading embedding model...")
-embedder = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
-
-def extract_text_from_pdf(pdf_path):
-    """Extract text from PDF file"""
-    text = ""
-    try:
-        with open(pdf_path, 'rb') as file:
-            reader = PyPDF2.PdfReader(file)
-            for page in reader.pages:
-                text += page.extract_text() + "\n"
-    except Exception as e:
-        print(f"Error reading {pdf_path}: {e}")
-    return text
-
-def chunk_text(text, chunk_size=500, overlap=100):
-    """Split text into overlapping chunks"""
-    words = text.split()
-    chunks = []
-    for i in range(0, len(words), chunk_size - overlap):
-        chunk = " ".join(words[i:i + chunk_size])
-        if len(chunk.strip()) > 50:  # Skip very small chunks
-            chunks.append(chunk)
-    return chunks
-
-def clean_text(text):
-    """Clean extracted text"""
-    text = re.sub(r'\s+', ' ', text)  # Multiple spaces to single
-    text = re.sub(r'\n+', '\n', text)  # Multiple newlines
-    return text.strip()
-
-# Process all PDFs
-print("Processing PDFs...")
-all_chunks = []
-
-for pdf_file in PDF_DIR.glob("*.pdf"):
-    print(f"Processing: {pdf_file.name}")
-    
-    text = extract_text_from_pdf(pdf_file)
-    text = clean_text(text)
-    
-    chunks = chunk_text(text)
-    
-    for chunk in chunks:
-        all_chunks.append({
-            "text": chunk,
-            "source": pdf_file.name
-        })
-
-print(f"Total chunks created: {len(all_chunks)}")
-
-# Create embeddings
-print("Creating embeddings...")
-texts = [chunk["text"] for chunk in all_chunks]
-embeddings = embedder.encode(texts, show_progress_bar=True)
-
-# Build FAISS index
-print("Building FAISS index...")
-dimension = embeddings.shape[1]
-index = faiss.IndexFlatL2(dimension)
-index.add(embeddings)
-
-# Save index and chunks
-print("Saving index...")
-faiss.write_index(index, str(INDEX_DIR / "index.faiss"))
-
-with open(INDEX_DIR / "chunks.pkl", "wb") as f:
-    pickle.dump(all_chunks, f)
-
-print(f"✓ Index saved to {INDEX_DIR}")
-print(f"✓ Total documents indexed: {len(all_chunks)}")
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "UG application process"
+No sentence-transformers model found with name sentence-transformers/all-MiniLM-L6-v2. Creating a new one with mean pooling.
+Warning: FAISS/RAG not available: (MaxRetryError("HTTPSConnectionPool(host='huggingface.co', port=443): Max retries exceeded with url: /sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json (Caused by SSLError(SSLError(1, '[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1035)')))"), '(Request ID: 97e55518-581c-4278-b0c7-c60cfb14f7bc)')
+I don't have specific information about that yet. You can ask me about:
+- Programs offered (UG/PG)
+- Eligibility criteria
+- Fee structure
+- Documents required
+- Application process
+- VITMEE/VITEEE details
+- Hostel facilities
+- Scholarships
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> 
