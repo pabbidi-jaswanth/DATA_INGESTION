@@ -1,156 +1,360 @@
-# app/rag_answer.py
-"""
-Top-level QA entrypoint.
-- SQL-first
-- Smalltalk answers for generic asks
-- RAG fallback: FAISS; else PDF text search; else short apology
-- Accepts both --q "..." and positional query
-"""
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "UG fee structure"    
+**Academic Fees**
 
-from app.sql_router import (
-    detect_structured_intent, parse_filters,
-    sql_hostel_overview, sql_block_contacts, sql_list_blocks,
-    sql_programs, sql_eligibility, sql_documents, sql_academic_fees, sql_scholarships
-)
+Level | Program | Category | AY | Tuition | One-time | Caution | Total | Curr | Source
+--- | --- | --- | --- | --- | --- | --- | --- | --- | ---
+UG | B.Arch | Indian | 2025-26 | 310000 |  |  | 315000 | INR | Academic Fee.pdf
+UG | B.Com | Indian | 2025-26 | 90000 |  |  | 95000 | INR | Academic Fee.pdf
+UG | B.Com | International | 2025-26 | 3450 |  |  | 3500 | USD | Academic Fee.pdf
+UG | B.Com (Banking and Capital Markets) | Indian | 2025-26 | 127000 |  |  | 132000 | INR | Academic Fee.pdf
+UG | B.Com (Business Process Services) | Indian | 2025-26 | 90000 |  |  | 95000 | INR | Academic Fee.pdf
+UG | B.Com (Financial Technology) | Indian | 2025-26 | 127000 |  |  | 132000 | INR | Academic Fee.pdf
+UG | B.Des (Industrial Design) | Indian | 2025-26 | 173000 |  |  | 178000 | INR | Academic Fee.pdf
+UG | B.Sc. (Computer Science) | Indian | 2025-26 | 90000 |  |  | 95000 | INR | Academic Fee.pdf
+UG | B.Sc. (Computer Science) | International | 2025-26 | 3450 |  |  | 3500 | USD | Academic Fee.pdf
+UG | B.Sc. (Hons.) Agriculture | Indian | 2025-26 | 110000 |  |  | 115000 | INR | Academic Fee.pdf
+UG | B.Sc. (Hospitality and Hotel Administration) | Indian | 2025-26 | 77000 |  |  | 82000 | INR | Academic Fee.pdf 
+UG | B.Sc. (Multimedia and Animation) | Indian | 2025-26 | 99000 |  |  | 104000 | INR | Academic Fee.pdf
+UG | B.Sc. (Multimedia and Animation) | International | 2025-26 | 4250 |  |  | 4300 | USD | Academic Fee.pdf        
+UG | B.Sc. (Visual Communication) | Indian | 2025-26 | 128000 |  |  | 133000 | INR | Academic Fee.pdf
+UG | B.Tech | International | 2025-26 | 9000 |  |  | 9100 | USD | Academic Fee.pdf
+UG | B.Tech - Group A | Indian | 2025-26 | 173000 |  |  | 176000 | INR | Academic Fee.pdf
+UG | B.Tech - Group A (L&T Collaboration) | Indian | 2025-26 | 207000 |  |  | 210000 | INR | Academic Fee.pdf       
+UG | B.Tech - Group B | Indian | 2025-26 | 195000 |  |  | 198000 | INR | Academic Fee.pdf
+UG | B.Tech - Group B (Bhopal Campus) | Indian | 2025-26 | 198000 |  |  | 201000 | INR | Academic Fee.pdf
+UG | BBA | Indian | 2025-26 | 90000 |  |  | 95000 | INR | Academic Fee.pdf
+UG | BBA | International | 2025-26 | 3450 |  |  | 3500 | USD | Academic Fee.pdf
+UG | BCA | Indian | 2025-26 | 90000 |  |  | 95000 | INR | Academic Fee.pdf
+UG | BCA | International | 2025-26 | 3450 |  |  | 3500 | USD | Academic Fee.pdf
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "UG programs offered"
+**Programs**
 
-# ---------- render helpers ----------
+Level | Program | School | Duration | Campus | Source
+--- | --- | --- | --- | --- | ---
+UG | B.Arch |  |  | Vellore; VIT-Bhopal | UG Programmes Offered.pdf
+UG | B.B.A (2+2 VSB->ASU | Degree from ASU) |  |  | VIT-AP | UG Programmes Offered.pdf
+UG | B.B.A (2+2 VSB->UMD | Degree from UMD) |  |  | VIT-AP | UG Programmes Offered.pdf
+UG | B.B.A (Bachelor of Business Administration) |  |  | Vellore; VIT-AP; VIT-Bhopal | UG Programmes Offered.pdf    
+UG | B.B.A (Business Analytics) |  |  | VIT-AP | UG Programmes Offered.pdf
+UG | B.B.A (Hons.) 2+2 with RIT |  |  | Chennai | UG Programmes Offered.pdf
+UG | B.B.A (Specialisation: Digital Marketing) |  |  | VIT-AP | UG Programmes Offered.pdf
+UG | B.B.A (Specialisation: FinTech) |  |  | VIT-AP | UG Programmes Offered.pdf
+UG | B.B.A (Specialisation: General Management) |  |  | VIT-AP | UG Programmes Offered.pdf
+UG | B.C.A (Bachelor of Computer Applications) |  |  | Vellore | UG Programmes Offered.pdf
+UG | B.Com (Bachelor of Commerce) |  |  | Vellore | UG Programmes Offered.pdf
+UG | B.Com (Finance) |  |  | VIT-AP | UG Programmes Offered.pdf
+UG | B.Com (Hons.) |  |  | Chennai | UG Programmes Offered.pdf
+UG | B.Com - Business Process Services |  |  | Vellore | UG Programmes Offered.pdf
+UG | B.Com – Banking and Capital Markets |  |  | Vellore | UG Programmes Offered.pdf
+UG | B.Com – Financial Technology |  |  | Vellore | UG Programmes Offered.pdf
+UG | B.Des. Industrial Design |  |  | Vellore | UG Programmes Offered.pdf
+UG | B.Sc. (Hons.) Agriculture |  |  | Vellore | UG Programmes Offered.pdf
+UG | B.Sc. Computer Science |  |  | Vellore; Chennai | UG Programmes Offered.pdf
+UG | B.Sc. Economics (Hons.) |  |  | Chennai | UG Programmes Offered.pdf
+UG | B.Sc. Fashion Design |  |  | Chennai | UG Programmes Offered.pdf
+UG | B.Sc. Multimedia & Animation |  |  | Vellore | UG Programmes Offered.pdf
+UG | B.Sc. Visual Communication |  |  | Vellore | UG Programmes Offered.pdf
+UG | B.Sc. in Hospitality and Hotel Administration |  |  | Vellore | UG Programmes Offered.pdf
+UG | B.Tech - Aerospace Engineering |  |  | VIT-Bhopal | UG Programmes Offered.pdf
+UG | B.Tech - Bioengineering |  |  | VIT-Bhopal | UG Programmes Offered.pdf
+UG | B.Tech - Biotechnology |  |  | Vellore | UG Programmes Offered.pdf
+UG | B.Tech - CSE (AI & Data Engineering) |  |  | Vellore | UG Programmes Offered.pdf
+UG | B.Tech - CSE (AI & ML) |  |  | Vellore; Chennai; VIT-AP; VIT-Bhopal | UG Programmes Offered.pdf
+UG | B.Tech - CSE (AI & Robotics) |  |  | Chennai | UG Programmes Offered.pdf
+UG | B.Tech - CSE (Bioinformatics) |  |  | Vellore | UG Programmes Offered.pdf
+UG | B.Tech - CSE (Blockchain) |  |  | VIT-AP | UG Programmes Offered.pdf
+UG | B.Tech - CSE (Cloud Computing & Automation) |  |  | VIT-Bhopal | UG Programmes Offered.pdf
+UG | B.Tech - CSE (Cyber Physical Systems) |  |  | Chennai | UG Programmes Offered.pdf
+UG | B.Tech - CSE (Cyber Security & Digital Forensics) |  |  | VIT-Bhopal | UG Programmes Offered.pdf
+UG | B.Tech - CSE (Cyber Security) |  |  | Vellore; Chennai; VIT-AP | UG Programmes Offered.pdf
+UG | B.Tech - CSE (Data Analytics) |  |  | VIT-AP | UG Programmes Offered.pdf
+UG | B.Tech - CSE (Data Science) |  |  | Vellore; Chennai | UG Programmes Offered.pdf
+UG | B.Tech - CSE (E-Commerce Technology) |  |  | VIT-Bhopal | UG Programmes Offered.pdf
+UG | B.Tech - CSE (Education Technology) |  |  | VIT-Bhopal | UG Programmes Offered.pdf
+UG | B.Tech - CSE (Gaming Technology) |  |  | VIT-Bhopal | UG Programmes Offered.pdf
+UG | B.Tech - CSE (Health Informatics) |  |  | VIT-Bhopal | UG Programmes Offered.pdf
+UG | B.Tech - CSE (Software Engineering) |  |  | VIT-AP | UG Programmes Offered.pdf
+UG | B.Tech - CSE and Business Systems (with TCS) |  |  | Vellore | UG Programmes Offered.pdf
+UG | B.Tech - Chemical Engineering |  |  | Vellore | UG Programmes Offered.pdf
+UG | B.Tech - Civil Engineering |  |  | Vellore; Chennai | UG Programmes Offered.pdf
+UG | B.Tech - Civil Engineering (In Collaboration with L & T) |  |  | Vellore; Chennai | UG Programmes Offered.pdf  
+UG | B.Tech - Computer Science and Business Systems |  |  | VIT-AP | UG Programmes Offered.pdf
+UG | B.Tech - Computer Science and Engineering |  |  | Vellore; Chennai; VIT-AP; VIT-Bhopal | UG Programmes Offered.pdf
+UG | B.Tech - ECE (AI & Cybernetics) |  |  | VIT-Bhopal | UG Programmes Offered.pdf
+UG | B.Tech - ECE (Biomedical Engineering) |  |  | Vellore | UG Programmes Offered.pdf
+UG | B.Tech - ECE (Embedded Systems) |  |  | VIT-AP | UG Programmes Offered.pdf
+UG | B.Tech - ECE (VLSI) |  |  | VIT-AP | UG Programmes Offered.pdf
+UG | B.Tech - Electrical and Computer Science Engineering |  |  | Vellore; Chennai | UG Programmes Offered.pdf      
+UG | B.Tech - Electrical and Electronics Engineering |  |  | Vellore; Chennai | UG Programmes Offered.pdf
+UG | B.Tech - Electronics Engineering (VLSI Design and Technology) |  |  | Vellore; Chennai | UG Programmes Offered.pdf
+UG | B.Tech - Electronics and Communication Engineering |  |  | Vellore; Chennai; VIT-AP; VIT-Bhopal | UG Programmes Offered.pdf
+UG | B.Tech - Electronics and Computer Engineering |  |  | Chennai | UG Programmes Offered.pdf
+UG | B.Tech - Electronics and Instrumentation Engineering |  |  | Vellore | UG Programmes Offered.pdf
+UG | B.Tech - Fashion Technology |  |  | Chennai | UG Programmes Offered.pdf
+UG | B.Tech - Health Sciences and Technology |  |  | Vellore | UG Programmes Offered.pdf
+UG | B.Tech - Information Technology |  |  | Vellore | UG Programmes Offered.pdf
+UG | B.Tech - Mechanical Engineering |  |  | Vellore; Chennai; VIT-AP; VIT-Bhopal | UG Programmes Offered.pdf       
+UG | B.Tech - Mechanical Engineering (AI & Robotics) |  |  | VIT-Bhopal | UG Programmes Offered.pdf
+UG | B.Tech - Mechanical Engineering (Automotive Design) |  |  | VIT-AP | UG Programmes Offered.pdf
+UG | B.Tech - Mechanical Engineering (Electric Vehicles) |  |  | Vellore; Chennai | UG Programmes Offered.pdf       
+UG | B.Tech - Mechanical Engineering (Robotics) |  |  | VIT-AP | UG Programmes Offered.pdf
+UG | B.Tech - Mechanical Engineering (Smart Manufacturing) |  |  | Vellore | UG Programmes Offered.pdf
+UG | B.Tech - Mechatronics and Automation |  |  | Chennai | UG Programmes Offered.pdf
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "UG douments to be sumbited"
+Sorry — I don’t have that yet.
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "UG douments to be submited"
+Sorry — I don’t have that yet.
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "UG scholarships"           
+When is VITMEE conducted? The VITMEE exam is typically conducted in the month of April / May every year. The exact dates are announced on the official website. Where is the CBT conducted? The test is conducted at VIT designated centers across India. Test cities details will be available on our official website. How are candidates selected? The selection process includes: 1. Performance in the VITMEE exam. 2. Verification of academic credentials. 3. Online Counselling What is the syllabus for VITMEE? The syllabus is program -specific and includes: Core Subjects: Topics relevant to the qualifying degree specialization. English Communication: Grammar, vocabulary, reading comprehension, and verbal ability. How can I prepare for VITMEE? Review the detailed syllabus provided on the official VIT website. Study core concepts and problem -solving techniques in your field of study. 10. Are there s
 
-def _fmt_table(tbl: dict) -> str:
-    if not tbl or not tbl.get("rows"):
-        return "_No matching rows._"
-    title  = f"**{tbl.get('title','Results')}**"
-    cols   = tbl["columns"]
-    header = " | ".join(cols)
-    sep    = " | ".join(["---"] * len(cols))
-    lines  = [title, "", header, sep]
-    for r in tbl["rows"]:
-        lines.append(" | ".join("" if x is None else str(x) for x in r))
-    return "\n".join(lines)
+_Source: PG MTECH FAQS.pdf (p.2)_
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "Provide all UG links"
+Frequently Asked Questions FAQ: VITMEE (VIT Master’s Entrance Examination) What is VITMEE? VITMEE is a Computer -Based Test (CBT) conducted for admission to postgraduate engineering programmes in VIT group of Institutions. Who can apply for VITMEE? Candidates with a B.E./B.Tech/B.Arch./B.Des./MCA/M.Sc. degree or equivalent in a relevant field, with a minimum aggregate of 60% or as specified for the program. Final-year students can also apply, provided they submit proof of graduation by the specified deadline. What is the application process for VITMEE? 1.Register online at the official VIT admissions portal. 2. Complete the application form with personal, academic, and program details. 3. Pay the application fee. 4. Upload photograph and signature 5. Upload the required documents (10th, 12th and qualifying degree certificates). 6. Submit the form before the deadline. What is the format o
 
-def _pack(table_dict=None, bullets=None):
-    parts = []
-    if table_dict: parts.append(_fmt_table(table_dict))
-    if bullets:    parts.append("\n".join(f"- {b}" for b in bullets))
-    return "\n".join(parts) if parts else "_No results._"
+_Source: PG MTECH FAQS.pdf (p.1)_
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "UG eligibility"      
+• Stage 3 Filling Online application form Provide all relevant details carefully, before submission. An application number will be generated after completion. Refer your application number for all your future correspondence. • Stage 4 Photo Upload Photograph Size should be between 10kB to 200 kB with the dimension of 3.5 cm X 4.5 cm. • Stage 5 Documents Upload 1. Proof of Age & Nationality (Passport/Birth Certificate/National ID). 2. 11th grade marksheet/AS Level/Form V(for appearing candidates) & 12th grade mark sheet/A Level/Form VI (for passed out candidates). 3. Both 11th and 12th Marksheets (for Nepal Education Board Candidates) Equivalent certificate from Association of Indian Universities(AIU) is mandatory, if passed from Universities/Boards other than India. • Stage 6 Download Application Filled in application will be available for download after completion. ---ELIGIBLITY ---- ➔
 
-# ---------- smalltalk ----------
+_Source: UG FOREIGN FAQ.pdf (p.3)_
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "PG fee structure"          
+**Academic Fees**
 
-def _smalltalk_answer(q: str) -> str | None:
-    ql = q.lower().strip()
-    if ql in {"hi","hello","hey"}:
-        return "Hi! I’m the VIT Admissions Chatbot. Ask me about fees, eligibility, documents, programs, hostel, links, or the application/refund process."
-    if ql in {"who are you","who are you?","what is your name"}:
-        return "I’m the VIT Admissions Chatbot."
-    if "how do you work" in ql or "how you work" in ql:
-        return "I read your SQLite tables first; if it’s a narrative query, I search your PDFs (FAISS or direct PDF text)."
-    return None
+Level | Program | Category | AY | Tuition | One-time | Caution | Total | Curr | Source
+--- | --- | --- | --- | --- | --- | --- | --- | --- | ---
+PG | M.Arch. | International | 2025-26 | 6450 |  |  | 6500 | USD | Academic Fee.pdf
+PG | M.Des (Industrial Design) | International | 2025-26 | 6450 |  |  | 6500 | USD | Academic Fee.pdf
+PG | M.Sc. | Indian | 2025-26 |  |  | 3,000 |  | INR | M.SC PROCESS.pdf
+PG | M.Sc. | Indian | 2025-26 |  |  | 3,000 |  | INR | M.SC PROCESS.pdf
+PG | M.Sc. | Indian | 2025-26 |  |  | 3,000 |  | INR | M.SC PROCESS.pdf
+PG | M.Sc. | Indian | 2025-26 |  |  | 3,000 |  | INR | M.SC PROCESS.pdf
+PG | M.Sc. | Indian | 2025-26 |  |  | 3,000 |  | INR | M.SC PROCESS.pdf
+PG | M.Sc. | Indian | 2025-26 |  |  | 3,000 |  | INR | M.SC PROCESS.pdf
+PG | M.Sc. | Indian | 2025-26 |  |  | 3,000 |  | INR | M.SC PROCESS.pdf
+PG | M.Sc. | Indian | 2025-26 |  |  | 3,000 |  | INR | M.SC PROCESS.pdf
+PG | M.Sc. | International | 2025-26 | 3450 |  |  | 3500 | USD | Academic Fee.pdf
+PG | M.Tech. | International | 2025-26 | 6450 |  |  | 6500 | USD | Academic Fee.pdf
+PG | M.Tech. AI & DS (In collaboration with LTIMindtree) | CAT1 | 2025-26 |  |  | 3000 |  | INR | pg_fees.csv       
+PG | M.Tech. AI & DS (In collaboration with LTIMindtree) | CAT2 | 2025-26 | 320000.0 |  | 3000 | 323000.0 | INR | pg_fees.csv
+PG | M.Tech. AI & ML (In collaboration with LTIMindtree) | CAT1 | 2025-26 |  |  | 3000 |  | INR | pg_fees.csv       
+PG | M.Tech. AI & ML (In collaboration with LTIMindtree) | CAT2 | 2025-26 | 320000.0 |  | 3000 | 323000.0 | INR | pg_fees.csv
+PG | M.Tech. Applied Computational Fluid Dynamics | CAT1 | 2025-26 | 150000.0 |  | 3000 | 153000.0 | INR | pg_fees.csv
+PG | M.Tech. Applied Computational Fluid Dynamics | CAT2 | 2025-26 |  |  | 3000 |  | INR | pg_fees.csv
+PG | M.Tech. Artificial Intelligence and Data Science | CAT1 | 2025-26 | 190000.0 |  | 3000 | 193000.0 | INR | pg_fees.csv
+PG | M.Tech. Artificial Intelligence and Data Science | CAT2 | 2025-26 | 299000.0 |  | 3000 | 302000.0 | INR | pg_fees.csv
+PG | M.Tech. Automotive Electronics | CAT1 | 2025-26 | 180000.0 |  | 3000 | 183000.0 | INR | pg_fees.csv
+PG | M.Tech. Automotive Electronics | CAT2 | 2025-26 | 260000.0 |  | 3000 | 263000.0 | INR | pg_fees.csv
+PG | M.Tech. Biomedical Engineering | CAT1 | 2025-26 | 150000.0 |  | 3000 | 153000.0 | INR | pg_fees.csv
+PG | M.Tech. Biomedical Engineering | CAT2 | 2025-26 | 230000.0 |  | 3000 | 233000.0 | INR | pg_fees.csv
+PG | M.Tech. Biotechnology | CAT1 | 2025-26 | 180000.0 |  | 3000 | 183000.0 | INR | pg_fees.csv
+PG | M.Tech. Biotechnology | CAT2 | 2025-26 | 296000.0 |  | 3000 | 299000.0 | INR | pg_fees.csv
+PG | M.Tech. CAD / CAM | CAT1 | 2025-26 | 150000.0 |  | 3000 | 153000.0 | INR | pg_fees.csv
+PG | M.Tech. CAD / CAM | CAT2 | 2025-26 | 230000.0 |  | 3000 | 233000.0 | INR | pg_fees.csv
+PG | M.Tech. CSE (Artificial Intelligence and Machine Learning) | CAT1 | 2025-26 | 190000.0 |  | 3000 | 193000.0 | INR | pg_fees.csv
+PG | M.Tech. CSE (Artificial Intelligence and Machine Learning) | CAT2 | 2025-26 | 299000.0 |  | 3000 | 302000.0 | INR | pg_fees.csv
+PG | M.Tech. CSE (Big Data Analytics) | CAT1 | 2025-26 | 190000.0 |  | 3000 | 193000.0 | INR | pg_fees.csv
+PG | M.Tech. CSE (Big Data Analytics) | CAT2 | 2025-26 | 299000.0 |  | 3000 | 302000.0 | INR | pg_fees.csv
+PG | M.Tech. CSE (Cyber Security & Digital Forensics) | CAT1 | 2025-26 | 190000.0 |  | 3000 | 193000.0 | INR | pg_fees.csv
+PG | M.Tech. CSE (Cyber Security & Digital Forensics) | CAT2 | 2025-26 | 299000.0 |  | 3000 | 302000.0 | INR | pg_fees.csv
+PG | M.Tech. CSE (Cyber Security) | CAT1 | 2025-26 | 190000.0 |  | 3000 | 193000.0 | INR | pg_fees.csv
+PG | M.Tech. CSE (Cyber Security) | CAT2 | 2025-26 | 299000.0 |  | 3000 | 302000.0 | INR | pg_fees.csv
+PG | M.Tech. Computer Science and Engineering | CAT1 | 2025-26 | 190000.0 |  | 3000 | 193000.0 | INR | pg_fees.csv  
+PG | M.Tech. Computer Science and Engineering | CAT2 | 2025-26 | 299000.0 |  | 3000 | 302000.0 | INR | pg_fees.csv  
+PG | M.Tech. Construction Technology and Management | CAT1 | 2025-26 | 150000.0 |  | 3000 | 153000.0 | INR | pg_fees.csv
+PG | M.Tech. Construction Technology and Management | CAT2 | 2025-26 | 230000.0 |  | 3000 | 233000.0 | INR | pg_fees.csv
+PG | M.Tech. Control and Automation | CAT1 | 2025-26 | 150000.0 |  | 3000 | 153000.0 | INR | pg_fees.csv
+PG | M.Tech. Control and Automation | CAT2 | 2025-26 | 230000.0 |  | 3000 | 233000.0 | INR | pg_fees.csv
+PG | M.Tech. Electric Mobility | CAT1 | 2025-26 | 150000.0 |  | 3000 | 153000.0 | INR | pg_fees.csv
+PG | M.Tech. Electric Mobility | CAT2 | 2025-26 | 230000.0 |  | 3000 | 233000.0 | INR | pg_fees.csv
+PG | M.Tech. Electronics & Communication Engineering (Intelligent Communication Systems) | CAT1 | 2025-26 | 180000.0 |  | 3000 | 183000.0 | INR | pg_fees.csv
+PG | M.Tech. Electronics & Communication Engineering (Intelligent Communication Systems) | CAT2 | 2025-26 | 260000.0 |  | 3000 | 263000.0 | INR | pg_fees.csv
+PG | M.Tech. Embedded Systems | CAT1 | 2025-26 | 190000.0 |  | 3000 | 193000.0 | INR | pg_fees.csv
+PG | M.Tech. Embedded Systems | CAT2 | 2025-26 | 299000.0 |  | 3000 | 302000.0 | INR | pg_fees.csv
+PG | M.Tech. Mechatronics | CAT1 | 2025-26 | 150000.0 |  | 3000 | 153000.0 | INR | pg_fees.csv
+PG | M.Tech. Mechatronics | CAT2 | 2025-26 | 230000.0 |  | 3000 | 233000.0 | INR | pg_fees.csv
+PG | M.Tech. Power Electronics and Drives | CAT1 | 2025-26 | 150000.0 |  | 3000 | 153000.0 | INR | pg_fees.csv      
+PG | M.Tech. Power Electronics and Drives | CAT2 | 2025-26 | 230000.0 |  | 3000 | 233000.0 | INR | pg_fees.csv      
+PG | M.Tech. Smart Manufacturing | CAT1 | 2025-26 | 180000.0 |  | 3000 | 183000.0 | INR | pg_fees.csv
+PG | M.Tech. Smart Manufacturing | CAT2 | 2025-26 | 260000.0 |  | 3000 | 263000.0 | INR | pg_fees.csv
+PG | M.Tech. Smart Mobility | CAT1 | 2025-26 | 180000.0 |  | 3000 | 183000.0 | INR | pg_fees.csv
+PG | M.Tech. Smart Mobility | CAT2 | 2025-26 | 260000.0 |  | 3000 | 263000.0 | INR | pg_fees.csv
+PG | M.Tech. Structural Engineering | CAT1 | 2025-26 | 150000.0 |  | 3000 | 153000.0 | INR | pg_fees.csv
+PG | M.Tech. Structural Engineering | CAT2 | 2025-26 | 230000.0 |  | 3000 | 233000.0 | INR | pg_fees.csv
+PG | M.Tech. VLSI Design | CAT1 | 2025-26 | 190000.0 |  | 3000 | 193000.0 | INR | pg_fees.csv
+PG | M.Tech. VLSI Design | CAT2 | 2025-26 | 299000.0 |  | 3000 | 302000.0 | INR | pg_fees.csv
+PG | MBA | International | 2025-26 | 6450 |  |  | 6500 | USD | Academic Fee.pdf
+PG | MCA | Indian | 2025-26 | 137,000 | 3,000 (Caution, refundable) | 3,000 | 140,000 | INR | MCA 2 Years PG Program.pdf
+PG | MCA | Indian | 2025-26 | 137,000 | NONE | NONE | 137,000 | INR | MCA 2 Years PG Program.pdf
+PG | MCA | International | 2025-26 | 6450 |  |  | 6500 | USD | Academic Fee.pdf
+PG | MSW (Master of Social Work) | International | 2025-26 | 3450 |  |  | 3500 | USD | Academic Fee.pdf
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "PG programs"
+                                                                                                                   **Programs**
 
-# ---------- PDF fallback (no FAISS) ----------
+Level | Program | School | Duration | Campus | Source
+--- | --- | --- | --- | --- | ---
+PG |  |  | 2 years | Vellore | M.SC PROCESS.pdf
+PG |  |  | 2 years | Vellore | M.SC PROCESS.pdf
+PG |  |  | 2 years | Vellore | M.SC PROCESS.pdf
+PG |  |  | 2 years | Vellore | M.SC PROCESS.pdf
+PG |  |  | 2 years | Vellore | M.SC PROCESS.pdf
+PG |  |  | 2 years | Vellore | M.SC PROCESS.pdf
+PG |  |  | 2 years | Vellore | M.SC PROCESS.pdf
+PG |  |  | 2 years | Vellore | M.SC PROCESS.pdf
+PG | M.Tech. Applied Computational Fluid Dynamics |  |  |  |
+PG | M.Tech. Artificial Intelligence and Data Science |  |  |  |
+PG | M.Tech. Artificial Intelligence and Data Science (In collaboration with LTIMindtree) |  |  |  |
+PG | M.Tech. Artificial Intelligence and Machine Learning (In collaboration with LTIMindtree) |  |  |  |
+PG | M.Tech. Automotive Electronics |  |  |  |
+PG | M.Tech. Biomedical Engineering |  |  |  |
+PG | M.Tech. Biotechnology |  |  |  |
+PG | M.Tech. CAD / CAM |  |  |  |
+PG | M.Tech. Computer Science and Engineering |  |  |  |
+PG | M.Tech. Computer Science and Engineering (Artificial Intelligence and Machine Learning) |  |  |  |
+PG | M.Tech. Computer Science and Engineering (Big Data Analytics) |  |  |  |
+PG | M.Tech. Computer Science and Engineering (Cyber Security & Digital Forensics) |  |  |  |
+PG | M.Tech. Computer Science and Engineering (Cyber Security) |  |  |  |
+PG | M.Tech. Construction Technology and Management |  |  |  |
+PG | M.Tech. Control and Automation |  |  |  |
+PG | M.Tech. Electric Mobility |  |  |  |
+PG | M.Tech. Electronics and Communication Engineering (Intelligent Communication Systems) |  |  |  |
+PG | M.Tech. Embedded Systems |  |  |  |
+PG | M.Tech. Mechatronics |  |  |  |
+PG | M.Tech. Power Electronics and Drives |  |  |  |
+PG | M.Tech. Smart Mobility |  |  |  |
+PG | M.Tech. Structural Engineering |  |  |  |
+PG | M.Tech. VLSI Design |  |  |  |
+PG | Master of Computer Applications (MCA) | School of Computer Science & Engineering / Information Systems | 2 years (4 semesters) | Vellore | MCA 2 Years PG Program.pdf
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "PG fee internation"
+**Academic Fees**
 
-def _pdf_text_search(query: str) -> str | None:
-    # naive text scan across PDFs for a quick snippet
-    import glob, os
-    try:
-        import PyPDF2  # lightweight
-    except Exception:
-        return None
-
-    qlow = query.lower()
-    tokens = [t for t in qlow.split() if len(t) > 3]
-    if not tokens:
-        tokens = [qlow]
-
-    for path in glob.glob("Data/**/*.pdf", recursive=True):
-        try:
-            reader = PyPDF2.PdfReader(path)
-            # scan first 30 pages; if nothing, scan rest up to 80
-            page_idx = list(range(min(30, len(reader.pages)))) + list(range(30, min(80, len(reader.pages))))
-            for i in page_idx:
-                try:
-                    text = reader.pages[i].extract_text() or ""
-                except Exception:
-                    continue
-                lower = text.lower()
-                if any(tok in lower for tok in tokens):
-                    # return small clean snippet
-                    snippet = " ".join(text.split())
-                    snippet = snippet[:900]
-                    return f"{snippet}\n\n_Source: {os.path.basename(path)} (p.{i+1})_"
-        except Exception:
-            continue
-    return None
-
-# ---------- RAG & text fallback ----------
-
-def _rag_answer(q: str) -> str | None:
-    # FAISS helper A
-    try:
-        from app.utils.fallback_rag import faiss_answer_or_summary
-        from pathlib import Path
-        resp = faiss_answer_or_summary(Path("Data/index/faiss"), "vit_faq_vellore", q)
-        if resp and resp.strip():
-            return resp.strip()
-    except Exception:
-        pass
-    # FAISS helper B
-    try:
-        from app.utils.fallback_rag import answer as rag_answer
-        resp2 = rag_answer(q, max_chunks=6, max_tokens=500)
-        if resp2 and resp2.strip():
-            return resp2.strip()
-    except Exception:
-        pass
-    # PDF direct search
-    pdf = _pdf_text_search(q)
-    if pdf:
-        return pdf
-    return None
-
-# ---------- SQL route ----------
-
-def _sql_route(q: str) -> str | None:
-    intent = detect_structured_intent(q)
-    f = parse_filters(q)
-
-    if intent == "contacts":   return _pack(sql_block_contacts(f).get("table"))
-    if intent == "blocks":     return _pack(sql_list_blocks(f).get("table"))
-    if intent == "hostel":     return _pack(sql_hostel_overview(f).get("table"))
-
-    if intent == "programs":     return _pack(sql_programs(f, q).get("table"))
-    if intent == "eligibility":  return _pack(sql_eligibility(f, q).get("table"))
-    if intent == "documents":    return _pack(sql_documents(f, q).get("table"))
-    if intent == "fees":         return _pack(sql_academic_fees(f, q).get("table"))
-    if intent == "scholarships": return _pack(sql_scholarships(f, q).get("table"))
-
-    if intent == "links":
-        from app.sql_router import sql_links
-        return _pack(sql_links(f, q).get("table"))
-
-    return None
-
-# ---------- public ----------
-
-def answer(query: str) -> str:
-    # 1) SQL
-    sql_text = _sql_route(query)
-    if sql_text is not None and sql_text.strip() != "_No matching rows._":
-        return sql_text
-    # 2) smalltalk
-    st = _smalltalk_answer(query)
-    if st:
-        return st
-    # 3) RAG
-    rag = _rag_answer(query)
-    if rag:
-        return rag
-    # 4) final
-    return "Sorry — I don’t have that yet."
-
-if __name__ == "__main__":
-    import argparse, sys
-    p = argparse.ArgumentParser()
-    p.add_argument("--q", "-q", dest="q", default="")
-    p.add_argument("qpos", nargs="*", help="query as positional words")
-    args = p.parse_args()
-    q = args.q.strip() or " ".join(args.qpos).strip()
+Level | Program | Category | AY | Tuition | One-time | Caution | Total | Curr | Source
+--- | --- | --- | --- | --- | --- | --- | --- | --- | ---
+PG | M.Arch. | International | 2025-26 | 6450 |  |  | 6500 | USD | Academic Fee.pdf
+PG | M.Des (Industrial Design) | International | 2025-26 | 6450 |  |  | 6500 | USD | Academic Fee.pdf
+PG | M.Sc. | Indian | 2025-26 |  |  | 3,000 |  | INR | M.SC PROCESS.pdf
+PG | M.Sc. | Indian | 2025-26 |  |  | 3,000 |  | INR | M.SC PROCESS.pdf
+PG | M.Sc. | Indian | 2025-26 |  |  | 3,000 |  | INR | M.SC PROCESS.pdf
+PG | M.Sc. | Indian | 2025-26 |  |  | 3,000 |  | INR | M.SC PROCESS.pdf
+PG | M.Sc. | Indian | 2025-26 |  |  | 3,000 |  | INR | M.SC PROCESS.pdf
+PG | M.Sc. | Indian | 2025-26 |  |  | 3,000 |  | INR | M.SC PROCESS.pdf
+PG | M.Sc. | Indian | 2025-26 |  |  | 3,000 |  | INR | M.SC PROCESS.pdf
+PG | M.Sc. | Indian | 2025-26 |  |  | 3,000 |  | INR | M.SC PROCESS.pdf
+PG | M.Sc. | International | 2025-26 | 3450 |  |  | 3500 | USD | Academic Fee.pdf
+PG | M.Tech. | International | 2025-26 | 6450 |  |  | 6500 | USD | Academic Fee.pdf
+PG | M.Tech. AI & DS (In collaboration with LTIMindtree) | CAT1 | 2025-26 |  |  | 3000 |  | INR | pg_fees.csv       
+PG | M.Tech. AI & DS (In collaboration with LTIMindtree) | CAT2 | 2025-26 | 320000.0 |  | 3000 | 323000.0 | INR | pg_fees.csv
+PG | M.Tech. AI & ML (In collaboration with LTIMindtree) | CAT1 | 2025-26 |  |  | 3000 |  | INR | pg_fees.csv       
+PG | M.Tech. AI & ML (In collaboration with LTIMindtree) | CAT2 | 2025-26 | 320000.0 |  | 3000 | 323000.0 | INR | pg_fees.csv
+PG | M.Tech. Applied Computational Fluid Dynamics | CAT1 | 2025-26 | 150000.0 |  | 3000 | 153000.0 | INR | pg_fees.csv
+PG | M.Tech. Applied Computational Fluid Dynamics | CAT2 | 2025-26 |  |  | 3000 |  | INR | pg_fees.csv
+PG | M.Tech. Artificial Intelligence and Data Science | CAT1 | 2025-26 | 190000.0 |  | 3000 | 193000.0 | INR | pg_fees.csv
+PG | M.Tech. Artificial Intelligence and Data Science | CAT2 | 2025-26 | 299000.0 |  | 3000 | 302000.0 | INR | pg_fees.csv
+PG | M.Tech. Automotive Electronics | CAT1 | 2025-26 | 180000.0 |  | 3000 | 183000.0 | INR | pg_fees.csv
+PG | M.Tech. Automotive Electronics | CAT2 | 2025-26 | 260000.0 |  | 3000 | 263000.0 | INR | pg_fees.csv
+PG | M.Tech. Biomedical Engineering | CAT1 | 2025-26 | 150000.0 |  | 3000 | 153000.0 | INR | pg_fees.csv
+PG | M.Tech. Biomedical Engineering | CAT2 | 2025-26 | 230000.0 |  | 3000 | 233000.0 | INR | pg_fees.csv
+PG | M.Tech. Biotechnology | CAT1 | 2025-26 | 180000.0 |  | 3000 | 183000.0 | INR | pg_fees.csv
+PG | M.Tech. Biotechnology | CAT2 | 2025-26 | 296000.0 |  | 3000 | 299000.0 | INR | pg_fees.csv
+PG | M.Tech. CAD / CAM | CAT1 | 2025-26 | 150000.0 |  | 3000 | 153000.0 | INR | pg_fees.csv
+PG | M.Tech. CAD / CAM | CAT2 | 2025-26 | 230000.0 |  | 3000 | 233000.0 | INR | pg_fees.csv
+PG | M.Tech. CSE (Artificial Intelligence and Machine Learning) | CAT1 | 2025-26 | 190000.0 |  | 3000 | 193000.0 | INR | pg_fees.csv
+PG | M.Tech. CSE (Artificial Intelligence and Machine Learning) | CAT2 | 2025-26 | 299000.0 |  | 3000 | 302000.0 | INR | pg_fees.csv
+PG | M.Tech. CSE (Big Data Analytics) | CAT1 | 2025-26 | 190000.0 |  | 3000 | 193000.0 | INR | pg_fees.csv
+PG | M.Tech. CSE (Big Data Analytics) | CAT2 | 2025-26 | 299000.0 |  | 3000 | 302000.0 | INR | pg_fees.csv
+PG | M.Tech. CSE (Cyber Security & Digital Forensics) | CAT1 | 2025-26 | 190000.0 |  | 3000 | 193000.0 | INR | pg_fees.csv
+PG | M.Tech. CSE (Cyber Security & Digital Forensics) | CAT2 | 2025-26 | 299000.0 |  | 3000 | 302000.0 | INR | pg_fees.csv
+PG | M.Tech. CSE (Cyber Security) | CAT1 | 2025-26 | 190000.0 |  | 3000 | 193000.0 | INR | pg_fees.csv
+PG | M.Tech. CSE (Cyber Security) | CAT2 | 2025-26 | 299000.0 |  | 3000 | 302000.0 | INR | pg_fees.csv
+PG | M.Tech. Computer Science and Engineering | CAT1 | 2025-26 | 190000.0 |  | 3000 | 193000.0 | INR | pg_fees.csv  
+PG | M.Tech. Computer Science and Engineering | CAT2 | 2025-26 | 299000.0 |  | 3000 | 302000.0 | INR | pg_fees.csv  
+PG | M.Tech. Construction Technology and Management | CAT1 | 2025-26 | 150000.0 |  | 3000 | 153000.0 | INR | pg_fees.csv
+PG | M.Tech. Construction Technology and Management | CAT2 | 2025-26 | 230000.0 |  | 3000 | 233000.0 | INR | pg_fees.csv
+PG | M.Tech. Control and Automation | CAT1 | 2025-26 | 150000.0 |  | 3000 | 153000.0 | INR | pg_fees.csv
+PG | M.Tech. Control and Automation | CAT2 | 2025-26 | 230000.0 |  | 3000 | 233000.0 | INR | pg_fees.csv
+PG | M.Tech. Electric Mobility | CAT1 | 2025-26 | 150000.0 |  | 3000 | 153000.0 | INR | pg_fees.csv
+PG | M.Tech. Electric Mobility | CAT2 | 2025-26 | 230000.0 |  | 3000 | 233000.0 | INR | pg_fees.csv
+PG | M.Tech. Electronics & Communication Engineering (Intelligent Communication Systems) | CAT1 | 2025-26 | 180000.0 |  | 3000 | 183000.0 | INR | pg_fees.csv
+PG | M.Tech. Electronics & Communication Engineering (Intelligent Communication Systems) | CAT2 | 2025-26 | 260000.0 |  | 3000 | 263000.0 | INR | pg_fees.csv
+PG | M.Tech. Embedded Systems | CAT1 | 2025-26 | 190000.0 |  | 3000 | 193000.0 | INR | pg_fees.csv
+PG | M.Tech. Embedded Systems | CAT2 | 2025-26 | 299000.0 |  | 3000 | 302000.0 | INR | pg_fees.csv
+PG | M.Tech. Mechatronics | CAT1 | 2025-26 | 150000.0 |  | 3000 | 153000.0 | INR | pg_fees.csv
+PG | M.Tech. Mechatronics | CAT2 | 2025-26 | 230000.0 |  | 3000 | 233000.0 | INR | pg_fees.csv
+PG | M.Tech. Power Electronics and Drives | CAT1 | 2025-26 | 150000.0 |  | 3000 | 153000.0 | INR | pg_fees.csv      
+PG | M.Tech. Power Electronics and Drives | CAT2 | 2025-26 | 230000.0 |  | 3000 | 233000.0 | INR | pg_fees.csv      
+PG | M.Tech. Smart Manufacturing | CAT1 | 2025-26 | 180000.0 |  | 3000 | 183000.0 | INR | pg_fees.csv
+PG | M.Tech. Smart Manufacturing | CAT2 | 2025-26 | 260000.0 |  | 3000 | 263000.0 | INR | pg_fees.csv
+PG | M.Tech. Smart Mobility | CAT1 | 2025-26 | 180000.0 |  | 3000 | 183000.0 | INR | pg_fees.csv
+PG | M.Tech. Smart Mobility | CAT2 | 2025-26 | 260000.0 |  | 3000 | 263000.0 | INR | pg_fees.csv
+PG | M.Tech. Structural Engineering | CAT1 | 2025-26 | 150000.0 |  | 3000 | 153000.0 | INR | pg_fees.csv
+PG | M.Tech. Structural Engineering | CAT2 | 2025-26 | 230000.0 |  | 3000 | 233000.0 | INR | pg_fees.csv
+PG | M.Tech. VLSI Design | CAT1 | 2025-26 | 190000.0 |  | 3000 | 193000.0 | INR | pg_fees.csv
+PG | M.Tech. VLSI Design | CAT2 | 2025-26 | 299000.0 |  | 3000 | 302000.0 | INR | pg_fees.csv
+PG | MBA | International | 2025-26 | 6450 |  |  | 6500 | USD | Academic Fee.pdf
+PG | MCA | Indian | 2025-26 | 137,000 | 3,000 (Caution, refundable) | 3,000 | 140,000 | INR | MCA 2 Years PG Program.pdf
+PG | MCA | Indian | 2025-26 | 137,000 | NONE | NONE | 137,000 | INR | MCA 2 Years PG Program.pdf
+PG | MCA | International | 2025-26 | 6450 |  |  | 6500 | USD | Academic Fee.pdf
+PG | MSW (Master of Social Work) | International | 2025-26 | 3450 |  |  | 3500 | USD | Academic Fee.pdf
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "PG documents "     
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Users\T8543\Downloads\project-2\app\rag_answer.py", line 156, in <module>
     print(answer(q or "UG programs CSE"))
+          ~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\T8543\Downloads\project-2\app\rag_answer.py", line 135, in answer
+    sql_text = _sql_route(query)
+  File "C:\Users\T8543\Downloads\project-2\app\rag_answer.py", line 121, in _sql_route
+    if intent == "documents":    return _pack(sql_documents(f, q).get("table"))
+                                              ~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\T8543\Downloads\project-2\app\sql_router.py", line 416, in sql_documents
+    [r.get("level",""), r.get("program",""), r.get("item",""), r.get("details",""), r.get("source_file","")]        
+     ^^^^^
+AttributeError: 'sqlite3.Row' object has no attribute 'get'
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "PG documents" 
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Users\T8543\Downloads\project-2\app\rag_answer.py", line 156, in <module>
+    print(answer(q or "UG programs CSE"))
+          ~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\T8543\Downloads\project-2\app\rag_answer.py", line 135, in answer
+    sql_text = _sql_route(query)
+  File "C:\Users\T8543\Downloads\project-2\app\rag_answer.py", line 121, in _sql_route
+    if intent == "documents":    return _pack(sql_documents(f, q).get("table"))
+                                              ~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\T8543\Downloads\project-2\app\sql_router.py", line 416, in sql_documents
+    [r.get("level",""), r.get("program",""), r.get("item",""), r.get("details",""), r.get("source_file","")]        
+     ^^^^^
+AttributeError: 'sqlite3.Row' object has no attribute 'get'
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "PG eligibility"
+• Stage 3 Filling Online application form Provide all relevant details carefully, before submission. An application number will be generated after completion. Refer your application number for all your future correspondence. • Stage 4 Photo Upload Photograph Size should be between 10kB to 200 kB with the dimension of 3.5 cm X 4.5 cm. • Stage 5 Documents Upload 1. Proof of Age & Nationality (Passport/Birth Certificate/National ID). 2. 11th grade marksheet/AS Level/Form V(for appearing candidates) & 12th grade mark sheet/A Level/Form VI (for passed out candidates). 3. Both 11th and 12th Marksheets (for Nepal Education Board Candidates) Equivalent certificate from Association of Indian Universities(AIU) is mandatory, if passed from Universities/Boards other than India. • Stage 6 Download Application Filled in application will be available for download after completion. ---ELIGIBLITY ---- ➔
+
+_Source: UG FOREIGN FAQ.pdf (p.3)_
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "mCA fee structure" 
+FOREIGN FAQS: 1. Who is considered a "Foreign" nationals for admissions? Any foreign national holding a valid foreign passport is eligible to apply under this category. For Nepal and Bhutan nationals , passport is not mandatory What documents are required to prove foreign nationality? You'll need to provide a copy of your valid passport or National ID as proof of your foreign nationality. National ID (For Nepal and Bhutan Candidates) as proof of your foreign nationality. Is there an entrance exam for Foreign admissions? We offer direct admission to all programmes for Foreign students based on their eligibility requirements. However OCI/PIO candidates can also appear for VITEEE, where Admission is based on the VITEEE rank and the counselling procedure.For more details https://viteee.vit.ac.in What are the basic academic requirements? Typically, you'll need to have completed 12 years of sc
+
+_Source: UG FOREIGN FAQ.pdf (p.5)_
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "MCA fee structure" 
+FOREIGN FAQS: 1. Who is considered a "Foreign" nationals for admissions? Any foreign national holding a valid foreign passport is eligible to apply under this category. For Nepal and Bhutan nationals , passport is not mandatory What documents are required to prove foreign nationality? You'll need to provide a copy of your valid passport or National ID as proof of your foreign nationality. National ID (For Nepal and Bhutan Candidates) as proof of your foreign nationality. Is there an entrance exam for Foreign admissions? We offer direct admission to all programmes for Foreign students based on their eligibility requirements. However OCI/PIO candidates can also appear for VITEEE, where Admission is based on the VITEEE rank and the counselling procedure.For more details https://viteee.vit.ac.in What are the basic academic requirements? Typically, you'll need to have completed 12 years of sc
+
+_Source: UG FOREIGN FAQ.pdf (p.5)_
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "MCA programs"     
+UG NRI: What are the basic academic requirements? You'll need to have completed 12 years of schooling (equivalent to the 10+2 system in India) with Physics, Chemistry, and Mathematics / Biology (Biotechnology) as core subjects. A minimum aggregate of 60% in PCM or PCB, as per the case may be. What if my qualifying exam is from a foreign board? We accept equivalent qualifications from recognized International boards like the GCE, International Baccalaureate, and High School Graduation from US/Canadian institutions provided Equivalent certificate from AIU, if passed from Universities/Boards other than India. Kindly refer the link for more details: https://vit.ac.in/admissions/international/btech -eligibilityandprocedure Who is considered an NRI for admission? Children of Indian citizens’ parents working abroad are considered under the NRI category. Can a relative sponsor my admission? NRI
+
+_Source: UG NRI_FAQS.pdf (p.1)_
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "MCA documents submited"
+Frequently Asked Questions FAQ: VITMEE (VIT Master’s Entrance Examination) What is VITMEE? VITMEE is a Computer -Based Test (CBT) conducted for admission to postgraduate engineering programmes in VIT group of Institutions. Who can apply for VITMEE? Candidates with a B.E./B.Tech/B.Arch./B.Des./MCA/M.Sc. degree or equivalent in a relevant field, with a minimum aggregate of 60% or as specified for the program. Final-year students can also apply, provided they submit proof of graduation by the specified deadline. What is the application process for VITMEE? 1.Register online at the official VIT admissions portal. 2. Complete the application form with personal, academic, and program details. 3. Pay the application fee. 4. Upload photograph and signature 5. Upload the required documents (10th, 12th and qualifying degree certificates). 6. Submit the form before the deadline. What is the format o
+
+_Source: PG MTECH FAQS.pdf (p.1)_
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "MCA eligibility"       
+• Stage 3 Filling Online application form Provide all relevant details carefully, before submission. An application number will be generated after completion. Refer your application number for all your future correspondence. • Stage 4 Photo Upload Photograph Size should be between 10kB to 200 kB with the dimension of 3.5 cm X 4.5 cm. • Stage 5 Documents Upload 1. Proof of Age & Nationality (Passport/Birth Certificate/National ID). 2. 11th grade marksheet/AS Level/Form V(for appearing candidates) & 12th grade mark sheet/A Level/Form VI (for passed out candidates). 3. Both 11th and 12th Marksheets (for Nepal Education Board Candidates) Equivalent certificate from Association of Indian Universities(AIU) is mandatory, if passed from Universities/Boards other than India. • Stage 6 Download Application Filled in application will be available for download after completion. ---ELIGIBLITY ---- ➔
+
+_Source: UG FOREIGN FAQ.pdf (p.3)_
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "MSC fee structure"
+FOREIGN FAQS: 1. Who is considered a "Foreign" nationals for admissions? Any foreign national holding a valid foreign passport is eligible to apply under this category. For Nepal and Bhutan nationals , passport is not mandatory What documents are required to prove foreign nationality? You'll need to provide a copy of your valid passport or National ID as proof of your foreign nationality. National ID (For Nepal and Bhutan Candidates) as proof of your foreign nationality. Is there an entrance exam for Foreign admissions? We offer direct admission to all programmes for Foreign students based on their eligibility requirements. However OCI/PIO candidates can also appear for VITEEE, where Admission is based on the VITEEE rank and the counselling procedure.For more details https://viteee.vit.ac.in What are the basic academic requirements? Typically, you'll need to have completed 12 years of sc
+
+_Source: UG FOREIGN FAQ.pdf (p.5)_
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "MSC eligibility"  
+• Stage 3 Filling Online application form Provide all relevant details carefully, before submission. An application number will be generated after completion. Refer your application number for all your future correspondence. • Stage 4 Photo Upload Photograph Size should be between 10kB to 200 kB with the dimension of 3.5 cm X 4.5 cm. • Stage 5 Documents Upload 1. Proof of Age & Nationality (Passport/Birth Certificate/National ID). 2. 11th grade marksheet/AS Level/Form V(for appearing candidates) & 12th grade mark sheet/A Level/Form VI (for passed out candidates). 3. Both 11th and 12th Marksheets (for Nepal Education Board Candidates) Equivalent certificate from Association of Indian Universities(AIU) is mandatory, if passed from Universities/Boards other than India. • Stage 6 Download Application Filled in application will be available for download after completion. ---ELIGIBLITY ---- ➔
+
+_Source: UG FOREIGN FAQ.pdf (p.3)_
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2>    
