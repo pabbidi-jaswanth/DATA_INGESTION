@@ -1,811 +1,554 @@
-(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "provide all UG links"  
-Sorry — I don’t have that in my current sources.
-(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "UG application process"
-Sorry — I don’t have that in my current sources.
-(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "UG eligibility"        
-Sorry — I don’t have that in my current sources.
-(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "UG eligibility"
-**Eligibility**
+# app/sql_router.py
+"""
+Router: SQL-first for fees/programs/eligibility/documents/scholarships/hostel/links.
+Fixes:
+- Strict CSV fallbacks (only files whose names match: eligibility/links/documents).
+- Require non-empty required fields; dedupe; validate URLs.
+- 'UG links' shows only UG/ALL rows; similar for PG.
+- Degree tokens map to LEVEL only; specializations map to PROGRAM.
+- MSc/MCA relaxed-level fallback (PG -> ALL).
+"""
 
-Level | Program | Criteria | Source
---- | --- | --- | ---
- | M.Tech. Electric Mobility |  | pg_fees.csv
- | M.Tech. Smart Mobility |  | pg_fees.csv
- | M.Tech. CSE (Cyber Security & Digital Forensics) |  | pg_fees.csv
- | M.Tech. CSE (Cyber Security) |  | pg_fees.csv
- | M.Tech. AI & ML (In collaboration with LTIMindtree) |  | pg_fees.csv
- | M.Tech. AI & DS (In collaboration with LTIMindtree) |  | pg_fees.csv
- | M.Tech. Smart Mobility |  | pg_programs.csv
- | M.Tech. Computer Science and Engineering (Cyber Security & Digital Forensics) |  | pg_programs.csv
- | M.Tech. Computer Science and Engineering (Cyber Security) |  | pg_programs.csv
- | M.Tech. Artificial Intelligence and Machine Learning (In collaboration with LTIMindtree) |  | pg_programs.csv    
- | M.Tech. Artificial Intelligence and Data Science (In collaboration with LTIMindtree) |  | pg_programs.csv        
- | M.Tech. Electric Mobility |  | pg_programs.csv
-UG | B.Sc. (Hospitality and Hotel Administration) |  | fee_structure_2025_2026.csv
-UG | B.Com (Banking and Capital Markets) |  | fee_structure_2025_2026.csv
-UG | B.B.A (Hons.) 2+2 with RIT |  | programs_ug (1).csv
-UG | B.B.A (Specialisation: Digital Marketing) |  | programs_ug (1).csv
-UG | B.Com – Banking and Capital Markets |  | programs_ug (1).csv
-UG | B.Sc. in Hospitality and Hotel Administration |  | programs_ug (1).csv
-UG | B.Tech - CSE (Cyber Security & Digital Forensics) |  | programs_ug (1).csv
-UG | B.Tech - CSE (Cyber Security) |  | programs_ug (1).csv
-UG | B.Tech - CSE and Business Systems (with TCS) |  | programs_ug (1).csv
-UG | B.Tech - Civil Engineering (In Collaboration with L & T) |  | programs_ug (1).csv
-UG | B.Sc. (Hospitality and Hotel Administration) | Completed Higher Secondary Education in Vellore / Ranipet / Tirupattur / Tiruvannamalai districts | scholarships_ug.csv
-UG | B.Com (Banking And Capital Markets) | Completed Higher Secondary Education in Vellore / Ranipet / Tirupattur / Tiruvannamalai districts | scholarships_ug.csv
-(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "UG application process"
-Sorry — I don’t have that yet.
-(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "provide all UG links"  
-**Links**
+import sqlite3, pathlib, re, csv, glob
+from typing import Dict, Any, List, Optional, Tuple
 
-Level | Program | Name | URL | Source
---- | --- | --- | --- | ---
- | M.Tech |  |  | catalog.csv
- |  |  |  | catalog.csv
- |  |  |  | catalog.csv
- | MCA |  |  | catalog.csv
- | Ph.D. |  |  | catalog.csv
- |  |  |  | catalog.csv
- |  |  |  | catalog.csv
- |  |  |  | catalog.csv
- |  |  |  | catalog.csv
- |  |  |  | catalog.csv
- |  |  |  | catalog.csv
- |  |  |  | catalog.csv
- |  |  |  | catalog.csv
- | M.Sc |  |  | catalog.csv
- | MCA |  |  | catalog.csv
- |  |  |  | catalog.csv
- |  |  |  | catalog.csv
- | Ph.D. |  |  | catalog.csv
- |  |  |  | catalog.csv
- |  |  |  | catalog.csv
- |  |  |  | catalog.csv
- |  |  |  | catalog.csv
- |  |  |  | catalog.csv
- |  |  |  | catalog.csv
- |  |  |  | catalog.csv
- | M.Tech |  |  | catalog.csv
- |  |  |  | catalog.csv
- |  |  |  | catalog.csv
- | MCA |  |  | catalog.csv
- | Ph.D. |  |  | catalog.csv
- |  |  |  | catalog.csv
- |  |  |  | catalog.csv
- |  |  |  | catalog.csv
- |  |  |  | catalog.csv
- |  |  |  | catalog.csv
- |  |  |  | catalog.csv
- |  |  |  | catalog.csv
- |  |  |  | catalog.csv
- | M.Sc |  |  | catalog.csv
- | MCA |  |  | catalog.csv
- |  |  |  | catalog.csv
- |  |  |  | catalog.csv
- | Ph.D. |  |  | catalog.csv
- |  |  |  | catalog.csv
- |  |  |  | catalog.csv
- |  |  |  | catalog.csv
- |  |  |  | catalog.csv
- |  |  |  | catalog.csv
- |  |  |  | catalog.csv
- |  |  |  | catalog.csv
- |  |  |  | clean_catalog.csv
- |  |  |  | clean_catalog.csv
- |  |  |  | clean_catalog.csv
- |  |  |  | clean_catalog.csv
- |  |  |  | clean_catalog.csv
- |  |  |  | clean_catalog.csv
- |  |  |  | clean_catalog.csv
- |  |  |  | clean_catalog.csv
- |  |  |  | clean_catalog.csv
- |  |  |  | clean_catalog.csv
- |  |  |  | clean_catalog.csv
- |  |  |  | clean_catalog.csv
- |  |  |  | clean_catalog.csv
- |  |  |  | clean_catalog.csv
- |  |  |  | clean_catalog.csv
- |  |  |  | clean_catalog.csv
- |  |  |  | clean_catalog.csv
- |  |  |  | clean_catalog.csv
- |  |  |  | clean_catalog.csv
- |  |  |  | clean_catalog.csv
- |  |  |  | clean_catalog.csv
- |  |  |  | clean_catalog.csv
- |  |  |  | clean_catalog.csv
- |  |  |  | clean_catalog.csv
- |  |  |  | clean_catalog.csv
- |  |  |  | clean_catalog.csv
- |  |  |  | clean_catalog.csv
- |  |  |  | clean_catalog.csv
- |  |  |  | clean_catalog.csv
- |  |  |  | clean_catalog.csv
- |  |  |  | clean_catalog.csv
- |  |  |  | clean_catalog.csv
- |  |  |  | clean_catalog.csv
- |  |  |  | clean_catalog.csv
- |  |  |  | clean_catalog.csv
- |  |  |  | clean_catalog.csv
- |  |  |  | clean_catalog.csv
- |  |  |  | clean_catalog.csv
- |  |  |  | clean_catalog.csv
- |  |  |  | clean_catalog.csv
- |  |  |  | clean_catalog.csv
- |  |  |  | clean_catalog.csv
- |  |  |  | clean_catalog.csv
- |  |  |  | clean_catalog.csv
- |  |  |  | clean_catalog.csv
- |  |  |  | clean_catalog.csv
- |  |  |  | clean_catalog.csv
- |  |  |  | clean_catalog.csv
- |  |  |  | clean_catalog.csv
- |  |  |  | clean_catalog.csv
- |  |  |  | mac_documents.csv
- |  |  |  | mac_documents.csv
- |  |  |  | mac_documents.csv
- |  |  |  | mac_documents.csv
- |  |  |  | mac_documents.csv
- |  |  |  | mac_documents.csv
- |  |  |  | mac_documents.csv
- |  |  |  | mac_documents.csv
- |  |  |  | mac_documents.csv
- |  |  |  | mac_documents.csv
- |  |  |  | mac_documents.csv
- |  |  |  | mac_documents.csv
- |  |  |  | mac_documents.csv
- |  |  |  | mac_documents.csv
- |  |  |  | mac_documents.csv
- |  |  |  | mac_documents.csv
- |  |  |  | mac_documents.csv
-PG | MCA |  |  | mca_eligibility (1).csv
-PG | MCA |  |  | mca_eligibility (1).csv
-PG | MCA |  |  | mca_eligibility (1).csv
-PG | MCA |  |  | mca_eligibility (1).csv
-PG | MCA |  |  | mca_eligibility (1).csv
-PG | MCA |  |  | mca_eligibility (1).csv
-PG | MCA |  |  | mca_fees.csv
-PG | MCA |  |  | mca_fees.csv
- |  | VITMEE MCA Application | https://admissions.vit.ac.in/vitmee-mca-2025-applications/login?utm_source=V71TI1559&utm_campaign=mca2025 | mca_links.csv
- |  | MCA Information Brochure 2025 | https://vit.ac.in/files/prospectus/MCA-Information-Brochure-2025.pdf | mca_links.csv
- |  | VITMEE Syllabus (MCA) | https://vit.ac.in/files/prospectus/MCA-Syallabus-2025.pdf | mca_links.csv
- |  | VITMEE 2025 Test Cities | https://vit.ac.in/files/prospectus/MCA-Test-City-2025.pdf | mca_links.csv
- |  | School page (SCSE/IS) | https://vit.ac.in/schools/school-of-computer-science-engineering-and-information-systems | mca_links.csv
-PG | Master of Computer Applications (MCA) |  |  | mca_programs.csv
-PG | ALL |  |  | msc_documents.csv
-PG | ALL |  |  | msc_documents.csv
-PG | ALL |  |  | msc_documents.csv
-PG | ALL |  |  | msc_documents.csv
-PG | ALL |  |  | msc_documents.csv
-PG | ALL |  |  | msc_documents.csv
-PG | ALL |  |  | msc_documents.csv
-PG | ALL |  |  | msc_documents.csv
-PG | ALL |  |  | msc_documents.csv
-PG | ALL |  |  | msc_documents.csv
-PG | ALL |  |  | msc_documents.csv
-PG | ALL |  |  | msc_documents.csv
-PG | ALL |  |  | msc_documents.csv
-PG | ALL |  |  | msc_documents.csv
-PG | ALL |  |  | msc_documents.csv
-PG | ALL |  |  | msc_documents.csv
-PG | M.Sc. |  |  | msc_eligibility (1).csv
-PG | M.Sc. |  |  | msc_eligibility (1).csv
-PG | M.Sc. |  |  | msc_eligibility (1).csv
-PG | M.Sc. |  |  | msc_eligibility (1).csv
-PG | M.Sc. |  |  | msc_eligibility (1).csv
-PG | M.Sc. |  |  | msc_eligibility (1).csv
-PG | M.Sc. |  |  | msc_eligibility (1).csv
-PG | M.Sc. |  |  | msc_eligibility (1).csv
-PG | M.Sc. |  |  | msc_fees (1).csv
-PG | M.Sc. |  |  | msc_fees (1).csv
-PG | M.Sc. |  |  | msc_fees (1).csv
-PG | M.Sc. |  |  | msc_fees (1).csv
-PG | M.Sc. |  |  | msc_fees (1).csv
-PG | M.Sc. |  |  | msc_fees (1).csv
-PG | M.Sc. |  |  | msc_fees (1).csv
-PG | M.Sc. |  |  | msc_fees (1).csv
-PG |  |  |  | msc_programs (1).csv
-PG |  |  |  | msc_programs (1).csv
-PG |  |  |  | msc_programs (1).csv
-PG |  |  |  | msc_programs (1).csv
-PG |  |  |  | msc_programs (1).csv
-PG |  |  |  | msc_programs (1).csv
-PG |  |  |  | msc_programs (1).csv
-PG |  |  |  | msc_programs (1).csv
- |  |  |  | pg_documents.csv
- |  |  |  | pg_documents.csv
- |  |  |  | pg_documents.csv
- |  |  |  | pg_documents.csv
- |  |  |  | pg_documents.csv
- |  |  |  | pg_documents.csv
- |  |  |  | pg_documents.csv
- |  |  |  | pg_documents.csv
- |  |  |  | pg_documents.csv
- |  |  |  | pg_documents.csv
- |  |  |  | pg_documents.csv
- |  |  |  | pg_documents.csv
- |  |  |  | pg_documents.csv
- |  |  |  | pg_documents.csv
- |  |  |  | pg_documents.csv
- |  |  |  | pg_eligibility.csv
- |  |  |  | pg_eligibility.csv
- |  |  |  | pg_eligibility.csv
- |  |  |  | pg_eligibility.csv
- | M.Tech. Biomedical Engineering |  |  | pg_fees.csv
- | M.Tech. CAD / CAM |  |  | pg_fees.csv
- | M.Tech. Construction Technology and Management |  |  | pg_fees.csv
- | M.Tech. Control and Automation |  |  | pg_fees.csv
- | M.Tech. Electric Mobility |  |  | pg_fees.csv
- | M.Tech. Mechatronics |  |  | pg_fees.csv
- | M.Tech. Power Electronics and Drives |  |  | pg_fees.csv
- | M.Tech. Structural Engineering |  |  | pg_fees.csv
- | M.Tech. Applied Computational Fluid Dynamics |  |  | pg_fees.csv
- | M.Tech. Automotive Electronics |  |  | pg_fees.csv
- | M.Tech. Smart Mobility |  |  | pg_fees.csv
- | M.Tech. Biotechnology |  |  | pg_fees.csv
- | M.Tech. Electronics & Communication Engineering (Intelligent Communication Systems) |  |  | pg_fees.csv
- | M.Tech. Smart Manufacturing |  |  | pg_fees.csv
- | M.Tech. Artificial Intelligence and Data Science |  |  | pg_fees.csv
- | M.Tech. Computer Science and Engineering |  |  | pg_fees.csv
- | M.Tech. CSE (Artificial Intelligence and Machine Learning) |  |  | pg_fees.csv
- | M.Tech. CSE (Big Data Analytics) |  |  | pg_fees.csv
- | M.Tech. CSE (Cyber Security & Digital Forensics) |  |  | pg_fees.csv
- | M.Tech. CSE (Cyber Security) |  |  | pg_fees.csv
- | M.Tech. AI & ML (In collaboration with LTIMindtree) |  |  | pg_fees.csv
- | M.Tech. AI & DS (In collaboration with LTIMindtree) |  |  | pg_fees.csv
- | M.Tech. Embedded Systems |  |  | pg_fees.csv
- | M.Tech. VLSI Design |  |  | pg_fees.csv
- |  |  |  | pg_fees_international.csv
- | M.Tech. Biomedical Engineering |  |  | pg_programs.csv
- | M.Tech. CAD / CAM |  |  | pg_programs.csv
- | M.Tech. Construction Technology and Management |  |  | pg_programs.csv
- | M.Tech. Control and Automation |  |  | pg_programs.csv
- | M.Tech. Mechatronics |  |  | pg_programs.csv
- | M.Tech. Power Electronics and Drives |  |  | pg_programs.csv
- | M.Tech. Structural Engineering |  |  | pg_programs.csv
- | M.Tech. Applied Computational Fluid Dynamics |  |  | pg_programs.csv
- | M.Tech. Automotive Electronics |  |  | pg_programs.csv
- | M.Tech. Smart Mobility |  |  | pg_programs.csv
- | M.Tech. Biotechnology |  |  | pg_programs.csv
- | M.Tech. Electronics and Communication Engineering (Intelligent Communication Systems) |  |  | pg_programs.csv    
- | M.Tech. Artificial Intelligence and Data Science |  |  | pg_programs.csv
- | M.Tech. Computer Science and Engineering |  |  | pg_programs.csv
- | M.Tech. Computer Science and Engineering (Artificial Intelligence and Machine Learning) |  |  | pg_programs.csv  
- | M.Tech. Computer Science and Engineering (Big Data Analytics) |  |  | pg_programs.csv
- | M.Tech. Computer Science and Engineering (Cyber Security & Digital Forensics) |  |  | pg_programs.csv
- | M.Tech. Computer Science and Engineering (Cyber Security) |  |  | pg_programs.csv
- | M.Tech. Artificial Intelligence and Machine Learning (In collaboration with LTIMindtree) |  |  | pg_programs.csv 
- | M.Tech. Artificial Intelligence and Data Science (In collaboration with LTIMindtree) |  |  | pg_programs.csv     
- | M.Tech. Embedded Systems |  |  | pg_programs.csv
- | M.Tech. VLSI Design |  |  | pg_programs.csv
- | M.Tech. Electric Mobility |  |  | pg_programs.csv
-UG |  |  |  | eligibility_2025_2026.csv
-UG |  |  |  | eligibility_2025_2026.csv
-UG |  |  |  | eligibility_2025_2026.csv
-UG |  |  |  | eligibility_2025_2026.csv
-UG | B.Tech - Group A |  |  | fee_structure_2025_2026.csv
-UG | B.Tech - Group A (L&T Collaboration) |  |  | fee_structure_2025_2026.csv
-UG | B.Tech - Group B |  |  | fee_structure_2025_2026.csv
-UG | B.Tech - Group B (Bhopal Campus) |  |  | fee_structure_2025_2026.csv
-UG | B.Arch |  |  | fee_structure_2025_2026.csv
-UG | B.Des (Industrial Design) |  |  | fee_structure_2025_2026.csv
-UG | B.Sc. (Hons.) Agriculture |  |  | fee_structure_2025_2026.csv
-UG | B.Sc. (Hospitality and Hotel Administration) |  |  | fee_structure_2025_2026.csv
-UG | BCA |  |  | fee_structure_2025_2026.csv
-UG | B.Sc. (Computer Science) |  |  | fee_structure_2025_2026.csv
-UG | B.Com |  |  | fee_structure_2025_2026.csv
-UG | B.Com (Business Process Services) |  |  | fee_structure_2025_2026.csv
-UG | B.Com (Banking and Capital Markets) |  |  | fee_structure_2025_2026.csv
-UG | B.Com (Financial Technology) |  |  | fee_structure_2025_2026.csv
-UG | BBA |  |  | fee_structure_2025_2026.csv
-UG | B.Sc. (Multimedia and Animation) |  |  | fee_structure_2025_2026.csv
-UG | B.Sc. (Visual Communication) |  |  | fee_structure_2025_2026.csv
-Integrated | Integrated M.Tech. (Category 1) |  |  | fee_structure_2025_2026.csv
-Integrated | Integrated M.Tech. (Category 2) |  |  | fee_structure_2025_2026.csv
-Integrated | Integrated M.Tech. (Category 3) |  |  | fee_structure_2025_2026.csv
-Integrated | Integrated M.Tech. (Category 4) |  |  | fee_structure_2025_2026.csv
-Integrated | Integrated M.Tech. (Category 5) |  |  | fee_structure_2025_2026.csv
-Integrated | Integrated M.Sc. Biotechnology (Vellore) |  |  | fee_structure_2025_2026.csv
-Integrated | Integrated M.Sc. Biotechnology (Bhopal) |  |  | fee_structure_2025_2026.csv
-Integrated | Integrated M.Sc. Food Science and Technology (Vellore) |  |  | fee_structure_2025_2026.csv
-Integrated | Integrated M.Sc. Computational Statistics and Data Analytics (Vellore) |  |  | fee_structure_2025_2026.csv
-Integrated | Integrated M.Sc. Physics (Vellore) |  |  | fee_structure_2025_2026.csv
-Integrated | Integrated M.Sc. Chemistry (Vellore) |  |  | fee_structure_2025_2026.csv
-Integrated | Integrated M.Sc. Mathematics (Vellore) |  |  | fee_structure_2025_2026.csv
-UG | B.Tech |  |  | fee_structure_2025_2026.csv
-Integrated | Integrated M.Tech. (5 Years) |  |  | fee_structure_2025_2026.csv
-Integrated | Integrated M.Sc. (5 Years) |  |  | fee_structure_2025_2026.csv
-UG | BCA |  |  | fee_structure_2025_2026.csv
-UG | B.Sc. (Computer Science) |  |  | fee_structure_2025_2026.csv
-UG | B.Com |  |  | fee_structure_2025_2026.csv
-UG | BBA |  |  | fee_structure_2025_2026.csv
-UG | B.Sc. (Multimedia and Animation) |  |  | fee_structure_2025_2026.csv
-PG | M.Sc. |  |  | fee_structure_2025_2026.csv
-PG | MSW (Master of Social Work) |  |  | fee_structure_2025_2026.csv
-PG | M.Tech. |  |  | fee_structure_2025_2026.csv
-PG | MCA |  |  | fee_structure_2025_2026.csv
-PG | MBA |  |  | fee_structure_2025_2026.csv
-PG | M.Des (Industrial Design) |  |  | fee_structure_2025_2026.csv
-PG | M.Arch. |  |  | fee_structure_2025_2026.csv
-PhD | Ph.D / Direct Ph.D |  |  | fee_structure_2025_2026.csv
-UG | B.Arch |  |  | programs_ug (1).csv
-UG | B.B.A (2+2 VSB->ASU | Degree from ASU) |  |  | programs_ug (1).csv
-UG | B.B.A (2+2 VSB->UMD | Degree from UMD) |  |  | programs_ug (1).csv
-UG | B.B.A (Bachelor of Business Administration) |  |  | programs_ug (1).csv
-UG | B.B.A (Business Analytics) |  |  | programs_ug (1).csv
-UG | B.B.A (Hons.) 2+2 with RIT |  |  | programs_ug (1).csv
-UG | B.B.A (Specialisation: Digital Marketing) |  |  | programs_ug (1).csv
-UG | B.B.A (Specialisation: FinTech) |  |  | programs_ug (1).csv
-UG | B.B.A (Specialisation: General Management) |  |  | programs_ug (1).csv
-UG | B.C.A (Bachelor of Computer Applications) |  |  | programs_ug (1).csv
-UG | B.Com (Bachelor of Commerce) |  |  | programs_ug (1).csv
-UG | B.Com (Finance) |  |  | programs_ug (1).csv
-UG | B.Com (Hons.) |  |  | programs_ug (1).csv
-UG | B.Com - Business Process Services |  |  | programs_ug (1).csv
-UG | B.Com – Banking and Capital Markets |  |  | programs_ug (1).csv
-UG | B.Com – Financial Technology |  |  | programs_ug (1).csv
-UG | B.Des. Industrial Design |  |  | programs_ug (1).csv
-UG | B.Sc. (Hons.) Agriculture |  |  | programs_ug (1).csv
-UG | B.Sc. Computer Science |  |  | programs_ug (1).csv
-UG | B.Sc. Economics (Hons.) |  |  | programs_ug (1).csv
-UG | B.Sc. Fashion Design |  |  | programs_ug (1).csv
-UG | B.Sc. Multimedia & Animation |  |  | programs_ug (1).csv
-UG | B.Sc. Visual Communication |  |  | programs_ug (1).csv
-UG | B.Sc. in Hospitality and Hotel Administration |  |  | programs_ug (1).csv
-UG | B.Tech - Aerospace Engineering |  |  | programs_ug (1).csv
-UG | B.Tech - Bioengineering |  |  | programs_ug (1).csv
-UG | B.Tech - Biotechnology |  |  | programs_ug (1).csv
-UG | B.Tech - CSE (AI & Data Engineering) |  |  | programs_ug (1).csv
-UG | B.Tech - CSE (AI & ML) |  |  | programs_ug (1).csv
-UG | B.Tech - CSE (AI & Robotics) |  |  | programs_ug (1).csv
-UG | B.Tech - CSE (Bioinformatics) |  |  | programs_ug (1).csv
-UG | B.Tech - CSE (Blockchain) |  |  | programs_ug (1).csv
-UG | B.Tech - CSE (Cloud Computing & Automation) |  |  | programs_ug (1).csv
-UG | B.Tech - CSE (Cyber Physical Systems) |  |  | programs_ug (1).csv
-UG | B.Tech - CSE (Cyber Security & Digital Forensics) |  |  | programs_ug (1).csv
-UG | B.Tech - CSE (Cyber Security) |  |  | programs_ug (1).csv
-UG | B.Tech - CSE (Data Analytics) |  |  | programs_ug (1).csv
-UG | B.Tech - CSE (Data Science) |  |  | programs_ug (1).csv
-UG | B.Tech - CSE (E-Commerce Technology) |  |  | programs_ug (1).csv
-UG | B.Tech - CSE (Education Technology) |  |  | programs_ug (1).csv
-UG | B.Tech - CSE (Gaming Technology) |  |  | programs_ug (1).csv
-UG | B.Tech - CSE (Health Informatics) |  |  | programs_ug (1).csv
-UG | B.Tech - CSE (Software Engineering) |  |  | programs_ug (1).csv
-UG | B.Tech - CSE and Business Systems (with TCS) |  |  | programs_ug (1).csv
-UG | B.Tech - Chemical Engineering |  |  | programs_ug (1).csv
-UG | B.Tech - Civil Engineering |  |  | programs_ug (1).csv
-UG | B.Tech - Civil Engineering (In Collaboration with L & T) |  |  | programs_ug (1).csv
-UG | B.Tech - Computer Science and Business Systems |  |  | programs_ug (1).csv
-UG | B.Tech - Computer Science and Engineering |  |  | programs_ug (1).csv
-UG | B.Tech - ECE (AI & Cybernetics) |  |  | programs_ug (1).csv
-UG | B.Tech - ECE (Biomedical Engineering) |  |  | programs_ug (1).csv
-UG | B.Tech - ECE (Embedded Systems) |  |  | programs_ug (1).csv
-UG | B.Tech - ECE (VLSI) |  |  | programs_ug (1).csv
-UG | B.Tech - Electrical and Computer Science Engineering |  |  | programs_ug (1).csv
-UG | B.Tech - Electrical and Electronics Engineering |  |  | programs_ug (1).csv
-UG | B.Tech - Electronics Engineering (VLSI Design and Technology) |  |  | programs_ug (1).csv
-UG | B.Tech - Electronics and Communication Engineering |  |  | programs_ug (1).csv
-UG | B.Tech - Electronics and Computer Engineering |  |  | programs_ug (1).csv
-UG | B.Tech - Electronics and Instrumentation Engineering |  |  | programs_ug (1).csv
-UG | B.Tech - Fashion Technology |  |  | programs_ug (1).csv
-UG | B.Tech - Health Sciences and Technology |  |  | programs_ug (1).csv
-UG | B.Tech - Information Technology |  |  | programs_ug (1).csv
-UG | B.Tech - Mechanical Engineering |  |  | programs_ug (1).csv
-UG | B.Tech - Mechanical Engineering (AI & Robotics) |  |  | programs_ug (1).csv
-UG | B.Tech - Mechanical Engineering (Automotive Design) |  |  | programs_ug (1).csv
-UG | B.Tech - Mechanical Engineering (Electric Vehicles) |  |  | programs_ug (1).csv
-UG | B.Tech - Mechanical Engineering (Robotics) |  |  | programs_ug (1).csv
-UG | B.Tech - Mechanical Engineering (Smart Manufacturing) |  |  | programs_ug (1).csv
-UG | B.Tech - Mechatronics and Automation |  |  | programs_ug (1).csv
-UG | B.Sc. (Hospitality and Hotel Administration) | GVSD District Scholarship |  | scholarships_ug.csv
-UG | BCA | GVSD District Scholarship |  | scholarships_ug.csv
-UG | B.Sc. (Computer Science) | GVSD District Scholarship |  | scholarships_ug.csv
-UG | B.Com | GVSD District Scholarship |  | scholarships_ug.csv
-UG | B.Com (Business Process Services) | GVSD District Scholarship |  | scholarships_ug.csv
-UG | B.Com (Banking And Capital Markets) | GVSD District Scholarship |  | scholarships_ug.csv
-UG | B.Com (Financial Technology) | GVSD District Scholarship |  | scholarships_ug.csv
-UG | BBA | GVSD District Scholarship |  | scholarships_ug.csv
-UG | B.Sc. (Multimedia and Animation) | GVSD District Scholarship |  | scholarships_ug.csv
-UG | B.Sc. Visual Communication | GVSD District Scholarship |  | scholarships_ug.csv
-UG | ALL |  |  | ug_documents.csv
-UG | ALL |  |  | ug_documents.csv
-UG | ALL |  |  | ug_documents.csv
-UG | ALL |  |  | ug_documents.csv
-UG | ALL |  |  | ug_documents.csv
-UG | ALL |  |  | ug_documents.csv
-UG | ALL |  |  | ug_documents.csv
-UG | ALL |  |  | ug_documents.csv
-UG | ALL |  |  | ug_documents.csv
-UG | ALL |  |  | ug_documents.csv
-UG | ALL |  |  | ug_documents.csv
-UG | ALL |  |  | ug_documents.csv
-UG | ALL |  |  | ug_documents.csv
-UG | ALL |  |  | ug_documents.csv
-UG | ALL |  |  | ug_documents.csv
-UG | ALL |  |  | ug_documents.csv
-UG | ALL |  |  | ug_documents.csv
-UG | ALL |  |  | ug_documents.csv
-UG |  |  | https://vitbhopal.ac.in/aerospace-engineering/ | ug_links.csv
-UG |  |  | https://vit.ac.in/school/course/sbst/ug | ug_links.csv
-UG |  |  | https://vitbhopal.ac.in/bio-engineering/ | ug_links.csv
-UG |  |  | https://vit.ac.in/school/course/scheme/ug | ug_links.csv
-UG |  |  | https://vit.ac.in/school/course/sce/ug | ug_links.csv
-UG |  |  | https://chennai.vit.ac.in/civil-engineering-chennai/courses/ | ug_links.csv
-UG |  |  | https://vit.ac.in/schools/school-of-computer-science-and-engineering-for-ug-courses | ug_links.csv       
-UG |  |  | https://chennai.vit.ac.in/computer-science-engineering-chennai/courses/ | ug_links.csv
-UG |  |  | https://vitap.ac.in/btech-computer-science-engineering | ug_links.csv
-UG |  |  | https://vitbhopal.ac.in/computer-science-and-engg/ | ug_links.csv
-UG |  |  | https://vitap.ac.in/b-tech-cse-blockchain | ug_links.csv
-UG |  |  | https://vitap.ac.in/b-tech-cse-software-engineering | ug_links.csv
-UG |  |  | https://vitap.ac.in/b-tech-cse-ai-ml | ug_links.csv
-UG |  |  | https://vitbhopal.ac.in/ai/ | ug_links.csv
-UG |  |  | https://vit.ac.in/schools/school-of-computer-science-engineering-and-information-systems-for-ug-courses | ug_links.csv
-UG |  |  | https://vitap.ac.in/allschools/SCOPE/undergraduate/cse-cybersecurity | ug_links.csv
-UG |  |  | https://vitbhopal.ac.in/cyber-security/ | ug_links.csv
-UG |  |  | https://vitbhopal.ac.in/cloud/ | ug_links.csv
-UG |  |  | https://vitbhopal.ac.in/ecommerce/ | ug_links.csv
-UG |  |  | https://vitbhopal.ac.in/edutech/ | ug_links.csv
-UG |  |  | https://vitbhopal.ac.in/gaming-technology/ | ug_links.csv
-UG |  |  | https://vitap.ac.in/cs-business-systems | ug_links.csv
-UG |  |  | https://vitbhopal.ac.in/health-informatics/ | ug_links.csv
-UG |  |  | https://vitap.ac.in/b-tech-cse-data-analytics | ug_links.csv
-UG |  |  | https://vit.ac.in/schools/school-of-electrical-engineering-for-ug-courses | ug_links.csv
-UG |  |  | https://chennai.vit.ac.in/electrical-and-electronics-engineering-chennai/courses/ | ug_links.csv
-UG |  |  | https://vit.ac.in/schools/school-of-electronics-engineering-for-ug-courses | ug_links.csv
-UG |  |  | https://chennai.vit.ac.in/academics/schools/sense/courses/ | ug_links.csv
-UG |  |  | https://vitap.ac.in/btech-electronics-communication-engineering | ug_links.csv
-UG |  |  | https://vitbhopal.ac.in/electronics-and-communication-engg/ | ug_links.csv
-UG |  |  | https://vitap.ac.in/b-tech-ece-vlsi | ug_links.csv
-UG |  |  | https://vitap.ac.in/b-tech-ece-embedded-systems | ug_links.csv
-UG |  |  | https://vitbhopal.ac.in/cybernetics/ | ug_links.csv
-UG |  |  | https://chennai.vit.ac.in/apply-now | ug_links.csv
-UG |  |  | https://vit.ac.in/shine-ug | ug_links.csv
-UG |  |  | https://vit.ac.in/school/course/smec/ug | ug_links.csv
-UG |  |  | https://chennai.vit.ac.in/mechanical-engineering-chennai/courses/ | ug_links.csv
-UG |  |  | https://vitap.ac.in/btech-mechanical-engineering | ug_links.csv
-UG |  |  | https://vitbhopal.ac.in/mechanical-engineering/ | ug_links.csv
-UG |  |  | https://vitap.ac.in/b-tech-mechanical-engineering-automotive-design | ug_links.csv
-UG |  |  | https://vitbhopal.ac.in/robotics/ | ug_links.csv
-UG |  |  | https://vitap.ac.in/b-tech-mechanical-engineering-robotics | ug_links.csv
-UG |  |  | https://vit.ac.in/school/course/vsign/ug | ug_links.csv
-UG |  |  | https://vit.ac.in/school/course/v-sparc/ug | ug_links.csv
-UG |  |  | https://vitbhopal.ac.in/architecture/ | ug_links.csv
-UG |  |  | https://vit.ac.in/school/course/vaial/ug | ug_links.csv
-UG |  |  | https://vit.ac.in/school/course/hot/ug | ug_links.csv
-UG |  |  | https://bschool.vit.ac.in/ | ug_links.csv
-UG |  |  | https://vitap.ac.in/allschools/vsb/undergraduate/bba | ug_links.csv
-UG |  |  | https://vitbhopal.ac.in/business-school/ | ug_links.csv
-UG |  |  | https://vit.ac.in/school/course/ssl/ug | ug_links.csv
-UG |  |  | https://vitap.ac.in/allschools/vsb/undergraduate/finance | ug_links.csv
-UG |  |  | https://vit.ac.in/school/course/sbst/ug | ug_links.csv
-UG |  |  | https://vit.ac.in/school/course/scheme/ug | ug_links.csv
-UG |  |  | https://vit.ac.in/school/course/sce/ug | ug_links.csv
-UG |  |  | https://vit.ac.in/schools/school-of-computer-science-and-engineering-for-ug-courses | ug_links.csv       
-UG |  |  | https://vit.ac.in/schools/school-of-computer-science-engineering-and-information-systems-for-ug-courses | ug_links.csv
-UG |  |  | https://vit.ac.in/schools/school-of-electrical-engineering-for-ug-courses | ug_links.csv
-UG |  |  | https://vit.ac.in/schools/school-of-electronics-engineering-for-ug-courses | ug_links.csv
-UG |  |  | https://vit.ac.in/school/course/smec/ug | ug_links.csv
-UG |  |  | https://admissions.vit.ac.in/ugnriapplication/login#departments-tab-1 | ug_links.csv
-UG |  |  | https://admissions.vit.ac.in/ugnriapplication/login#departments-tab-2 | ug_links.csv
-UG |  |  | https://admissions.vit.ac.in/ugnriapplication/login#departments-tab-3 | ug_links.csv
-UG |  |  | https://admissions.vit.ac.in/ugnriapplication/login#departments-tab-4 | ug_links.csv
-UG |  |  | https://admissions.vit.ac.in/ugnriapplication/login#departments-tab-7 | ug_links.csv
-UG |  |  | https://admissions.vit.ac.in/ugnriapplication/login#departments-tab-5 | ug_links.csv
-UG |  |  | https://admissions.vit.ac.in/ugnriapplication/login#departments-tab-6 | ug_links.csv
-UG |  |  | https://vit.ac.in/school/course/sbst/ug | ug_links.csv
-UG |  |  | https://vit.ac.in/school/course/scheme/ug | ug_links.csv
-UG |  |  | https://vit.ac.in/school/course/sce/ug | ug_links.csv
-UG |  |  | https://vit.ac.in/schools/school-of-computer-science-and-engineering-for-ug-courses | ug_links.csv       
-UG |  |  | https://vit.ac.in/schools/school-of-computer-science-engineering-and-information-systems-for-ug-courses | ug_links.csv
-UG |  |  | https://vit.ac.in/schools/school-of-electrical-engineering-for-ug-courses | ug_links.csv
-UG |  |  | https://vit.ac.in/schools/school-of-electronics-engineering-for-ug-courses | ug_links.csv
-UG |  |  | https://vit.ac.in/school/course/smec/ug | ug_links.csv
-UG |  |  | https://vit.ac.in/admissions/international/integrated | ug_links.csv
-UG |  |  | https://vit.ac.in/engineering-programmes-vellore-campus | ug_links.csv
-UG |  |  | https://admissions.vit.ac.in/freshersportal/login | ug_links.csv
-UG |  |  | https://vit.ac.in/sites/default/files/ug/Affidavit_Student-2025.pdf | ug_links.csv
-UG |  |  | https://vit.ac.in/sites/default/files/ug/Affidavit_Parent-2025.pdf | ug_links.csv
-UG |  |  | https://vit.ac.in/sites/default/files/ug/Hostel-Joint-Affidavit-2025.pdf | ug_links.csv
-UG |  |  | https://vit.ac.in/sites/default/files/ug/Certificate-of-Physical-Fitness-2025.pdf | ug_links.csv
-UG |  |  | https://vit.ac.in/sites/default/files/ug/Undertaking-Form-2025.pdf | ug_links.csv
-UG |  |  | https://vit.ac.in/wp-content/uploads/2023/09/EmployerCertificate.pdf | ug_links.csv
-UG |  |  | https://vit.ac.in/wp-content/uploads/2023/09/SponsorshipLetter.pdf | ug_links.csv
-UG |  |  | https://vit.ac.in/sites/default/files/ug/Undertaking-Form-2025.pdf | ug_links.csv
-UG |  |  | https://vit.ac.in/sites/default/files/ug/Affidavit_Student-2025.pdf | ug_links.csv
-UG |  |  | https://vit.ac.in/sites/default/files/ug/Affidavit_Parent-2025.pdf | ug_links.csv
-UG |  |  | https://vit.ac.in/sites/default/files/ug/Hostel-Joint-Affidavit-2025.pdf | ug_links.csv
-UG |  |  | https://vit.ac.in/sites/default/files/ug/Certificate-of-Physical-Fitness-2025.pdf | ug_links.csv
- |  |  |  | Hostel-joint-Affidavit-2025__camelot_0.csv
- |  |  |  | Hostel-joint-Affidavit-2025__camelot_0.csv
- |  |  |  | Hostel-joint-Affidavit-2025__camelot_0.csv
- |  |  |  | Hostel-joint-Affidavit-2025__camelot_0.csv
- |  |  |  | Hostel_info__camelot_0.csv
- |  |  |  | Hostel_info__camelot_0.csv
- |  |  |  | Hostel_info__camelot_0.csv
- |  |  |  | Hostel_info__camelot_0.csv
- |  |  |  | Hostel_info__camelot_0.csv
- |  |  |  | Hostel_info__camelot_0.csv
- |  |  |  | Hostel_info__camelot_0.csv
- |  |  |  | Hostel_info__camelot_0.csv
- |  |  |  | Hostel_info__camelot_0.csv
- |  |  |  | Hostel_info__camelot_0.csv
- |  |  |  | Hostel_info__camelot_0.csv
- |  |  |  | Hostel_info__camelot_0.csv
- |  |  |  | Hostel_info__camelot_0.csv
- |  |  |  | Hostel_info__camelot_0.csv
- |  |  |  | Hostel_info__camelot_1.csv
- |  |  |  | Hostel_info__camelot_1.csv
- |  |  |  | Hostel_info__camelot_1.csv
- |  |  |  | Hostel_info__camelot_1.csv
- |  |  |  | Hostel_info__camelot_1.csv
- |  |  |  | Hostel_info__camelot_1.csv
- |  |  |  | Hostel_info__camelot_1.csv
- |  |  |  | Hostel_info__camelot_1.csv
- |  |  |  | Hostel_info__camelot_1.csv
- |  |  |  | Hostel_info__camelot_1.csv
- |  |  |  | Hostel_info__camelot_1.csv
- |  |  |  | Hostel_info__camelot_1.csv
- |  |  |  | Hostel_info__camelot_1.csv
- |  |  |  | Hostel_info__camelot_1.csv
- |  |  |  | Hostel_info__camelot_1.csv
- |  |  |  | Hostel_info__camelot_1.csv
- |  |  |  | Hostel_info__camelot_1.csv
- |  |  |  | Hostel_info__camelot_2.csv
- |  |  |  | Hostel_info__camelot_2.csv
- |  |  |  | Hostel_info__camelot_2.csv
- |  |  |  | Hostel_info__camelot_2.csv
- |  |  |  | Hostel_info__camelot_2.csv
- |  |  |  | Hostel_info__camelot_2.csv
- |  |  |  | Hostel_info__camelot_2.csv
- |  |  |  | Hostel_info__camelot_2.csv
- |  |  |  | Hostel_info__camelot_2.csv
- |  |  |  | Hostel_info__camelot_2.csv
- |  |  |  | Hostel_info__camelot_2.csv
- |  |  |  | Hostel_info__camelot_2.csv
- |  |  |  | Hostel_info__camelot_2.csv
- |  |  |  | Hostel_info__camelot_2.csv
- |  |  |  | Hostel_info__camelot_2.csv
- |  |  |  | Hostel_info__camelot_2.csv
- |  |  |  | Hostel_info__camelot_2.csv
- |  |  |  | Hostel_info__camelot_3.csv
- |  |  |  | Hostel_info__camelot_3.csv
- |  |  |  | Hostel_info__camelot_3.csv
- |  |  |  | Hostel_info__camelot_3.csv
- |  |  |  | Hostel_info__camelot_3.csv
- |  |  |  | Hostel_info__camelot_3.csv
- |  |  |  | Hostel_info__camelot_3.csv
- |  |  |  | Hostel_info__camelot_3.csv
- |  |  |  | Hostel_info__camelot_3.csv
- |  |  |  | Hostel_info__camelot_4.csv
- |  |  |  | Hostel_info__camelot_4.csv
- |  |  |  | Hostel_info__camelot_4.csv
- |  |  |  | Hostel_info__camelot_4.csv
- |  |  |  | Hostel_info__camelot_4.csv
- |  |  |  | Hostel_info__camelot_4.csv
- |  |  |  | Hostel_info__camelot_4.csv
- |  |  |  | Hostel_info__camelot_4.csv
- |  |  |  | Hostel_info__camelot_4.csv
- |  |  |  | Hostel_info__camelot_4.csv
- |  |  |  | Hostel_info__camelot_4.csv
- |  |  |  | Hostel_info__camelot_4.csv
- |  |  |  | Hostel_info__camelot_4.csv
- |  |  |  | Hostel_info__camelot_4.csv
- |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
- |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
- |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
- |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
- |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
- |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
- |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
- |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
- |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
- |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
- |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
- |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
- |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
- |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
- |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
- |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
- |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
- |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
- |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
- |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
- |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
- |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
- |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
- |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
- |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
- |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
- |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
- |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
- |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
- |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
- |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
- |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
- |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
- |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
- |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
- |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
- |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
- |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
- |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
- |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
- |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
- |  |  |  | LH-FEE-structure-Indian-Category-2025-26__camelot_0.csv
- |  |  |  | LH-FEE-structure-NRI-Foreign-Category-2025-26__camelot_0.csv
- |  |  |  | LH-FEE-structure-NRI-Foreign-Category-2025-26__camelot_0.csv
- |  |  |  | LH-FEE-structure-NRI-Foreign-Category-2025-26__camelot_0.csv
- |  |  |  | LH-FEE-structure-NRI-Foreign-Category-2025-26__camelot_0.csv
- |  |  |  | LH-FEE-structure-NRI-Foreign-Category-2025-26__camelot_0.csv
- |  |  |  | LH-FEE-structure-NRI-Foreign-Category-2025-26__camelot_0.csv
- |  |  |  | LH-FEE-structure-NRI-Foreign-Category-2025-26__camelot_0.csv
- |  |  |  | LH-FEE-structure-NRI-Foreign-Category-2025-26__camelot_0.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv
- |  |  |  | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_4.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_4.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_4.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_4.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_5.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_5.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_5.csv
- |  |  |  | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_5.csv
-(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer --q "PG eligibility"        
-**Eligibility**
+DB = pathlib.Path("Data/sql/vit_vellore.db")
 
-Level | Program | Criteria | Source
---- | --- | --- | ---
- | M.Tech. Electric Mobility |  | pg_fees.csv
- | M.Tech. Smart Mobility |  | pg_fees.csv
- | M.Tech. CSE (Cyber Security & Digital Forensics) |  | pg_fees.csv
- | M.Tech. CSE (Cyber Security) |  | pg_fees.csv
- | M.Tech. AI & ML (In collaboration with LTIMindtree) |  | pg_fees.csv
- | M.Tech. AI & DS (In collaboration with LTIMindtree) |  | pg_fees.csv
- | M.Tech. Smart Mobility |  | pg_programs.csv
- | M.Tech. Computer Science and Engineering (Cyber Security & Digital Forensics) |  | pg_programs.csv
- | M.Tech. Computer Science and Engineering (Cyber Security) |  | pg_programs.csv
- | M.Tech. Artificial Intelligence and Machine Learning (In collaboration with LTIMindtree) |  | pg_programs.csv    
- | M.Tech. Artificial Intelligence and Data Science (In collaboration with LTIMindtree) |  | pg_programs.csv        
- | M.Tech. Electric Mobility |  | pg_programs.csv
-UG | B.Sc. (Hospitality and Hotel Administration) |  | fee_structure_2025_2026.csv
-UG | B.Com (Banking and Capital Markets) |  | fee_structure_2025_2026.csv
-UG | B.B.A (Hons.) 2+2 with RIT |  | programs_ug (1).csv
-UG | B.B.A (Specialisation: Digital Marketing) |  | programs_ug (1).csv
-UG | B.Com – Banking and Capital Markets |  | programs_ug (1).csv
-UG | B.Sc. in Hospitality and Hotel Administration |  | programs_ug (1).csv
-UG | B.Tech - CSE (Cyber Security & Digital Forensics) |  | programs_ug (1).csv
-UG | B.Tech - CSE (Cyber Security) |  | programs_ug (1).csv
-UG | B.Tech - CSE and Business Systems (with TCS) |  | programs_ug (1).csv
-UG | B.Tech - Civil Engineering (In Collaboration with L & T) |  | programs_ug (1).csv
-UG | B.Sc. (Hospitality and Hotel Administration) | Completed Higher Secondary Education in Vellore / Ranipet / Tirupattur / Tiruvannamalai districts | scholarships_ug.csv
-UG | B.Com (Banking And Capital Markets) | Completed Higher Secondary Education in Vellore / Ranipet / Tirupattur / Tiruvannamalai districts | scholarships_ug.csv
-(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer "MCA documents to be submitted"
-usage: rag_answer.py [-h] [--q Q]
-rag_answer.py: error: unrecognized arguments: MCA documents to be submitted
-(.venv) (base) PS C:\Users\T8543\Downloads\project-2> .\.venv\Scripts\python.exe -m app.rag_answer "MCA eligibility"
-                                                                                                                   usage: rag_answer.py [-h] [--q Q]
-rag_answer.py: error: unrecognized arguments: MCA eligibility
-(.venv) (base) PS C:\Users\T8543\Downloads\project-2> 
+# ------------------ helpers ------------------
+
+def _norm_text(s: str) -> str:
+    s = (s or "").lower().replace("&", "and")
+    return re.sub(r"[^a-z0-9]+", "", s)
+
+def _norm_like(value: Optional[str]) -> Optional[str]:
+    return f"%{_norm_text(value)}%" if value else None
+
+def _add_norm_like_clause(col: str, val: Optional[str], where: list, args: list):
+    if not val:
+        return
+    expr = (
+        f"REPLACE(REPLACE(REPLACE(REPLACE(LOWER({col}),'.',''),'-',''),'&','and'),' ','')"
+    )
+    where.append(f"{expr} LIKE ?")
+    args.append(_norm_like(val))
+
+def _is_http(url: str) -> bool:
+    return bool(re.match(r"^https?://", (url or "").strip(), flags=re.I))
+
+def _mk():
+    con = sqlite3.connect(DB)
+    con.row_factory = sqlite3.Row
+    return con
+
+def _safe_fetch(con, sql, args):
+    try:
+        return con.execute(sql, args).fetchall()
+    except sqlite3.OperationalError:
+        return []
+
+def _dedupe(items: List[Dict[str, Any]], keyfn) -> List[Dict[str, Any]]:
+    seen = set(); out = []
+    for it in items:
+        k = keyfn(it)
+        if k in seen: 
+            continue
+        seen.add(k); out.append(it)
+    return out
+
+def _csv_scan(
+    patterns: List[str],
+    must_include_in_filename: List[str],
+    required_columns: List[str],
+) -> List[Dict[str, str]]:
+    """Scan CSVs under Data/** that match both filename keywords and required columns."""
+    rows: List[Dict[str, str]] = []
+    for pat in patterns:
+        for path in glob.glob(pat, recursive=True):
+            name = pathlib.Path(path).name.lower()
+            if must_include_in_filename and not any(k in name for k in must_include_in_filename):
+                continue
+            try:
+                with open(path, "r", encoding="utf-8-sig", newline="") as f:
+                    reader = csv.DictReader(f)
+                    if not reader.fieldnames:
+                        continue
+                    # must contain all required columns
+                    if not set(required_columns).issubset(set([c.strip() for c in reader.fieldnames])):
+                        continue
+                    for r in reader:
+                        row = {k: (r.get(k, "") or "").strip() for k in required_columns}
+                        row["source_file"] = pathlib.Path(path).name
+                        rows.append(row)
+            except Exception:
+                continue
+    return rows
+
+def _relaxed_levels_sequence(f: Dict[str, Any]) -> List[Optional[str]]:
+    seq: List[Optional[str]] = []
+    lv = f.get("level_like")
+    if lv: seq.append(lv)
+    if f.get("raw_degree") in {"msc","mca"} and "pg" not in seq:
+        seq.append("pg")
+    seq.append(None)  # final global
+    return seq
+
+# ------------------ intent ------------------
+
+ACA_KEYWORDS = {
+    "programs": ["program","course","degree","b.tech","m.tech","mca","msc","btech","mtech","offered","offerings"],
+    "eligibility": ["eligibility","qualify","criteria","requirement","requirements","min marks","minimum marks","cutoff","cut-off"],
+    "documents": ["document","documents","docs","upload","certificate","proof","bonafide","to be submit","to be submitted","submission","sumbit","symbited","submit"],
+    "fees": ["tuition","fee","fees","academic fee","semester fee","fee structure","structure","charges","cost","price"],
+    "scholarships": ["scholarship","waiver","merit","financial aid","fee concession","freeship"],
+    "links": ["link","links","url","website","apply link","application link","brochure","portal"]
+}
+
+def _contains_any(q: str, words: List[str]) -> bool:
+    ql = q.lower()
+    return any(w in ql for w in words)
+
+def detect_structured_intent(q: str) -> str:
+    ql = q.lower()
+
+    # laundry-like -> narrative/RAG
+    if any(w in ql for w in ["laundry","dhobi","washing","wash"]):
+        return "text"
+
+    # hostel tables
+    if any(k in ql for k in ["contact","phone","email","supervisor","warden","director","manager"]):
+        return "contacts"
+    if "block" in ql and any(k in ql for k in ["name","names","list","all","codes","code"]):
+        return "blocks"
+    if any(k in ql for k in ["hostel","room","mess","mh","lh","ac","non-ac","canteen","residence"]):
+        return "hostel"
+
+    # academic tables
+    if _contains_any(ql, ACA_KEYWORDS["fees"]): return "fees"
+    if _contains_any(ql, ACA_KEYWORDS["links"]): return "links"
+    for tag in ("programs","eligibility","documents","scholarships"):
+        if _contains_any(ql, ACA_KEYWORDS[tag]): return tag
+
+    # narrative flow
+    if any(w in ql for w in ["application process","admission process","how to apply","refund","cancellation","deadline","last date","when","why","what","who","how"]):
+        return "text"
+    return "text"
+
+# ------------------ parse filters ------------------
+
+DEGREE_TOKENS = {
+    "btech": [r"b\.?\s*tech", r"\bbtech\b"],
+    "mtech": [r"m\.?\s*tech", r"\bmtech\b"],
+    "mca":   [r"\bmca\b"],
+    "msc":   [r"m\.?\s*sc", r"\bmsc\b"],
+}
+
+SPECIALIZATION_TOKENS = [
+    "computer science","cse","it","information technology","ece","eee","mechanical","mech",
+    "civil","biotech","biotechnology","ai","data","vlsi","cyber","software","chemistry",
+    "physics","mathematics","maths","bioinformatics","blockchain","robotics",
+    "data science","gaming","health informatics","education technology","smart manufacturing"
+]
+
+def _find_degree_token(q: str) -> Optional[str]:
+    ql = q.lower()
+    for norm, pats in DEGREE_TOKENS.items():
+        for p in pats:
+            if re.search(p, ql, flags=re.I):
+                return norm
+    return None
+
+def _find_specialization(q: str) -> Optional[str]:
+    ql = q.lower()
+    for term in sorted(SPECIALIZATION_TOKENS, key=len, reverse=True):
+        if term in ql:
+            return term
+    return None
+
+def _ay_from_text(q: str) -> Optional[str]:
+    m = re.search(r"\b(20\d{2})\b", q)
+    if not m: return None
+    yr = m.group(1)
+    return f"{yr}-{str(int(yr[-2:])+1).zfill(2)}"
+
+def parse_filters(q: str) -> Dict[str, Any]:
+    ql = q.lower()
+    f: Dict[str, Any] = {
+        "ay": _ay_from_text(q),
+        "gender": None,
+        "category": None,
+        "level_like": None,
+        "program_like": None,
+        "prog_is_degree": False,
+        "raw_degree": None,
+    }
+    if any(k in ql for k in ["boy","boys","men","mh","mens","male"]): f["gender"] = "Male"
+    if any(k in ql for k in ["girl","girls","ladies","lh","women","female"]): f["gender"] = "Female"
+    if any(k in ql for k in ["nri","foreign","international"]): f["category"] = "International"
+    elif "indian" in ql: f["category"] = "Indian"
+
+    deg = _find_degree_token(q); f["raw_degree"] = deg
+    if deg == "btech": f["level_like"], f["prog_is_degree"] = "UG", True
+    elif deg == "mtech": f["level_like"], f["prog_is_degree"] = "PG", True
+    elif deg == "mca": f["level_like"], f["prog_is_degree"] = "mca", True
+    elif deg == "msc": f["level_like"], f["prog_is_degree"] = "msc", True
+
+    if " ug" in f" {ql}": f["level_like"] = f["level_like"] or "UG"
+    if " pg" in f" {ql}": f["level_like"] = f["level_like"] or "PG"
+
+    spec = _find_specialization(q)
+    if spec:
+        f["program_like"] = spec
+        f["prog_is_degree"] = False
+    return f
+
+# ------------------ formatters ------------------
+
+def _fmt_table(tbl: dict) -> str:
+    if not tbl or not tbl.get("rows"):
+        return "_No matching rows._"
+    title  = f"**{tbl.get('title','Results')}**"
+    cols   = tbl["columns"]
+    header = " | ".join(cols)
+    sep    = " | ".join(["---"]*len(cols))
+    lines  = [title, "", header, sep]
+    for r in tbl["rows"]:
+        lines.append(" | ".join("" if x is None else str(x) for x in r))
+    return "\n".join(lines)
+
+def _pack(table_dict=None, bullets=None) -> str:
+    parts = []
+    if table_dict: parts.append(_fmt_table(table_dict))
+    if bullets:    parts.append("\n".join(f"- {b}" for b in bullets))
+    return "\n".join(parts) if parts else "_No results._"
+
+# ------------------ hostel SQL ------------------
+
+def sql_hostel_overview(f: Dict[str,Any], limit_rows: int = 800) -> Dict[str, Any]:
+    con = _mk()
+    where = ["1=1"]; args=[]
+    if f["gender"]:     where.append("IFNULL(b.gender,'')=IFNULL(?, '')");     args.append(f["gender"])
+    if f["level_like"]: where.append("IFNULL(b.level,'') LIKE IFNULL(?, '')"); args.append(f"%{f['level_like']}%")
+    if f["ay"]:         where.append("IFNULL(hf.ay,'')=IFNULL(?, '')");        args.append(f["ay"])
+    if f["category"]:   where.append("IFNULL(hf.category,'')=IFNULL(?, '')");  args.append(f["category"])
+    sql = f"""
+    SELECT b.display_name AS block, b.gender, b.level, b.block_type,
+           hf.ay, hf.category, hf.occupancy, hf.ac, hf.mess_type,
+           hf.room_mess_fee, hf.admission_fee, hf.caution_deposit, hf.other_fee, hf.total_fee, hf.currency,
+           hf.source_file
+    FROM hostel_fees hf
+    JOIN blocks b ON b.id = hf.block_id
+    WHERE {' AND '.join(where)}
+    ORDER BY b.block_type, block, hf.occupancy, hf.ac DESC, hf.mess_type
+    """
+    rows = _safe_fetch(con, sql, args); con.close()
+    columns = ["Block","Gender","Level","Type","AY","Category","Occ","AC","Mess",
+               "Room+Mess","Admission","Caution","Other","Total","Curr","Source"]
+    tbl = {"title":"Hostel Fee Details (Vellore)", "columns":columns, "rows":[]}
+    for r in rows[:limit_rows]:
+        tbl["rows"].append([
+            r["block"] or "", r["gender"] or "", r["level"] or "", r["block_type"] or "",
+            r["ay"] or "", r["category"] or "", r["occupancy"] or "",
+            "AC" if (r["ac"]==1) else ("Non-AC" if (r["ac"]==0) else ""),
+            r["mess_type"] or "", r["room_mess_fee"] or "", r["admission_fee"] or "",
+            r["caution_deposit"] or "", r["other_fee"] or "", r["total_fee"] or "",
+            r["currency"] or "", r["source_file"] or ""
+        ])
+    return {"table": tbl, "bullets": []}
+
+def sql_block_contacts(_f: Dict[str,Any]) -> Dict[str,Any]:
+    con = _mk()
+    rows = _safe_fetch(con, """
+        SELECT '' AS block, name, role, phone, email
+        FROM hostel_contacts
+        ORDER BY role, name
+    """, [])
+    con.close()
+    cols = ["Block","Name","Role","Phone","Email"]
+    tbl = {"title":"Hostel Contacts", "columns":cols, "rows":[
+        [r["block"], r["name"] or "", r["role"] or "", r["phone"] or "", r["email"] or ""]
+        for r in rows
+    ]}
+    return {"table": tbl, "bullets": []}
+
+def sql_list_blocks(f: Dict[str,Any]) -> Dict[str,Any]:
+    con = _mk()
+    if f["gender"] == "Female":
+        sql = "SELECT block_code AS display_name, 'Female' AS gender FROM lh_blocks ORDER BY block_code"
+    elif f["gender"] == "Male":
+        sql = "SELECT COALESCE(block_name, block_code) AS display_name, 'Male' AS gender FROM mh_blocks ORDER BY block_code"
+    else:
+        sql = """
+        SELECT COALESCE(block_name, block_code) AS display_name, 'Male' AS gender FROM mh_blocks
+        UNION ALL
+        SELECT block_code AS display_name, 'Female' AS gender FROM lh_blocks
+        ORDER BY gender, display_name
+        """
+    rows = _safe_fetch(con, sql, []); con.close()
+    cols = ["Block","Gender"]
+    tbl = {"title":"Hostel Blocks", "columns":cols, "rows":[
+        [r["display_name"] or "", r["gender"] or ""]
+        for r in rows
+    ]}
+    return {"table": tbl, "bullets": []}
+
+# ------------------ academics SQL ------------------
+
+def sql_programs(f: Dict[str,Any], _q: str) -> Dict[str,Any]:
+    con = _mk()
+    where, args = ["1=1"], []
+    _add_norm_like_clause("level", f["level_like"], where, args)
+    if f["program_like"] and not f["prog_is_degree"]:
+        _add_norm_like_clause("program", f["program_like"], where, args)
+    rows = _safe_fetch(con, f"""
+        SELECT level, program, school, duration, campus, source_file
+        FROM programs
+        WHERE {' AND '.join(where)}
+        ORDER BY level, program
+    """, args); con.close()
+    cols = ["Level","Program","School","Duration","Campus","Source"]
+    return {"table":{"title":"Programs","columns":cols,"rows":[
+        [r["level"] or "", r["program"] or "", r["school"] or "", r["duration"] or "", r["campus"] or "", r["source_file"] or ""]
+        for r in rows
+    ]}}
+
+def sql_eligibility(f: Dict[str,Any], _q: str) -> Dict[str,Any]:
+    con = _mk()
+    rows_all = []
+    # SQL first with relaxed levels
+    for lv in _relaxed_levels_sequence(f):
+        where, args = ["1=1"], []
+        _add_norm_like_clause("level", lv, where, args)
+        if f["program_like"] and not f["prog_is_degree"]:
+            _add_norm_like_clause("program", f["program_like"], where, args)
+        rows = _safe_fetch(con, f"""
+            SELECT level, program, criteria, source_file
+            FROM eligibility
+            WHERE {' AND '.join(where)}
+            ORDER BY level, program
+        """, args)
+        if rows:
+            rows_all = rows
+            break
+    con.close()
+
+    # CSV fallback (strict)
+    if not rows_all:
+        candidates = _csv_scan(
+            ["Data/**/*.csv"],
+            must_include_in_filename=["eligibility","criteria"],
+            required_columns=["level","program","criteria"],
+        )
+        filtered = []
+        lv_seq = _relaxed_levels_sequence(f)
+        def _match_level(s: str) -> bool:
+            s_norm = _norm_text(s)
+            for lv in lv_seq:
+                if lv is None: return True
+                if _norm_like(lv).strip("%") in s_norm:
+                    return True
+            return False
+        for r in candidates:
+            if not r.get("criteria"): 
+                continue
+            if not r.get("program"):
+                continue
+            if not _match_level(r.get("level","")):
+                continue
+            if f["program_like"] and not f["prog_is_degree"]:
+                if _norm_like(f["program_like"]).strip("%") not in _norm_text(r.get("program","")):
+                    continue
+            filtered.append(r)
+        rows_all = filtered
+
+    cols = ["Level","Program","Criteria","Source"]
+    return {"table":{"title":"Eligibility","columns":cols,"rows":[
+        [r.get("level",""), r.get("program",""), r.get("criteria",""), r.get("source_file","")]
+        for r in rows_all
+    ]}}
+
+def sql_documents(f: Dict[str,Any], _q: str) -> Dict[str,Any]:
+    con = _mk()
+    rows_all = []
+    for lv in _relaxed_levels_sequence(f):
+        where, args = ["1=1"], []
+        _add_norm_like_clause("level", lv, where, args)
+        if f["program_like"] and not f["prog_is_degree"]:
+            _add_norm_like_clause("program", f["program_like"], where, args)
+        rows = _safe_fetch(con, f"""
+            SELECT level, program, item, details, source_file
+            FROM documents_required
+            WHERE {' AND '.join(where)}
+            ORDER BY level, program, item
+        """, args)
+        if rows:
+            rows_all = rows
+            break
+    con.close()
+
+    if not rows_all:
+        candidates = _csv_scan(
+            ["Data/**/*.csv"],
+            must_include_in_filename=["document","documents","doc","submit"],
+            required_columns=["level","program","item","details"],
+        )
+        filtered = []
+        lv_seq = _relaxed_levels_sequence(f)
+        def _match_level(s: str) -> bool:
+            s_norm = _norm_text(s)
+            for lv in lv_seq:
+                if lv is None: return True
+                if _norm_like(lv).strip("%") in s_norm:
+                    return True
+            return False
+        for r in candidates:
+            if not r.get("item") and not r.get("details"):
+                continue
+            if not _match_level(r.get("level","")):
+                continue
+            if f["program_like"] and not f["prog_is_degree"]:
+                if _norm_like(f["program_like"]).strip("%") not in _norm_text(r.get("program","")):
+                    continue
+            filtered.append(r)
+        rows_all = filtered
+
+    cols = ["Level","Program","Document","Details","Source"]
+    return {"table":{"title":"Documents Required","columns":cols,"rows":[
+        [r.get("level",""), r.get("program",""), r.get("item",""), r.get("details",""), r.get("source_file","")]
+        for r in rows_all
+    ]}}
+
+def sql_academic_fees(f: Dict[str,Any], _q: str) -> Dict[str,Any]:
+    con = _mk()
+    where, args = ["1=1"], []
+    if f["program_like"] and not f["prog_is_degree"]:
+        _add_norm_like_clause("program", f["program_like"], where, args)
+    _add_norm_like_clause("level", f["level_like"], where, args)
+    if f["ay"]:       where.append("IFNULL(ay,'')=IFNULL(?, '')");        args.append(f["ay"])
+    if f["category"]: where.append("IFNULL(category,'')=IFNULL(?, '')");  args.append(f["category"])
+    rows = _safe_fetch(con, f"""
+        SELECT level, program, category, ay, tuition, one_time, caution, total, currency, source_file
+        FROM academic_fees
+        WHERE {' AND '.join(where)}
+        ORDER BY level, program, category, ay
+    """, args); con.close()
+    cols = ["Level","Program","Category","AY","Tuition","One-time","Caution","Total","Curr","Source"]
+    return {"table":{"title":"Academic Fees","columns":cols,"rows":[
+        [r["level"] or "", r["program"] or "", r["category"] or "", r["ay"] or "",
+         r["tuition"] or "", r["one_time"] or "", r["caution"] or "", r["total"] or "",
+         r["currency"] or "", r["source_file"] or ""]
+        for r in rows
+    ]}}
+
+def sql_scholarships(f: Dict[str,Any], q: str) -> Dict[str,Any]:
+    con = _mk()
+    where, args = ["1=1"], []
+    _add_norm_like_clause("level", f["level_like"], where, args)
+    if q: _add_norm_like_clause("name", q, where, args)
+    rows = _safe_fetch(con, f"""
+        SELECT level, name, criteria, amount, currency, source_file
+        FROM scholarships
+        WHERE {' AND '.join(where)}
+        ORDER BY level, name
+    """, args); con.close()
+    cols = ["Level","Name","Criteria","Amount","Curr","Source"]
+    return {"table":{"title":"Scholarships","columns":cols,"rows":[
+        [r["level"] or "", r["name"] or "", r["criteria"] or "", r["amount"] or "", r["currency"] or "", r["source_file"] or ""]
+        for r in rows
+    ]}}
+
+def sql_links(f: Dict[str,Any], _q: str) -> Dict[str,Any]:
+    """
+    links(level, program, name, url, source_file)
+    Strict logic: if SQL empty/missing, only accept CSVs named like *links*.csv/*link*.csv/*url*.csv.
+    Require valid http(s) URL; restrict by level (e.g., 'UG links' -> UG/ALL rows).
+    """
+    con = _mk()
+    have_table = True
+    try:
+        con.execute("SELECT 1 FROM links LIMIT 1")
+    except sqlite3.OperationalError:
+        have_table = False
+
+    rows = []
+    if have_table:
+        where, args = ["1=1"], []
+        _add_norm_like_clause("level", f["level_like"], where, args)
+        if f["program_like"] and not f["prog_is_degree"]:
+            _add_norm_like_clause("program", f["program_like"], where, args)
+        rows = _safe_fetch(con, f"""
+            SELECT level, program, name, url, source_file
+            FROM links
+            WHERE {' AND '.join(where)}
+            ORDER BY level, program, name
+        """, args)
+    con.close()
+
+    if not rows:
+        candidates = _csv_scan(
+            ["Data/**/*.csv"],
+            must_include_in_filename=["links","link","url"],
+            required_columns=["level","program","name","url"],
+        )
+        filtered = []
+        lv_seq = _relaxed_levels_sequence(f)
+        def _match_level(s: str) -> bool:
+            s_norm = _norm_text(s)
+            # treat 'all' as global
+            if "all" in s_norm:
+                return True
+            for lv in lv_seq:
+                if lv is None: return True
+                if _norm_like(lv).strip("%") in s_norm:
+                    return True
+            return False
+        for r in candidates:
+            url = r.get("url","")
+            if not _is_http(url):
+                continue
+            if not _match_level(r.get("level","")):
+                continue
+            if f["program_like"] and not f["prog_is_degree"]:
+                if _norm_like(f["program_like"]).strip("%") not in _norm_text(r.get("program","")):
+                    continue
+            filtered.append(r)
+        # dedupe on (level, program, name, url)
+        rows = _dedupe(filtered, keyfn=lambda x: (x.get("level",""), x.get("program",""), x.get("name",""), x.get("url","")))
+
+    cols = ["Level","Program","Name","URL","Source"]
+    return {"table":{"title":"Links","columns":cols,"rows":[
+        [r.get("level",""), r.get("program",""), r.get("name",""), r.get("url",""), r.get("source_file","")]
+        for r in rows
+    ]}}
+
+# ------------------ router ------------------
+
+def _sql_route(q: str) -> Optional[str]:
+    intent = detect_structured_intent(q)
+    f = parse_filters(q)
+
+    # hostel
+    if intent == "contacts": return _pack(sql_block_contacts(f).get("table"))
+    if intent == "blocks":   return _pack(sql_list_blocks(f).get("table"))
+    if intent == "hostel":   return _pack(sql_hostel_overview(f).get("table"))
+
+    # academics
+    if intent == "links":        return _pack(sql_links(f, q).get("table"))
+    if intent == "programs":     return _pack(sql_programs(f, q).get("table"))
+    if intent == "eligibility":  return _pack(sql_eligibility(f, q).get("table"))
+    if intent == "documents":    return _pack(sql_documents(f, q).get("table"))
+    if intent == "fees":         return _pack(sql_academic_fees(f, q).get("table"))
+    if intent == "scholarships": return _pack(sql_scholarships(f, q).get("table"))
+    return None  # narrative/RAG
+
+# ------------------ public ------------------
+
+def answer(query: str) -> str:
+    sql_text = _sql_route(query)
+    if sql_text is not None and sql_text.strip() != "_No matching rows._":
+        return sql_text
+    return "_No matching rows._"
+
+if __name__ == "__main__":
+    import sys
+    q = " ".join(sys.argv[1:]) or "Show MH Senior NRI hostel fees 2025"
+    print(answer(q))
