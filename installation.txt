@@ -1,7 +1,6 @@
 # app/rag_answer.py
-# One-file Router: SQL-first with CSV fallbacks for fees/programs/eligibility/documents/scholarships/links/hostel.
-# Narrative (application process, refund policy, deadlines, FAQs, laundry) goes to RAG ONLY.
-# Typo-friendly intent (e.g., "douments", "sumbited"), friendlier LIKE matching, MCA/MSc PG relax, and strict link rows.
+# Hybrid Router: SQL/CSV for structured data + FAISS for narrative FAQs
+# Handles VITMEE, application process, refund policy, exam format, etc.
 
 from __future__ import annotations
 import argparse, csv, glob, re, sqlite3, sys
@@ -10,11 +9,40 @@ from typing import Any, Dict, Iterable, List, Optional
 
 # ------------------ Config ------------------
 
-ROOT = Path(__file__).resolve().parent.parent  # project root (..)
+ROOT = Path(__file__).resolve().parent.parent
 DB = ROOT / "Data" / "sql" / "vit_vellore.db"
-CSV_GLOBS = [str(ROOT / "Data" / "**" / "*.csv")]  # where we scan for fallbacks
+CSV_GLOBS = [str(ROOT / "Data" / "**" / "*.csv")]
 
-# ------------------ Helpers ------------------
+# FAISS/RAG Config
+FAISS_INDEX_PATH = ROOT / "Data" / "faiss_index"  # Adjust to your path
+EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"  # Or your chosen model
+
+# ------------------ FAISS RAG Setup ------------------
+
+try:
+    from sentence_transformers import SentenceTransformer
+    import faiss
+    import pickle
+    
+    # Load embedding model
+    embedder = SentenceTransformer(EMBEDDING_MODEL)
+    
+    # Load FAISS index
+    index = faiss.read_index(str(FAISS_INDEX_PATH / "index.faiss"))
+    
+    # Load document chunks
+    with open(FAISS_INDEX_PATH / "chunks.pkl", "rb") as f:
+        doc_chunks = pickle.load(f)
+    
+    RAG_AVAILABLE = True
+except Exception as e:
+    print(f"Warning: FAISS/RAG not available: {e}", file=sys.stderr)
+    embedder = None
+    index = None
+    doc_chunks = []
+    RAG_AVAILABLE = False
+
+# ------------------ Helpers (same as before) ------------------
 
 def _mk():
     con = sqlite3.connect(DB)
@@ -36,14 +64,11 @@ def _norm_like(value: Optional[str]) -> Optional[str]:
 def _add_norm_like_clause(col: str, val: Optional[str], where: list, args: list):
     if not val:
         return
-    expr = (
-        f"REPLACE(REPLACE(REPLACE(REPLACE(LOWER({col}),'.',''),'-',''),'&','and'),' ','')"
-    )
+    expr = f"REPLACE(REPLACE(REPLACE(REPLACE(LOWER({col}),'.',''),'-',''),'&','and'),' ','')"
     where.append(f"{expr} LIKE ?")
     args.append(_norm_like(val))
 
 def _row_get(r: Any, k: str, default: str = "") -> str:
-    # Works with sqlite3.Row AND dict
     try:
         if isinstance(r, sqlite3.Row):
             v = r[k]
@@ -93,23 +118,31 @@ def _csv_scan(
                         d["source_file"] = p.name
                         out.append(d)
             except Exception:
-                # ignore unreadable/bad CSVs
                 continue
     return out
 
-# ------------------ Intent ------------------
+# ------------------ Intent Detection ------------------
 
 ACA_KEYWORDS = {
     "programs": ["program","course","degree","b.tech","m.tech","mca","msc","btech","mtech","offered","offerings"],
     "eligibility": ["eligibility","qualify","criteria","requirement","requirements","min marks","minimum marks","cutoff","cut-off"],
-    "documents": [
-        "document","documents","docs","upload","certificate","proof","submission","submit",
-        "to be submitted","to be submit","documets","douments","submited","sumbited"  # typos
-    ],
+    "documents": ["document","documents","docs","upload","certificate","proof","submission","submit","to be submitted","to be submit","documets","douments","submited","sumbited"],
     "fees": ["tuition","fee","fees","academic fee","semester fee","fee structure","structure","charges","cost","price"],
     "scholarships": ["scholarship","scholarships","waiver","merit","financial aid","fee concession","freeship"],
     "links": ["link","links","url","website","apply link","application link","brochure","portal"]
 }
+
+# Narrative/FAQ keywords that should go to RAG
+NARRATIVE_KEYWORDS = [
+    "vitmee", "viteee", "exam", "test", "entrance",
+    "application process", "how to apply", "apply",
+    "refund", "cancellation", "withdrawal",
+    "deadline", "last date", "important dates",
+    "why", "what is", "who can", "when is", "how does",
+    "format", "pattern", "syllabus", "eligibility for exam",
+    "registration", "counseling", "counselling", "selection",
+    "faq", "frequently asked", "laundry", "dhobi", "washing"
+]
 
 def _contains_any(q: str, words: List[str]) -> bool:
     ql = q.lower()
@@ -118,11 +151,7 @@ def _contains_any(q: str, words: List[str]) -> bool:
 def detect_structured_intent(q: str) -> str:
     ql = q.lower()
 
-    # RAG-only: laundry/dhobi (hostel narratives in PDFs)
-    if any(w in ql for w in ["laundry","dhobi","washing","wash"]):
-        return "text"
-
-    # Hostel
+    # Hostel contacts/blocks
     if any(k in ql for k in ["contact","phone","email","supervisor","warden","director","manager"]):
         return "contacts"
     if "block" in ql and any(k in ql for k in ["name","names","list","all","codes","code"]):
@@ -130,22 +159,20 @@ def detect_structured_intent(q: str) -> str:
     if any(k in ql for k in ["hostel","room","mess","mh","lh","ac","non-ac","canteen"]):
         return "hostel"
 
-    # Academics (structured)
+    # Academics structured data
     if _contains_any(ql, ACA_KEYWORDS["fees"]): return "fees"
     if _contains_any(ql, ACA_KEYWORDS["links"]): return "links"
     for tag in ("programs","eligibility","documents","scholarships"):
         if _contains_any(ql, ACA_KEYWORDS[tag]): return tag
 
-    # Narrative QA -> RAG
-    if any(w in ql for w in [
-        "application process","how to apply","refund","cancellation",
-        "deadline","last date","when","why","what","who","how","faq"
-    ]):
+    # Narrative FAQs -> RAG (most important check)
+    if _contains_any(ql, NARRATIVE_KEYWORDS):
         return "text"
 
+    # Default to text for safety
     return "text"
 
-# ------------------ Query Parsing ------------------
+# ------------------ Query Parsing (same as before) ------------------
 
 DEGREE_TOKENS = {
     "btech": [r"b\.?\s*tech", r"\bbtech\b"],
@@ -193,15 +220,12 @@ def parse_filters(q: str) -> Dict[str, Any]:
         "prog_is_degree": False,
         "raw_degree": None,
     }
-    # gender hints (hostel)
     if any(k in ql for k in ["boy","boys","men","mh","mens","male"]): f["gender"] = "Male"
     if any(k in ql for k in ["girl","girls","ladies","lh","women","female"]): f["gender"] = "Female"
-    # category
     if any(k in ql for k in ["nri","foreign","international"]):
         f["category"] = "International"
     elif "indian" in ql:
         f["category"] = "Indian"
-    # degree -> level_like
     deg = _find_degree_token(q); f["raw_degree"] = deg
     if deg == "btech":
         f["level_like"] = "UG"; f["prog_is_degree"] = True
@@ -211,10 +235,8 @@ def parse_filters(q: str) -> Dict[str, Any]:
         f["level_like"] = "mca"; f["prog_is_degree"] = True
     elif deg == "msc":
         f["level_like"] = "msc"; f["prog_is_degree"] = True
-    # explicit UG/PG words
     if " ug" in f" {ql}": f["level_like"] = f["level_like"] or "UG"
     if " pg" in f" {ql}": f["level_like"] = f["level_like"] or "PG"
-    # specialization -> program_like
     spec = _find_specialization(q)
     if spec:
         f["program_like"] = spec
@@ -222,14 +244,15 @@ def parse_filters(q: str) -> Dict[str, Any]:
     return f
 
 def _relaxed_levels_sequence(f: Dict[str,Any]) -> List[Optional[str]]:
-    # MFA: if MSc/MCA rows don’t show up, auto-relax to PG -> ALL
     lv = f.get("level_like")
     raw = f.get("raw_degree")
     if raw in {"msc","mca"}:
         return [lv, "PG", None]
     return [lv, None]
 
-# ------------------ Hostel SQL ------------------
+# ------------------ SQL Functions (same as before) ------------------
+# [All your sql_hostel_overview, sql_block_contacts, sql_programs, etc. stay the same]
+# I'll include them for completeness:
 
 def sql_hostel_overview(f: Dict[str,Any], limit_rows: int = 800) -> Dict[str, Any]:
     con = _mk()
@@ -298,8 +321,6 @@ def sql_list_blocks(f: Dict[str,Any]) -> Dict[str,Any]:
     ]}
     return {"table": tbl}
 
-# ------------------ Academics: SQL + CSV fallbacks ------------------
-
 def sql_programs(f: Dict[str,Any], _q: str) -> Dict[str,Any]:
     con = _mk()
     where, args = ["1=1"], []
@@ -313,7 +334,6 @@ def sql_programs(f: Dict[str,Any], _q: str) -> Dict[str,Any]:
         ORDER BY level, program
     """, args)
     con.close()
-    # CSV fallback if empty
     if not rows:
         rows = _csv_scan(CSV_GLOBS, must_include_in_filename=["program"], required_columns=["level","program"])
     cols = ["Level","Program","School","Duration","Campus","Source"]
@@ -323,7 +343,6 @@ def sql_programs(f: Dict[str,Any], _q: str) -> Dict[str,Any]:
     ]}}
 
 def sql_eligibility(f: Dict[str,Any], q: str) -> Dict[str,Any]:
-    # SQL first (with MCA/MSc relax)
     con = _mk()
     rows_all: List[Any] = []
     for lv in _relaxed_levels_sequence(f):
@@ -343,13 +362,8 @@ def sql_eligibility(f: Dict[str,Any], q: str) -> Dict[str,Any]:
             rows_all = rows
             break
     con.close()
-    # CSV fallback
     if not rows_all:
-        rows_all = _csv_scan(
-            CSV_GLOBS,
-            must_include_in_filename=["eligibility"],
-            required_columns=["level","program","criteria"]
-        )
+        rows_all = _csv_scan(CSV_GLOBS, must_include_in_filename=["eligibility"], required_columns=["level","program","criteria"])
     cols = ["Level","Program","Criteria","Source"]
     return {"table":{"title":"Eligibility","columns":cols,"rows":[
         [_row_get(r,"level"), _row_get(r,"program"), _row_get(r,"criteria"), _row_get(r,"source_file")]
@@ -359,7 +373,6 @@ def sql_eligibility(f: Dict[str,Any], q: str) -> Dict[str,Any]:
 def sql_documents(f: Dict[str,Any], _q: str) -> Dict[str,Any]:
     con = _mk()
     rows_all: List[Any] = []
-    # SQL first (relaxed UG/PG -> ALL for MSc/MCA)
     for lv in _relaxed_levels_sequence(f):
         where, args = ["1=1"], []
         _add_norm_like_clause("level", lv, where, args)
@@ -375,17 +388,10 @@ def sql_documents(f: Dict[str,Any], _q: str) -> Dict[str,Any]:
             rows_all = rows
             break
     con.close()
-
-    # CSV fallback (ONLY from doc-* files)
     if not rows_all:
-        candidates = _csv_scan(
-            CSV_GLOBS,
-            must_include_in_filename=["document","documents","doc","submit"],
-            required_columns=["level","program","item","details"],
-        )
+        candidates = _csv_scan(CSV_GLOBS, must_include_in_filename=["document","documents","doc","submit"], required_columns=["level","program","item","details"])
         filtered = []
         lv_seq = _relaxed_levels_sequence(f)
-
         def _match_level(s: str) -> bool:
             s_norm = _norm_text(s)
             if "all" in s_norm: return True
@@ -394,7 +400,6 @@ def sql_documents(f: Dict[str,Any], _q: str) -> Dict[str,Any]:
                 if _norm_like(lv).strip("%") in s_norm:
                     return True
             return False
-
         for r in candidates:
             if not (r.get("item") or r.get("details")):
                 continue
@@ -405,7 +410,6 @@ def sql_documents(f: Dict[str,Any], _q: str) -> Dict[str,Any]:
                     continue
             filtered.append(r)
         rows_all = filtered
-
     cols = ["Level","Program","Document","Details","Source"]
     return {"table":{"title":"Documents Required","columns":cols,"rows":[
         [_row_get(r,"level"), _row_get(r,"program"), _row_get(r,"item"), _row_get(r,"details"), _row_get(r,"source_file")]
@@ -427,21 +431,12 @@ def sql_academic_fees(f: Dict[str,Any], _q: str) -> Dict[str,Any]:
         ORDER BY level, program, category, ay
     """, args)
     con.close()
-    # CSV fallback if empty
     if not rows:
-        # pick only fee_structure / pg_fees style files
-        rows = _csv_scan(
-            CSV_GLOBS,
-            must_include_in_filename=["fee","fees","structure"],
-            required_columns=["level","program"]
-        )
+        rows = _csv_scan(CSV_GLOBS, must_include_in_filename=["fee","fees","structure"], required_columns=["level","program"])
     cols = ["Level","Program","Category","AY","Tuition","One-time","Caution","Total","Curr","Source"]
     return {"table":{"title":"Academic Fees","columns":cols,"rows":[
-        [
-            _row_get(r,"level"), _row_get(r,"program"), _row_get(r,"category"),
-            _row_get(r,"ay"), _row_get(r,"tuition"), _row_get(r,"one_time"),
-            _row_get(r,"caution"), _row_get(r,"total"), _row_get(r,"currency"), _row_get(r,"source_file")
-        ]
+        [_row_get(r,"level"), _row_get(r,"program"), _row_get(r,"category"), _row_get(r,"ay"), _row_get(r,"tuition"),
+         _row_get(r,"one_time"), _row_get(r,"caution"), _row_get(r,"total"), _row_get(r,"currency"), _row_get(r,"source_file")]
         for r in rows
     ]}}
 
@@ -458,15 +453,9 @@ def sql_scholarships(f: Dict[str,Any], q: str) -> Dict[str,Any]:
     """, args)
     con.close()
     if not rows:
-        # strict CSV fallback
-        candidates = _csv_scan(
-            CSV_GLOBS,
-            must_include_in_filename=["scholarship","scholarships","waiver","aid"],
-            required_columns=["level","name","criteria"]
-        )
+        candidates = _csv_scan(CSV_GLOBS, must_include_in_filename=["scholarship","scholarships","waiver","aid"], required_columns=["level","name","criteria"])
         filtered = []
         lv_seq = _relaxed_levels_sequence(f)
-
         def _match_level(s: str) -> bool:
             s_norm = _norm_text(s)
             if "all" in s_norm: return True
@@ -475,7 +464,6 @@ def sql_scholarships(f: Dict[str,Any], q: str) -> Dict[str,Any]:
                 if _norm_like(lv).strip("%") in s_norm:
                     return True
             return False
-
         for r in candidates:
             if not r.get("name") or not r.get("criteria"):
                 continue
@@ -483,17 +471,13 @@ def sql_scholarships(f: Dict[str,Any], q: str) -> Dict[str,Any]:
                 continue
             filtered.append(r)
         rows = filtered
-
     cols = ["Level","Name","Criteria","Amount","Curr","Source"]
     return {"table":{"title":"Scholarships","columns":cols,"rows":[
-        [
-            _row_get(r,"level"), _row_get(r,"name"), _row_get(r,"criteria"),
-            _row_get(r,"amount"), _row_get(r,"currency"), _row_get(r,"source_file")
-        ] for r in rows
+        [_row_get(r,"level"), _row_get(r,"name"), _row_get(r,"criteria"), _row_get(r,"amount"), _row_get(r,"currency"), _row_get(r,"source_file")]
+        for r in rows
     ]}}
 
 def sql_links(f: Dict[str,Any], _q: str) -> Dict[str,Any]:
-    # Try SQL 'links' table (if present)
     con = _mk()
     try:
         con.execute("SELECT 1 FROM links LIMIT 1")
@@ -513,25 +497,68 @@ def sql_links(f: Dict[str,Any], _q: str) -> Dict[str,Any]:
             ORDER BY level, program, name
         """, args)
     con.close()
-
-    # CSV fallback (strictly link-ish filenames and valid http(s) URL)
     if not rows:
-        candidates = _csv_scan(
-            CSV_GLOBS,
-            must_include_in_filename=["link","links","portal","brochure"],
-            required_columns=["url"]
-        )
+        candidates = _csv_scan(CSV_GLOBS, must_include_in_filename=["link","links","portal","brochure"], required_columns=["url"])
         for r in list(candidates):
             url = (r.get("url") or "").strip()
             if not re.match(r"^https?://", url, flags=re.I):
                 candidates.remove(r)
         rows = candidates
-
     cols = ["Level","Program","Name","URL","Source"]
     return {"table":{"title":"Links","columns":cols,"rows":[
         [_row_get(r,"level"), _row_get(r,"program"), _row_get(r,"name"), _row_get(r,"url"), _row_get(r,"source_file")]
         for r in rows
     ]}}
+
+# ------------------ RAG Implementation ------------------
+
+def _rag_answer(q: str, top_k: int = 3) -> Optional[str]:
+    """
+    Retrieve relevant chunks from FAISS and format as answer.
+    This handles narrative questions like:
+    - What is VITMEE?
+    - Application process for MCA
+    - Refund policy
+    - Exam format
+    """
+    if not RAG_AVAILABLE:
+        return None
+    
+    try:
+        # Encode query
+        query_embedding = embedder.encode([q])[0].reshape(1, -1)
+        
+        # Search FAISS
+        distances, indices = index.search(query_embedding, top_k)
+        
+        # Retrieve chunks
+        results = []
+        for idx in indices[0]:
+            if idx < len(doc_chunks):
+                chunk = doc_chunks[idx]
+                results.append(chunk)
+        
+        if not results:
+            return None
+        
+        # Format answer
+        answer_parts = ["Here's what I found:\n"]
+        for i, chunk in enumerate(results, 1):
+            # Extract text and metadata
+            text = chunk.get("text", "").strip()
+            source = chunk.get("source", "document")
+            
+            if text:
+                answer_parts.append(f"\n**From {source}:**")
+                answer_parts.append(text)
+                if i < len(results):
+                    answer_parts.append("\n---")
+        
+        return "\n".join(answer_parts)
+        
+    except Exception as e:
+        print(f"RAG error: {e}", file=sys.stderr)
+        return None
 
 # ------------------ Router ------------------
 
@@ -539,67 +566,72 @@ def _sql_route(q: str) -> Optional[str]:
     intent = detect_structured_intent(q)
     f = parse_filters(q)
 
-    # hostel
+    # Hostel
     if intent == "contacts": return _pack(sql_block_contacts(f).get("table"))
     if intent == "blocks":   return _pack(sql_list_blocks(f).get("table"))
     if intent == "hostel":   return _pack(sql_hostel_overview(f).get("table"))
 
-    # academics (structured)
+    # Academics (structured)
     if intent == "links":        return _pack(sql_links(f, q).get("table"))
     if intent == "programs":     return _pack(sql_programs(f, q).get("table"))
     if intent == "eligibility":  return _pack(sql_eligibility(f, q).get("table"))
     if intent == "documents":    return _pack(sql_documents(f, q).get("table"))
     if intent == "fees":         return _pack(sql_academic_fees(f, q).get("table"))
     if intent == "scholarships": return _pack(sql_scholarships(f, q).get("table"))
-    return None  # narrative/text -> RAG
+    
+    return None  # Let narrative/text go to RAG
 
-# ------------------ Smalltalk / RAG gates ------------------
+# ------------------ Smalltalk ------------------
 
 def _smalltalk_answer(q: str) -> Optional[str]:
     ql = q.lower().strip()
-    if ql in {"hi","hello","hey"}:
-        return "Hello! Ask me about fees, programs, eligibility, scholarships, documents, links, or hostel info."
+    if ql in {"hi","hello","hey","hello!","hi!"}:
+        return "Hello! I can help you with VIT admissions, programs, fees, eligibility, documents, scholarships, hostel info, and answer FAQs about VITMEE, VITEEE, application process, and more. What would you like to know?"
+    if ql in {"thanks","thank you","thank you!","thanks!"}:
+        return "You're welcome! Let me know if you need anything else."
     return None
 
-def _rag_answer(q: str) -> Optional[str]:
-    """
-    Plug your FAISS/LLM here.
-    IMPORTANT: Structured asks never fall back here (guarded in answer()).
-    """
-    # Placeholder: return None to avoid noisy fallbacks
-    return None
-
-# ------------------ Public ------------------
+# ------------------ Main Answer Function ------------------
 
 def answer(query: str) -> str:
+    """
+    Main routing logic:
+    1. Try structured data (SQL/CSV) for tables
+    2. Try smalltalk for greetings
+    3. Try RAG for narrative FAQs
+    4. Fallback gracefully
+    """
     intent = detect_structured_intent(query)
 
-    # 1) SQL/CSV route first
+    # 1) Structured data route (SQL/CSV)
     sql_text = _sql_route(query)
-    if sql_text is not None and sql_text.strip() != "_No matching rows._":
+    if sql_text is not None and sql_text.strip() not in {"_No matching rows._", ""}:
         return sql_text
 
-    # 2) smalltalk
+    # 2) Smalltalk
     st = _smalltalk_answer(query)
     if st:
         return st
 
-    # 3) Only narrative/text intents are allowed to use RAG/PDF
+    # 3) RAG for narrative questions (VITMEE, application process, FAQs, etc.)
     if intent == "text":
         rag = _rag_answer(query)
         if rag:
             return rag
 
-    # 4) final
-    return "Sorry — I don’t have that yet."
+    # 4) Intelligent fallback based on intent
+    if intent in {"programs", "eligibility", "documents", "fees", "scholarships", "links"}:
+        # User asked for structured data but we found nothing
+        return f"I don't have specific {intent} information matching your query. Try being more specific (e.g., 'MCA eligibility', 'B.Tech CSE fees') or check if the data is available in the system."
+    
+    # General fallback for narrative questions
+    return "I don't have specific information about that yet. You can ask me about:\n- Programs offered (UG/PG)\n- Eligibility criteria\n- Fee structure\n- Documents required\n- Application process\n- VITMEE/VITEEE details\n- Hostel facilities\n- Scholarships"
 
 # ------------------ CLI ------------------
 
 def _build_query_from_argv(argv: List[str]) -> str:
-    # Accept both --q "..." and positional query (to avoid argparse errors).
     parser = argparse.ArgumentParser()
     parser.add_argument("--q", type=str, default=None, help="query")
-    # collect the rest as positional words
     parser.add_argument("rest", nargs="*", help=argparse.SUPPRESS)
     ns = parser.parse_args(argv)
     if ns.q and ns.q.strip():
