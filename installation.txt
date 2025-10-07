@@ -1,111 +1,209 @@
-Choose a section
+import pathlib
+from typing import Dict, Any, List
 
+import streamlit as st
 
-UG Admissions
+# ---- import your existing backend helpers ----
+# Make sure you run: streamlit run streamlit_app.py from the repo root
+from app.sql_router import (
+    sql_programs, sql_eligibility, sql_documents, sql_academic_fees,
+    sql_scholarships, sql_hostel_overview, sql_block_contacts, sql_list_blocks
+)
+from app.utils.fallback_rag import faiss_answer_or_summary
 
+# ---------------- CONFIG ----------------
+FAISS_INDEX_DIR = pathlib.Path("Data/index/faiss")   # your FAISS folder
+FAISS_COLLECTION = "vit_faq_vellore"                 # your collection name
 
-PG
+st.set_page_config(page_title="UG FAQs — Click to Answer", layout="wide")
 
+# ---------------- UG 40 Static Questions ----------------
+# Each item carries routing info so we can do SQL-first, otherwise FAISS summary.
+UG_REG: List[Dict[str, Any]] = [
+    # Programs / Courses
+    {"qid":"UG-01","label":"What UG programs and specializations are offered?","handler":"programs","filters":{"level_like":"UG"}},
+    {"qid":"UG-02","label":"Which B.Tech specializations are available at each campus?","handler":"programs","filters":{"level_like":"UG","program_like":"B.Tech"}},
+    {"qid":"UG-03","label":"What non–B.Tech UG programs are offered (BBA/B.Com/BCA etc.)?","handler":"programs","filters":{"level_like":"UG","program_like":"BBA B.Com BCA"}},
 
-MCA
+    # Eligibility
+    {"qid":"UG-04","label":"UG eligibility: minimum marks and required subjects","handler":"eligibility","filters":{"level_like":"UG"}},
+    {"qid":"UG-05","label":"Is Mathematics mandatory for specific B.Tech programs?","handler":"eligibility","filters":{"level_like":"UG","program_like":"B.Tech"}},
+    {"qid":"UG-06","label":"Are NIOS/correspondence students eligible for UG?","handler":"eligibility","filters":{"level_like":"UG","program_like":"ALL"}},
+    {"qid":"UG-07","label":"Eligibility for NRI/OCI/PIO applicants (UG)","handler":"eligibility","filters":{"level_like":"UG","program_like":"ALL"}},
 
+    # Documents
+    {"qid":"UG-08","label":"Documents to submit for UG admission and reporting","handler":"documents","filters":{"level_like":"UG"}},
+    {"qid":"UG-09","label":"Where to download affidavits and fitness forms?","handler":"documents","filters":{"level_like":"UG","program_like":"affidavit fitness"}},
+    {"qid":"UG-10","label":"Photo/signature/document upload specifications","handler":"documents","filters":{"level_like":"UG","program_like":"photo signature upload"}},
 
-MSc
+    # Fees
+    {"qid":"UG-11","label":"UG tuition fee (Indian category) for AY 2025–26","handler":"fees","filters":{"level_like":"UG","category":"Indian","ay":"2025-26"}},
+    {"qid":"UG-12","label":"UG tuition fee (NRI category) for AY 2025–26","handler":"fees","filters":{"level_like":"UG","category":"NRI","ay":"2025-26"}},
+    {"qid":"UG-13","label":"UG tuition fee (Foreign category) for AY 2025–26","handler":"fees","filters":{"level_like":"UG","category":"Foreign","ay":"2025-26"}},
+    {"qid":"UG-14","label":"Is there a refundable caution deposit for UG?","handler":"fees","filters":{"level_like":"UG"}},
 
+    # Scholarships
+    {"qid":"UG-15","label":"Scholarships/waivers available for UG students","handler":"scholarships","filters":{"level_like":"UG"}},
 
-HOSTELS
+    # Process & timelines (narrative – FAISS)
+    {"qid":"UG-16","label":"Step-by-step UG application process (Indian/NRI/Foreign)","handler":"faiss_summary","filters":{}},
+    {"qid":"UG-17","label":"Important admission dates and deadlines for UG","handler":"faiss_summary","filters":{}},
+    {"qid":"UG-18","label":"How is the merit list prepared and tie-break rules?","handler":"faiss_summary","filters":{}},
+    {"qid":"UG-19","label":"Counselling and seat allotment process (rounds and sliding)","handler":"faiss_summary","filters":{}},
+    {"qid":"UG-20","label":"Branch locking and later branch-change policy","handler":"faiss_summary","filters":{}},
 
-FileNotFoundError: [Errno 2] No such file or directory: 'Data\\processed\\ug_admissions_questions_registry.json'
-Traceback:
-File "c:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\streamlit\runtime\scriptrunner\exec_code.py", line 128, in exec_func_with_error_handling
-    result = func()
-File "c:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\streamlit\runtime\scriptrunner\script_runner.py", line 669, in code_to_exec
-    exec(code, module.__dict__)  # noqa: S102
-    ~~~~^^^^^^^^^^^^^^^^^^^^^^^
-File "C:\Users\T8543\Downloads\project-2\streamlit_app.py", line 120, in <module>
-    rows = load_registry(registry_path)
-File "c:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\streamlit\runtime\caching\cache_utils.py", line 227, in __call__
-    return self._get_or_create_cached_value(args, kwargs, spinner_message)
-           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-File "c:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\streamlit\runtime\caching\cache_utils.py", line 269, in _get_or_create_cached_value
-    return self._handle_cache_miss(cache, value_key, func_args, func_kwargs)
-           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-File "c:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\streamlit\runtime\caching\cache_utils.py", line 328, in _handle_cache_miss
-    computed_value = self._info.func(*func_args, **func_kwargs)
-File "C:\Users\T8543\Downloads\project-2\streamlit_app.py", line 92, in load_registry
-    with p.open("r", encoding="utf-8") as f:
-         ~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
-File "C:\Program Files\Python313\Lib\pathlib\_local.py", line 537, in open
-    return io.open(self, mode, buffering, encoding, errors, newline)
-           ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    # Category-specific (NRI/Foreign) — mostly narrative
+    {"qid":"UG-21","label":"Who is treated as NRI vs Foreign applicant?","handler":"faiss_summary","filters":{}},
+    {"qid":"UG-22","label":"NRI application portal & fee payment instructions","handler":"faiss_summary","filters":{}},
+    {"qid":"UG-23","label":"Foreign nationals/OCI/PIO application steps & fees","handler":"faiss_summary","filters":{}},
 
+    # Hostel touchpoints for UG joiners (kept; uses hostel SQL if you have it)
+    {"qid":"UG-24","label":"First-year hostel fee (Indian) AY 2025–26","handler":"hostel","filters":{"level":"First-Year","category":"Indian","ay":"2025-26"}},
+    {"qid":"UG-25","label":"First-year hostel fee (NRI/Foreign) AY 2025–26","handler":"hostel","filters":{"level":"First-Year","category":"NRI","ay":"2025-26"}},
+    {"qid":"UG-26","label":"Senior hostel fee overview AY 2025–26","handler":"hostel","filters":{"level":"Senior","ay":"2025-26"}},
+    {"qid":"UG-27","label":"Hostel block landlines and key contacts","handler":"contacts","filters":{}},
 
+    # International/NRI doc nuances (FAISS)
+    {"qid":"UG-28","label":"Extra documents for NRI/Foreign students at reporting","handler":"faiss_summary","filters":{}},
+    {"qid":"UG-29","label":"AIU equivalence and accepted international boards","handler":"faiss_summary","filters":{}},
 
-You can find our privacy policy at https://streamlit.io/privacy-policy
+    # Payments / Refunds
+    {"qid":"UG-30","label":"Mode and schedule of tuition/hostel fee payment","handler":"faiss_summary","filters":{}},
+    {"qid":"UG-31","label":"Refund policy if I withdraw before/after registration","handler":"faiss_summary","filters":{}},
 
-  Summary:
-  - This open source library collects usage statistics.
-  - We cannot see and do not store information contained inside Streamlit apps,
-    such as text, charts, images, etc.
-  - Telemetry data is stored in servers in the United States.
-  - If you'd like to opt out, add the following to %userprofile%/.streamlit/config.toml,
-    creating that file if necessary:
+    # After-offer logistics
+    {"qid":"UG-32","label":"When to pay balance tuition/hostel after provisional admission?","handler":"faiss_summary","filters":{}},
+    {"qid":"UG-33","label":"How to check application status and download letters?","handler":"faiss_summary","filters":{}},
+    {"qid":"UG-34","label":"How to correct mistakes in the application after submission?","handler":"faiss_summary","filters":{}},
+    {"qid":"UG-35","label":"Uploading pending 12th/board marks and verification process","handler":"faiss_summary","filters":{}},
 
-    [browser]
-    gatherUsageStats = false
+    # Academics quick info (FAISS)
+    {"qid":"UG-36","label":"Medium of instruction and availability of bridge courses","handler":"faiss_summary","filters":{}},
+    {"qid":"UG-37","label":"Attendance, exams and grading policy (UG) overview","handler":"faiss_summary","filters":{}},
 
+    # Careers (FAISS)
+    {"qid":"UG-38","label":"Internships and industry-linked projects during UG","handler":"faiss_summary","filters":{}},
+    {"qid":"UG-39","label":"Recent UG placement highlights & top recruiters","handler":"faiss_summary","filters":{}},
 
-  You can now view your Streamlit app in your browser.
+    # Support (FAISS)
+    {"qid":"UG-40","label":"Whom to contact for UG admissions help (email/phone)?","handler":"faiss_summary","filters":{}},
+]
 
-  Local URL: http://localhost:8501
-  Network URL: http://192.168.29.28:8501
+# ---------------- Helpers ----------------
+def _md_table(table: Dict[str, Any]) -> str:
+    """Render a dict(table) => markdown table string."""
+    if not table or not table.get("columns") or not table.get("rows"):
+        return "_No results._"
+    cols = table["columns"]
+    rows = table["rows"]
+    lines = [
+        " | ".join(cols),
+        " | ".join(["---"] * len(cols))
+    ]
+    for r in rows:
+        lines.append(" | ".join("" if x is None else str(x) for x in r))
+    return "\n".join(lines)
 
-────────────────────────── Traceback (most recent call last) ───────────────────────────
-  c:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\streamlit\runtime\scriptr
-  unner\exec_code.py:128 in exec_func_with_error_handling
+def _dispatch(handler: str, filters: Dict[str, Any], fallback_query: str) -> Dict[str, Any]:
+    """
+    Returns: {"type": "table" | "md", "content": <table_dict or markdown string>}
+    Follows your architecture: SQL-first; narrative via FAISS.
+    """
+    # --- SQL-first routes ---
+    if handler == "programs":
+        return {"type": "table", "content": sql_programs(filters, "")}
+    if handler == "eligibility":
+        return {"type": "table", "content": sql_eligibility(filters, "")}
+    if handler == "documents":
+        return {"type": "table", "content": sql_documents(filters, "")}
+    if handler == "fees":
+        return {"type": "table", "content": sql_academic_fees(filters, "")}
+    if handler == "scholarships":
+        return {"type": "table", "content": sql_scholarships(filters, "")}
+    if handler == "hostel":
+        # hostel helper returns {"table": {...}, "notes": [...]}
+        data = sql_hostel_overview(filters)
+        tbl = data.get("table")
+        notes = data.get("notes") or []
+        md = _md_table(tbl)
+        if notes:
+            md += "\n\n" + "\n".join(f"- {n}" for n in notes)
+        return {"type": "md", "content": md}
+    if handler == "contacts":
+        data = sql_block_contacts(filters)
+        return {"type": "table", "content": data.get("table")}
+    if handler == "blocks":
+        data = sql_list_blocks(filters)
+        return {"type": "table", "content": data.get("table")}
 
-  c:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\streamlit\runtime\scriptr
-  unner\script_runner.py:669 in code_to_exec
+    # --- FAISS: narrative/guide answers from PDFs ---
+    if handler == "faiss_summary":
+        try:
+            md = faiss_answer_or_summary(FAISS_INDEX_DIR, FAISS_COLLECTION, fallback_query)
+            return {"type": "md", "content": md or "_No context found in PDFs._"}
+        except Exception as e:
+            return {"type": "md", "content": f"_FAISS error: {e}_"}
 
-  C:\Users\T8543\Downloads\project-2\streamlit_app.py:120 in <module>
+    return {"type": "md", "content": "_Unknown handler._"}
 
-    117 │   )
-    118 │   registry_path = REGISTRY_FILES[seg]
-    119 │   
-  ❱ 120 │   rows = load_registry(registry_path)
-    121 │   st.caption(f"Loaded **{len(rows)}** questions from `{registry_path}`")
-    122 │   
-    123 │   q_search = st.text_input("Filter questions", placeholder="Type to filter…"
+# ---------------- UI ----------------
+st.title("🎓 UG — Static FAQs (Click to Answer)")
 
-  c:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\streamlit\runtime\caching
-  \cache_utils.py:227 in __call__
+left, right = st.columns([1, 3], gap="large")
 
-  c:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\streamlit\runtime\caching
-  \cache_utils.py:269 in _get_or_create_cached_value
+with left:
+    st.subheader("UG — 40 Questions")
 
-  c:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\streamlit\runtime\caching
-  \cache_utils.py:328 in _handle_cache_miss
+    # Filter box for quick narrowing
+    q_search = st.text_input("Filter", placeholder="Search in questions/QIDs…").strip().lower()
+    options = [row for row in UG_REG if (q_search in row["label"].lower() or q_search in row["qid"].lower())]
 
-  C:\Users\T8543\Downloads\project-2\streamlit_app.py:92 in load_registry
+    # Select + button for clean UX
+    labels = [f"{r['qid']} — {r['label']}" for r in options]
+    idx = st.selectbox("Select a question", options=range(len(labels)) if labels else [0],
+                       format_func=(lambda i: labels[i] if labels else "—"),
+                       label_visibility="collapsed")
 
-     89 @st.cache_data(show_spinner=False)
-     90 def load_registry(registry_path: str) -> List[Dict[str, Any]]:
-     91 │   p = pathlib.Path(registry_path)
-  ❱  92 │   with p.open("r", encoding="utf-8") as f:
-     93 │   │   data = json.load(f)
-     94 │   # sanity
-     95 │   for row in data:
+    go = st.button("Get Answer", type="primary")
+    # Persist the selected row in session
+    if go and options:
+        st.session_state["selected_ug"] = options[idx]
+    elif "selected_ug" not in st.session_state and options:
+        st.session_state["selected_ug"] = options[0]
 
-  C:\Program Files\Python313\Lib\pathlib\_local.py:537 in open
+with right:
+    st.subheader("Answer")
+    selected = st.session_state.get("selected_ug")
+    if not selected:
+        st.info("Pick a question on the left.")
+    else:
+        handler = selected.get("handler")
+        filters = selected.get("filters") or {}
+        fallback_query = selected.get("label", "")
 
-    534 │   │   """
-    535 │   │   if "b" not in mode:
-    536 │   │   │   encoding = io.text_encoding(encoding)
-  ❱ 537 │   │   return io.open(self, mode, buffering, encoding, errors, newline)
-    538 │   
-    539 │   def read_text(self, encoding=None, errors=None, newline=None):
-    540 │   │   """
-────────────────────────────────────────────────────────────────────────────────────────
-FileNotFoundError: [Errno 2] No such file or directory:
-'Data\\processed\\ug_admissions_questions_registry.json'
+        with st.spinner("Fetching…"):
+            result = _dispatch(handler, filters, fallback_query)
 
+        st.markdown(f"**{selected['qid']}** — {selected['label']}")
+        st.caption(f"Handler: `{handler}`  |  Filters: `{filters}`")
+
+        if result["type"] == "table":
+            table = result["content"]
+            if not table:
+                st.warning("No results from SQL.")
+            else:
+                cols = table.get("columns") or []
+                rows = table.get("rows") or []
+                if cols and rows:
+                    import pandas as pd
+                    df = pd.DataFrame(rows, columns=cols)
+                    st.dataframe(df, use_container_width=True, hide_index=True)
+                    with st.expander("Copy as Markdown"):
+                        st.code(_md_table(table), language="markdown")
+                else:
+                    st.write("_No results._")
+        else:
+            st.markdown(result["content"])
+
+    st.divider()
+    st.caption("Source of truth: SQLite for tabular data · FAISS for narrative answers from PDFs.")
