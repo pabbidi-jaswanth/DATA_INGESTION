@@ -38,3 +38,74 @@ File "C:\Users\T8543\Downloads\project-2\streamlit_app.py", line 92, in load_reg
 File "C:\Program Files\Python313\Lib\pathlib\_local.py", line 537, in open
     return io.open(self, mode, buffering, encoding, errors, newline)
            ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+
+You can find our privacy policy at https://streamlit.io/privacy-policy
+
+  Summary:
+  - This open source library collects usage statistics.
+  - We cannot see and do not store information contained inside Streamlit apps,
+    such as text, charts, images, etc.
+  - Telemetry data is stored in servers in the United States.
+  - If you'd like to opt out, add the following to %userprofile%/.streamlit/config.toml,
+    creating that file if necessary:
+
+    [browser]
+    gatherUsageStats = false
+
+
+  You can now view your Streamlit app in your browser.
+
+  Local URL: http://localhost:8501
+  Network URL: http://192.168.29.28:8501
+
+────────────────────────── Traceback (most recent call last) ───────────────────────────
+  c:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\streamlit\runtime\scriptr
+  unner\exec_code.py:128 in exec_func_with_error_handling
+
+  c:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\streamlit\runtime\scriptr
+  unner\script_runner.py:669 in code_to_exec
+
+  C:\Users\T8543\Downloads\project-2\streamlit_app.py:120 in <module>
+
+    117 │   )
+    118 │   registry_path = REGISTRY_FILES[seg]
+    119 │   
+  ❱ 120 │   rows = load_registry(registry_path)
+    121 │   st.caption(f"Loaded **{len(rows)}** questions from `{registry_path}`")
+    122 │   
+    123 │   q_search = st.text_input("Filter questions", placeholder="Type to filter…"
+
+  c:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\streamlit\runtime\caching
+  \cache_utils.py:227 in __call__
+
+  c:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\streamlit\runtime\caching
+  \cache_utils.py:269 in _get_or_create_cached_value
+
+  c:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\streamlit\runtime\caching
+  \cache_utils.py:328 in _handle_cache_miss
+
+  C:\Users\T8543\Downloads\project-2\streamlit_app.py:92 in load_registry
+
+     89 @st.cache_data(show_spinner=False)
+     90 def load_registry(registry_path: str) -> List[Dict[str, Any]]:
+     91 │   p = pathlib.Path(registry_path)
+  ❱  92 │   with p.open("r", encoding="utf-8") as f:
+     93 │   │   data = json.load(f)
+     94 │   # sanity
+     95 │   for row in data:
+
+  C:\Program Files\Python313\Lib\pathlib\_local.py:537 in open
+
+    534 │   │   """
+    535 │   │   if "b" not in mode:
+    536 │   │   │   encoding = io.text_encoding(encoding)
+  ❱ 537 │   │   return io.open(self, mode, buffering, encoding, errors, newline)
+    538 │   
+    539 │   def read_text(self, encoding=None, errors=None, newline=None):
+    540 │   │   """
+────────────────────────────────────────────────────────────────────────────────────────
+FileNotFoundError: [Errno 2] No such file or directory:
+'Data\\processed\\ug_admissions_questions_registry.json'
+
