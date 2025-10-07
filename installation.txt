@@ -1,219 +1,540 @@
-#!/usr/bin/env python3
-# embeddings_faiss_gemini.py
-"""
-Build FAISS index from chunks_clean_final.jsonl using Gemini embeddings.
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> python -m app.rag_answer "MCA eligibility"
+FAISS index not found at C:\Users\T8543\Downloads\project-2\Data\faiss_index. Run build_faiss_index.py first.
+**Programs**
 
-Usage:
-    python embeddings_faiss_gemini.py \
-        --chunks Data/processed/chunks_clean_final.jsonl \
-        --persist Data/index/faiss \
-        --collection vit_faq_vellore
-"""
+Level | Program | School | Duration | Campus | Source
+--- | --- | --- | --- | --- | ---
+PG | Master of Computer Applications (MCA) | School of Computer Science & Engineering / Information Systems | 2 years (4 semesters) | Vellore | mca_programs.csv
+UG | B.Arch |  |  | Vellore; VIT-Bhopal | programs_ug (1).csv
+UG | B.B.A (2+2 VSB->ASU | Degree from ASU) |  |  | VIT-AP | programs_ug (1).csv
+UG | B.B.A (2+2 VSB->UMD | Degree from UMD) |  |  | VIT-AP | programs_ug (1).csv
+UG | B.B.A (Bachelor of Business Administration) |  |  | Vellore; VIT-AP; VIT-Bhopal | programs_ug (1).csv
+UG | B.B.A (Business Analytics) |  |  | VIT-AP | programs_ug (1).csv
+UG | B.B.A (Hons.) 2+2 with RIT |  |  | Chennai | programs_ug (1).csv
+UG | B.B.A (Specialisation: Digital Marketing) |  |  | VIT-AP | programs_ug (1).csv
+UG | B.B.A (Specialisation: FinTech) |  |  | VIT-AP | programs_ug (1).csv
+UG | B.B.A (Specialisation: General Management) |  |  | VIT-AP | programs_ug (1).csv
+UG | B.C.A (Bachelor of Computer Applications) |  |  | Vellore | programs_ug (1).csv
+UG | B.Com (Bachelor of Commerce) |  |  | Vellore | programs_ug (1).csv
+UG | B.Com (Finance) |  |  | VIT-AP | programs_ug (1).csv
+UG | B.Com (Hons.) |  |  | Chennai | programs_ug (1).csv
+UG | B.Com - Business Process Services |  |  | Vellore | programs_ug (1).csv
+UG | B.Com – Banking and Capital Markets |  |  | Vellore | programs_ug (1).csv
+UG | B.Com – Financial Technology |  |  | Vellore | programs_ug (1).csv
+UG | B.Des. Industrial Design |  |  | Vellore | programs_ug (1).csv
+UG | B.Sc. (Hons.) Agriculture |  |  | Vellore | programs_ug (1).csv
+UG | B.Sc. Computer Science |  |  | Vellore; Chennai | programs_ug (1).csv
+UG | B.Sc. Economics (Hons.) |  |  | Chennai | programs_ug (1).csv
+UG | B.Sc. Fashion Design |  |  | Chennai | programs_ug (1).csv
+UG | B.Sc. Multimedia & Animation |  |  | Vellore | programs_ug (1).csv
+UG | B.Sc. Visual Communication |  |  | Vellore | programs_ug (1).csv
+UG | B.Sc. in Hospitality and Hotel Administration |  |  | Vellore | programs_ug (1).csv
+UG | B.Tech - Aerospace Engineering |  |  | VIT-Bhopal | programs_ug (1).csv
+UG | B.Tech - Bioengineering |  |  | VIT-Bhopal | programs_ug (1).csv
+UG | B.Tech - Biotechnology |  |  | Vellore | programs_ug (1).csv
+UG | B.Tech - CSE (AI & Data Engineering) |  |  | Vellore | programs_ug (1).csv
+UG | B.Tech - CSE (AI & ML) |  |  | Vellore; Chennai; VIT-AP; VIT-Bhopal | programs_ug (1).csv
+UG | B.Tech - CSE (AI & Robotics) |  |  | Chennai | programs_ug (1).csv
+UG | B.Tech - CSE (Bioinformatics) |  |  | Vellore | programs_ug (1).csv
+UG | B.Tech - CSE (Blockchain) |  |  | VIT-AP | programs_ug (1).csv
+UG | B.Tech - CSE (Cloud Computing & Automation) |  |  | VIT-Bhopal | programs_ug (1).csv
+UG | B.Tech - CSE (Cyber Physical Systems) |  |  | Chennai | programs_ug (1).csv
+UG | B.Tech - CSE (Cyber Security & Digital Forensics) |  |  | VIT-Bhopal | programs_ug (1).csv
+UG | B.Tech - CSE (Cyber Security) |  |  | Vellore; Chennai; VIT-AP | programs_ug (1).csv
+UG | B.Tech - CSE (Data Analytics) |  |  | VIT-AP | programs_ug (1).csv
+UG | B.Tech - CSE (Data Science) |  |  | Vellore; Chennai | programs_ug (1).csv
+UG | B.Tech - CSE (E-Commerce Technology) |  |  | VIT-Bhopal | programs_ug (1).csv
+UG | B.Tech - CSE (Education Technology) |  |  | VIT-Bhopal | programs_ug (1).csv
+UG | B.Tech - CSE (Gaming Technology) |  |  | VIT-Bhopal | programs_ug (1).csv
+UG | B.Tech - CSE (Health Informatics) |  |  | VIT-Bhopal | programs_ug (1).csv
+UG | B.Tech - CSE (Software Engineering) |  |  | VIT-AP | programs_ug (1).csv
+UG | B.Tech - CSE and Business Systems (with TCS) |  |  | Vellore | programs_ug (1).csv
+UG | B.Tech - Chemical Engineering |  |  | Vellore | programs_ug (1).csv
+UG | B.Tech - Civil Engineering |  |  | Vellore; Chennai | programs_ug (1).csv
+UG | B.Tech - Civil Engineering (In Collaboration with L & T) |  |  | Vellore; Chennai | programs_ug (1).csv        
+UG | B.Tech - Computer Science and Business Systems |  |  | VIT-AP | programs_ug (1).csv
+UG | B.Tech - Computer Science and Engineering |  |  | Vellore; Chennai; VIT-AP; VIT-Bhopal | programs_ug (1).csv   
+UG | B.Tech - ECE (AI & Cybernetics) |  |  | VIT-Bhopal | programs_ug (1).csv
+UG | B.Tech - ECE (Biomedical Engineering) |  |  | Vellore | programs_ug (1).csv
+UG | B.Tech - ECE (Embedded Systems) |  |  | VIT-AP | programs_ug (1).csv
+UG | B.Tech - ECE (VLSI) |  |  | VIT-AP | programs_ug (1).csv
+UG | B.Tech - Electrical and Computer Science Engineering |  |  | Vellore; Chennai | programs_ug (1).csv
+UG | B.Tech - Electrical and Electronics Engineering |  |  | Vellore; Chennai | programs_ug (1).csv
+UG | B.Tech - Electronics Engineering (VLSI Design and Technology) |  |  | Vellore; Chennai | programs_ug (1).csv   
+UG | B.Tech - Electronics and Communication Engineering |  |  | Vellore; Chennai; VIT-AP; VIT-Bhopal | programs_ug (1).csv
+UG | B.Tech - Electronics and Computer Engineering |  |  | Chennai | programs_ug (1).csv
+UG | B.Tech - Electronics and Instrumentation Engineering |  |  | Vellore | programs_ug (1).csv
+UG | B.Tech - Fashion Technology |  |  | Chennai | programs_ug (1).csv
+UG | B.Tech - Health Sciences and Technology |  |  | Vellore | programs_ug (1).csv
+UG | B.Tech - Information Technology |  |  | Vellore | programs_ug (1).csv
+UG | B.Tech - Mechanical Engineering |  |  | Vellore; Chennai; VIT-AP; VIT-Bhopal | programs_ug (1).csv
+UG | B.Tech - Mechanical Engineering (AI & Robotics) |  |  | VIT-Bhopal | programs_ug (1).csv
+UG | B.Tech - Mechanical Engineering (Automotive Design) |  |  | VIT-AP | programs_ug (1).csv
+UG | B.Tech - Mechanical Engineering (Electric Vehicles) |  |  | Vellore; Chennai | programs_ug (1).csv
+UG | B.Tech - Mechanical Engineering (Robotics) |  |  | VIT-AP | programs_ug (1).csv
+UG | B.Tech - Mechanical Engineering (Smart Manufacturing) |  |  | Vellore | programs_ug (1).csv
+UG | B.Tech - Mechatronics and Automation |  |  | Chennai | programs_ug (1).csv
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> python -m app.rag_answer "B.tech CSE fees indian 2025"
+FAISS index not found at C:\Users\T8543\Downloads\project-2\Data\faiss_index. Run build_faiss_index.py first.
+**Academic Fees**
 
-import os, sys, json, argparse
-from pathlib import Path
-from tqdm import tqdm
-from dotenv import load_dotenv
+Level | Program | Category | AY | Tuition | One-time | Caution | Total | Curr | Source
+--- | --- | --- | --- | --- | --- | --- | --- | --- | ---
+PG | MCA | Indian |  | 137,000 | 3,000 (Caution, refundable) | 3,000 | 140,000 | INR | mca_fees.csv
+PG | MCA | Indian |  | 137,000 | NONE | NONE | 137,000 | INR | mca_fees.csv
+PG | M.Sc. | Indian | 2025-26 |  |  | 3,000 |  | INR | msc_fees (1).csv
+PG | M.Sc. | Indian | 2025-26 |  |  | 3,000 |  | INR | msc_fees (1).csv
+PG | M.Sc. | Indian | 2025-26 |  |  | 3,000 |  | INR | msc_fees (1).csv
+PG | M.Sc. | Indian | 2025-26 |  |  | 3,000 |  | INR | msc_fees (1).csv
+PG | M.Sc. | Indian | 2025-26 |  |  | 3,000 |  | INR | msc_fees (1).csv
+PG | M.Sc. | Indian | 2025-26 |  |  | 3,000 |  | INR | msc_fees (1).csv
+PG | M.Sc. | Indian | 2025-26 |  |  | 3,000 |  | INR | msc_fees (1).csv
+PG | M.Sc. | Indian | 2025-26 |  |  | 3,000 |  | INR | msc_fees (1).csv
+UG | B.Tech - Group A | Indian |  |  |  |  |  | INR | fee_structure_2025_2026.csv
+UG | B.Tech - Group A (L&T Collaboration) | Indian |  |  |  |  |  | INR | fee_structure_2025_2026.csv
+UG | B.Tech - Group B | Indian |  |  |  |  |  | INR | fee_structure_2025_2026.csv
+UG | B.Tech - Group B (Bhopal Campus) | Indian |  |  |  |  |  | INR | fee_structure_2025_2026.csv
+UG | B.Arch | Indian |  |  |  |  |  | INR | fee_structure_2025_2026.csv
+UG | B.Des (Industrial Design) | Indian |  |  |  |  |  | INR | fee_structure_2025_2026.csv
+UG | B.Sc. (Hons.) Agriculture | Indian |  |  |  |  |  | INR | fee_structure_2025_2026.csv
+UG | B.Sc. (Hospitality and Hotel Administration) | Indian |  |  |  |  |  | INR | fee_structure_2025_2026.csv       
+UG | BCA | Indian |  |  |  |  |  | INR | fee_structure_2025_2026.csv
+UG | B.Sc. (Computer Science) | Indian |  |  |  |  |  | INR | fee_structure_2025_2026.csv
+UG | B.Com | Indian |  |  |  |  |  | INR | fee_structure_2025_2026.csv
+UG | B.Com (Business Process Services) | Indian |  |  |  |  |  | INR | fee_structure_2025_2026.csv
+UG | B.Com (Banking and Capital Markets) | Indian |  |  |  |  |  | INR | fee_structure_2025_2026.csv
+UG | B.Com (Financial Technology) | Indian |  |  |  |  |  | INR | fee_structure_2025_2026.csv
+UG | BBA | Indian |  |  |  |  |  | INR | fee_structure_2025_2026.csv
+UG | B.Sc. (Multimedia and Animation) | Indian |  |  |  |  |  | INR | fee_structure_2025_2026.csv
+UG | B.Sc. (Visual Communication) | Indian |  |  |  |  |  | INR | fee_structure_2025_2026.csv
+Integrated | Integrated M.Tech. (Category 1) | Indian |  |  |  |  |  | INR | fee_structure_2025_2026.csv
+Integrated | Integrated M.Tech. (Category 2) | Indian |  |  |  |  |  | INR | fee_structure_2025_2026.csv
+Integrated | Integrated M.Tech. (Category 3) | Indian |  |  |  |  |  | INR | fee_structure_2025_2026.csv
+Integrated | Integrated M.Tech. (Category 4) | Indian |  |  |  |  |  | INR | fee_structure_2025_2026.csv
+Integrated | Integrated M.Tech. (Category 5) | Indian |  |  |  |  |  | INR | fee_structure_2025_2026.csv
+Integrated | Integrated M.Sc. Biotechnology (Vellore) | Indian |  |  |  |  |  | INR | fee_structure_2025_2026.csv   
+Integrated | Integrated M.Sc. Biotechnology (Bhopal) | Indian |  |  |  |  |  | INR | fee_structure_2025_2026.csv    
+Integrated | Integrated M.Sc. Food Science and Technology (Vellore) | Indian |  |  |  |  |  | INR | fee_structure_2025_2026.csv
+Integrated | Integrated M.Sc. Computational Statistics and Data Analytics (Vellore) | Indian |  |  |  |  |  | INR | fee_structure_2025_2026.csv
+Integrated | Integrated M.Sc. Physics (Vellore) | Indian |  |  |  |  |  | INR | fee_structure_2025_2026.csv
+Integrated | Integrated M.Sc. Chemistry (Vellore) | Indian |  |  |  |  |  | INR | fee_structure_2025_2026.csv       
+Integrated | Integrated M.Sc. Mathematics (Vellore) | Indian |  |  |  |  |  | INR | fee_structure_2025_2026.csv     
+UG | B.Tech | International |  |  |  |  |  | USD | fee_structure_2025_2026.csv
+Integrated | Integrated M.Tech. (5 Years) | International |  |  |  |  |  | USD | fee_structure_2025_2026.csv        
+Integrated | Integrated M.Sc. (5 Years) | International |  |  |  |  |  | USD | fee_structure_2025_2026.csv
+UG | BCA | International |  |  |  |  |  | USD | fee_structure_2025_2026.csv
+UG | B.Sc. (Computer Science) | International |  |  |  |  |  | USD | fee_structure_2025_2026.csv
+UG | B.Com | International |  |  |  |  |  | USD | fee_structure_2025_2026.csv
+UG | BBA | International |  |  |  |  |  | USD | fee_structure_2025_2026.csv
+UG | B.Sc. (Multimedia and Animation) | International |  |  |  |  |  | USD | fee_structure_2025_2026.csv
+PG | M.Sc. | International |  |  |  |  |  | USD | fee_structure_2025_2026.csv
+PG | MSW (Master of Social Work) | International |  |  |  |  |  | USD | fee_structure_2025_2026.csv
+PG | M.Tech. | International |  |  |  |  |  | USD | fee_structure_2025_2026.csv
+PG | MCA | International |  |  |  |  |  | USD | fee_structure_2025_2026.csv
+PG | MBA | International |  |  |  |  |  | USD | fee_structure_2025_2026.csv
+PG | M.Des (Industrial Design) | International |  |  |  |  |  | USD | fee_structure_2025_2026.csv
+PG | M.Arch. | International |  |  |  |  |  | USD | fee_structure_2025_2026.csv
+PhD | Ph.D / Direct Ph.D | International |  |  |  |  |  | USD/INR | fee_structure_2025_2026.csv
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> python -m app.rag_answer "UG documents required"      
+FAISS index not found at C:\Users\T8543\Downloads\project-2\Data\faiss_index. Run build_faiss_index.py first.
+**Documents Required**
 
-# Load environment variables
-load_dotenv()
+Level | Program | Document | Details | Source
+--- | --- | --- | --- | ---
+UG | ALL | •  Affidavit by the Parent (Signed & Notarized) |  | Document Submission.pdf
+UG | ALL | •  Affidavit by the Student ( (Signed & Notarized): |  | Document Submission.pdf
+UG | ALL | •  Age proof (Birth certificate / Passport Copy) |  | Document Submission.pdf
+UG | ALL | •  Community Certificate (For SC/ST only) |  | Document Submission.pdf
+UG | ALL | •  Employer Certificate (original) |  | Document Submission.pdf
+UG | ALL | •  Hostel Affidavit (Signed & Notarized) |  | Document Submission.pdf
+UG | ALL | •  In case of submission of any fraudulent, incompetent certificate by the |  | Document Submission.pdf  
+UG | ALL | •  Migration Certificate |  | Document Submission.pdf
+UG | ALL | •  Migration Certificate (if issued by the board) |  | Document Submission.pdf
+UG | ALL | •  Nativity Certificate (For Applicants hailing from North Eastern States and Jammu & |  | Document Submission.pdf
+UG | ALL | •  Passport Copy (Student & Parent) |  | Document Submission.pdf
+UG | ALL | •  Recent passport size colour photos - 4 Nos. |  | Document Submission.pdf
+UG | ALL | •  The candidate should submit the qualifying mark statement from the board |  | Document Submission.pdf 
+UG | ALL | •  Transfer Certificate / School leaving Certificate |  | Document Submission.pdf
+UG | ALL | •  Transfer Certificate/School Leaving Certificate |  | Document Submission.pdf
+UG | ALL | •  Undertaking form (Signed by Student & Parent) |  | Document Submission.pdf
+UG | ALL | •  X & XII mark sheet |  | Document Submission.pdf
+UG | ALL | •  XII Mark statements of all attempts of qualifying examination |  | Document Submission.pdf
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> python -m app.rag_answer "MSc programs offered" 
+FAISS index not found at C:\Users\T8543\Downloads\project-2\Data\faiss_index. Run build_faiss_index.py first.
+**Programs**
 
-# Import LangChain and Gemini
-from langchain_community.vectorstores import FAISS
-from langchain_core.embeddings import Embeddings
-import google.generativeai as genai
+Level | Program | School | Duration | Campus | Source
+--- | --- | --- | --- | --- | ---
+PG | Master of Computer Applications (MCA) | School of Computer Science & Engineering / Information Systems | 2 years (4 semesters) | Vellore | mca_programs.csv
+UG | B.Arch |  |  | Vellore; VIT-Bhopal | programs_ug (1).csv
+UG | B.B.A (2+2 VSB->ASU | Degree from ASU) |  |  | VIT-AP | programs_ug (1).csv
+UG | B.B.A (2+2 VSB->UMD | Degree from UMD) |  |  | VIT-AP | programs_ug (1).csv
+UG | B.B.A (Bachelor of Business Administration) |  |  | Vellore; VIT-AP; VIT-Bhopal | programs_ug (1).csv
+UG | B.B.A (Business Analytics) |  |  | VIT-AP | programs_ug (1).csv
+UG | B.B.A (Hons.) 2+2 with RIT |  |  | Chennai | programs_ug (1).csv
+UG | B.B.A (Specialisation: Digital Marketing) |  |  | VIT-AP | programs_ug (1).csv
+UG | B.B.A (Specialisation: FinTech) |  |  | VIT-AP | programs_ug (1).csv
+UG | B.B.A (Specialisation: General Management) |  |  | VIT-AP | programs_ug (1).csv
+UG | B.C.A (Bachelor of Computer Applications) |  |  | Vellore | programs_ug (1).csv
+UG | B.Com (Bachelor of Commerce) |  |  | Vellore | programs_ug (1).csv
+UG | B.Com (Finance) |  |  | VIT-AP | programs_ug (1).csv
+UG | B.Com (Hons.) |  |  | Chennai | programs_ug (1).csv
+UG | B.Com - Business Process Services |  |  | Vellore | programs_ug (1).csv
+UG | B.Com – Banking and Capital Markets |  |  | Vellore | programs_ug (1).csv
+UG | B.Com – Financial Technology |  |  | Vellore | programs_ug (1).csv
+UG | B.Des. Industrial Design |  |  | Vellore | programs_ug (1).csv
+UG | B.Sc. (Hons.) Agriculture |  |  | Vellore | programs_ug (1).csv
+UG | B.Sc. Computer Science |  |  | Vellore; Chennai | programs_ug (1).csv
+UG | B.Sc. Economics (Hons.) |  |  | Chennai | programs_ug (1).csv
+UG | B.Sc. Fashion Design |  |  | Chennai | programs_ug (1).csv
+UG | B.Sc. Multimedia & Animation |  |  | Vellore | programs_ug (1).csv
+UG | B.Sc. Visual Communication |  |  | Vellore | programs_ug (1).csv
+UG | B.Sc. in Hospitality and Hotel Administration |  |  | Vellore | programs_ug (1).csv
+UG | B.Tech - Aerospace Engineering |  |  | VIT-Bhopal | programs_ug (1).csv
+UG | B.Tech - Bioengineering |  |  | VIT-Bhopal | programs_ug (1).csv
+UG | B.Tech - Biotechnology |  |  | Vellore | programs_ug (1).csv
+UG | B.Tech - CSE (AI & Data Engineering) |  |  | Vellore | programs_ug (1).csv
+UG | B.Tech - CSE (AI & ML) |  |  | Vellore; Chennai; VIT-AP; VIT-Bhopal | programs_ug (1).csv
+UG | B.Tech - CSE (AI & Robotics) |  |  | Chennai | programs_ug (1).csv
+UG | B.Tech - CSE (Bioinformatics) |  |  | Vellore | programs_ug (1).csv
+UG | B.Tech - CSE (Blockchain) |  |  | VIT-AP | programs_ug (1).csv
+UG | B.Tech - CSE (Cloud Computing & Automation) |  |  | VIT-Bhopal | programs_ug (1).csv
+UG | B.Tech - CSE (Cyber Physical Systems) |  |  | Chennai | programs_ug (1).csv
+UG | B.Tech - CSE (Cyber Security & Digital Forensics) |  |  | VIT-Bhopal | programs_ug (1).csv
+UG | B.Tech - CSE (Cyber Security) |  |  | Vellore; Chennai; VIT-AP | programs_ug (1).csv
+UG | B.Tech - CSE (Data Analytics) |  |  | VIT-AP | programs_ug (1).csv
+UG | B.Tech - CSE (Data Science) |  |  | Vellore; Chennai | programs_ug (1).csv
+UG | B.Tech - CSE (E-Commerce Technology) |  |  | VIT-Bhopal | programs_ug (1).csv
+UG | B.Tech - CSE (Education Technology) |  |  | VIT-Bhopal | programs_ug (1).csv
+UG | B.Tech - CSE (Gaming Technology) |  |  | VIT-Bhopal | programs_ug (1).csv
+UG | B.Tech - CSE (Health Informatics) |  |  | VIT-Bhopal | programs_ug (1).csv
+UG | B.Tech - CSE (Software Engineering) |  |  | VIT-AP | programs_ug (1).csv
+UG | B.Tech - CSE and Business Systems (with TCS) |  |  | Vellore | programs_ug (1).csv
+UG | B.Tech - Chemical Engineering |  |  | Vellore | programs_ug (1).csv
+UG | B.Tech - Civil Engineering |  |  | Vellore; Chennai | programs_ug (1).csv
+UG | B.Tech - Civil Engineering (In Collaboration with L & T) |  |  | Vellore; Chennai | programs_ug (1).csv        
+UG | B.Tech - Computer Science and Business Systems |  |  | VIT-AP | programs_ug (1).csv
+UG | B.Tech - Computer Science and Engineering |  |  | Vellore; Chennai; VIT-AP; VIT-Bhopal | programs_ug (1).csv   
+UG | B.Tech - ECE (AI & Cybernetics) |  |  | VIT-Bhopal | programs_ug (1).csv
+UG | B.Tech - ECE (Biomedical Engineering) |  |  | Vellore | programs_ug (1).csv
+UG | B.Tech - ECE (Embedded Systems) |  |  | VIT-AP | programs_ug (1).csv
+UG | B.Tech - ECE (VLSI) |  |  | VIT-AP | programs_ug (1).csv
+UG | B.Tech - Electrical and Computer Science Engineering |  |  | Vellore; Chennai | programs_ug (1).csv
+UG | B.Tech - Electrical and Electronics Engineering |  |  | Vellore; Chennai | programs_ug (1).csv
+UG | B.Tech - Electronics Engineering (VLSI Design and Technology) |  |  | Vellore; Chennai | programs_ug (1).csv   
+UG | B.Tech - Electronics and Communication Engineering |  |  | Vellore; Chennai; VIT-AP; VIT-Bhopal | programs_ug (1).csv
+UG | B.Tech - Electronics and Computer Engineering |  |  | Chennai | programs_ug (1).csv
+UG | B.Tech - Electronics and Instrumentation Engineering |  |  | Vellore | programs_ug (1).csv
+UG | B.Tech - Fashion Technology |  |  | Chennai | programs_ug (1).csv
+UG | B.Tech - Health Sciences and Technology |  |  | Vellore | programs_ug (1).csv
+UG | B.Tech - Information Technology |  |  | Vellore | programs_ug (1).csv
+UG | B.Tech - Mechanical Engineering |  |  | Vellore; Chennai; VIT-AP; VIT-Bhopal | programs_ug (1).csv
+UG | B.Tech - Mechanical Engineering (AI & Robotics) |  |  | VIT-Bhopal | programs_ug (1).csv
+UG | B.Tech - Mechanical Engineering (Automotive Design) |  |  | VIT-AP | programs_ug (1).csv
+UG | B.Tech - Mechanical Engineering (Electric Vehicles) |  |  | Vellore; Chennai | programs_ug (1).csv
+UG | B.Tech - Mechanical Engineering (Robotics) |  |  | VIT-AP | programs_ug (1).csv
+UG | B.Tech - Mechanical Engineering (Smart Manufacturing) |  |  | Vellore | programs_ug (1).csv
+UG | B.Tech - Mechatronics and Automation |  |  | Chennai | programs_ug (1).csv
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> python -m app.rag_answer "what is VITMEE?"     
+FAISS index not found at C:\Users\T8543\Downloads\project-2\Data\faiss_index. Run build_faiss_index.py first.
+I don't have specific information about that yet. You can ask me about:
+- Programs offered (UG/PG)
+- Eligibility criteria
+- Fee structure
+- Documents required
+- Application process
+- VITMEE/VITEEE details
+- Hostel facilities
+- Scholarships
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> python -m app.rag_answer "how to apply for MCA?"
+FAISS index not found at C:\Users\T8543\Downloads\project-2\Data\faiss_index. Run build_faiss_index.py first.
+**Programs**
 
-# ==================== Gemini Embeddings ====================
+Level | Program | School | Duration | Campus | Source
+--- | --- | --- | --- | --- | ---
+PG | Master of Computer Applications (MCA) | School of Computer Science & Engineering / Information Systems | 2 years (4 semesters) | Vellore | mca_programs.csv
+UG | B.Arch |  |  | Vellore; VIT-Bhopal | programs_ug (1).csv
+UG | B.B.A (2+2 VSB->ASU | Degree from ASU) |  |  | VIT-AP | programs_ug (1).csv
+UG | B.B.A (2+2 VSB->UMD | Degree from UMD) |  |  | VIT-AP | programs_ug (1).csv
+UG | B.B.A (Bachelor of Business Administration) |  |  | Vellore; VIT-AP; VIT-Bhopal | programs_ug (1).csv
+UG | B.B.A (Business Analytics) |  |  | VIT-AP | programs_ug (1).csv
+UG | B.B.A (Hons.) 2+2 with RIT |  |  | Chennai | programs_ug (1).csv
+UG | B.B.A (Specialisation: Digital Marketing) |  |  | VIT-AP | programs_ug (1).csv
+UG | B.B.A (Specialisation: FinTech) |  |  | VIT-AP | programs_ug (1).csv
+UG | B.B.A (Specialisation: General Management) |  |  | VIT-AP | programs_ug (1).csv
+UG | B.C.A (Bachelor of Computer Applications) |  |  | Vellore | programs_ug (1).csv
+UG | B.Com (Bachelor of Commerce) |  |  | Vellore | programs_ug (1).csv
+UG | B.Com (Finance) |  |  | VIT-AP | programs_ug (1).csv
+UG | B.Com (Hons.) |  |  | Chennai | programs_ug (1).csv
+UG | B.Com - Business Process Services |  |  | Vellore | programs_ug (1).csv
+UG | B.Com – Banking and Capital Markets |  |  | Vellore | programs_ug (1).csv
+UG | B.Com – Financial Technology |  |  | Vellore | programs_ug (1).csv
+UG | B.Des. Industrial Design |  |  | Vellore | programs_ug (1).csv
+UG | B.Sc. (Hons.) Agriculture |  |  | Vellore | programs_ug (1).csv
+UG | B.Sc. Computer Science |  |  | Vellore; Chennai | programs_ug (1).csv
+UG | B.Sc. Economics (Hons.) |  |  | Chennai | programs_ug (1).csv
+UG | B.Sc. Fashion Design |  |  | Chennai | programs_ug (1).csv
+UG | B.Sc. Multimedia & Animation |  |  | Vellore | programs_ug (1).csv
+UG | B.Sc. Visual Communication |  |  | Vellore | programs_ug (1).csv
+UG | B.Sc. in Hospitality and Hotel Administration |  |  | Vellore | programs_ug (1).csv
+UG | B.Tech - Aerospace Engineering |  |  | VIT-Bhopal | programs_ug (1).csv
+UG | B.Tech - Bioengineering |  |  | VIT-Bhopal | programs_ug (1).csv
+UG | B.Tech - Biotechnology |  |  | Vellore | programs_ug (1).csv
+UG | B.Tech - CSE (AI & Data Engineering) |  |  | Vellore | programs_ug (1).csv
+UG | B.Tech - CSE (AI & ML) |  |  | Vellore; Chennai; VIT-AP; VIT-Bhopal | programs_ug (1).csv
+UG | B.Tech - CSE (AI & Robotics) |  |  | Chennai | programs_ug (1).csv
+UG | B.Tech - CSE (Bioinformatics) |  |  | Vellore | programs_ug (1).csv
+UG | B.Tech - CSE (Blockchain) |  |  | VIT-AP | programs_ug (1).csv
+UG | B.Tech - CSE (Cloud Computing & Automation) |  |  | VIT-Bhopal | programs_ug (1).csv
+UG | B.Tech - CSE (Cyber Physical Systems) |  |  | Chennai | programs_ug (1).csv
+UG | B.Tech - CSE (Cyber Security & Digital Forensics) |  |  | VIT-Bhopal | programs_ug (1).csv
+UG | B.Tech - CSE (Cyber Security) |  |  | Vellore; Chennai; VIT-AP | programs_ug (1).csv
+UG | B.Tech - CSE (Data Analytics) |  |  | VIT-AP | programs_ug (1).csv
+UG | B.Tech - CSE (Data Science) |  |  | Vellore; Chennai | programs_ug (1).csv
+UG | B.Tech - CSE (E-Commerce Technology) |  |  | VIT-Bhopal | programs_ug (1).csv
+UG | B.Tech - CSE (Education Technology) |  |  | VIT-Bhopal | programs_ug (1).csv
+UG | B.Tech - CSE (Gaming Technology) |  |  | VIT-Bhopal | programs_ug (1).csv
+UG | B.Tech - CSE (Health Informatics) |  |  | VIT-Bhopal | programs_ug (1).csv
+UG | B.Tech - CSE (Software Engineering) |  |  | VIT-AP | programs_ug (1).csv
+UG | B.Tech - CSE and Business Systems (with TCS) |  |  | Vellore | programs_ug (1).csv
+UG | B.Tech - Chemical Engineering |  |  | Vellore | programs_ug (1).csv
+UG | B.Tech - Civil Engineering |  |  | Vellore; Chennai | programs_ug (1).csv
+UG | B.Tech - Civil Engineering (In Collaboration with L & T) |  |  | Vellore; Chennai | programs_ug (1).csv        
+UG | B.Tech - Computer Science and Business Systems |  |  | VIT-AP | programs_ug (1).csv
+UG | B.Tech - Computer Science and Engineering |  |  | Vellore; Chennai; VIT-AP; VIT-Bhopal | programs_ug (1).csv   
+UG | B.Tech - ECE (AI & Cybernetics) |  |  | VIT-Bhopal | programs_ug (1).csv
+UG | B.Tech - ECE (Biomedical Engineering) |  |  | Vellore | programs_ug (1).csv
+UG | B.Tech - ECE (Embedded Systems) |  |  | VIT-AP | programs_ug (1).csv
+UG | B.Tech - ECE (VLSI) |  |  | VIT-AP | programs_ug (1).csv
+UG | B.Tech - Electrical and Computer Science Engineering |  |  | Vellore; Chennai | programs_ug (1).csv
+UG | B.Tech - Electrical and Electronics Engineering |  |  | Vellore; Chennai | programs_ug (1).csv
+UG | B.Tech - Electronics Engineering (VLSI Design and Technology) |  |  | Vellore; Chennai | programs_ug (1).csv   
+UG | B.Tech - Electronics and Communication Engineering |  |  | Vellore; Chennai; VIT-AP; VIT-Bhopal | programs_ug (1).csv
+UG | B.Tech - Electronics and Computer Engineering |  |  | Chennai | programs_ug (1).csv
+UG | B.Tech - Electronics and Instrumentation Engineering |  |  | Vellore | programs_ug (1).csv
+UG | B.Tech - Fashion Technology |  |  | Chennai | programs_ug (1).csv
+UG | B.Tech - Health Sciences and Technology |  |  | Vellore | programs_ug (1).csv
+UG | B.Tech - Information Technology |  |  | Vellore | programs_ug (1).csv
+UG | B.Tech - Mechanical Engineering |  |  | Vellore; Chennai; VIT-AP; VIT-Bhopal | programs_ug (1).csv
+UG | B.Tech - Mechanical Engineering (AI & Robotics) |  |  | VIT-Bhopal | programs_ug (1).csv
+UG | B.Tech - Mechanical Engineering (Automotive Design) |  |  | VIT-AP | programs_ug (1).csv
+UG | B.Tech - Mechanical Engineering (Electric Vehicles) |  |  | Vellore; Chennai | programs_ug (1).csv
+UG | B.Tech - Mechanical Engineering (Robotics) |  |  | VIT-AP | programs_ug (1).csv
+UG | B.Tech - Mechanical Engineering (Smart Manufacturing) |  |  | Vellore | programs_ug (1).csv
+UG | B.Tech - Mechatronics and Automation |  |  | Chennai | programs_ug (1).csv
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> python -m app.rag_answer "application process for PG programs"
 
-class GeminiEmbeddings(Embeddings):
-    """
-    LangChain-compatible Gemini embeddings using text-embedding-004.
-    """
-    def __init__(self, model: str = "models/text-embedding-004"):
-        api_key = os.getenv("GEMINI_API_KEY")
-        if not api_key:
-            print("[ERROR] GEMINI_API_KEY not set in environment or .env file")
-            sys.exit(1)
-        
-        genai.configure(api_key=api_key)
-        self.genai = genai
-        self.model = model
-        print(f"[OK] Gemini embeddings initialized with model: {model}")
-    
-    def embed_documents(self, texts: list[str]) -> list[list[float]]:
-        """Embed multiple documents"""
-        embeddings = []
-        print(f"[INFO] Embedding {len(texts)} documents...")
-        
-        for i, text in enumerate(tqdm(texts, desc="Embedding")):
-            try:
-                result = self.genai.embed_content(model=self.model, content=text)
-                embedding = result.get("embedding")
-                
-                if embedding is None:
-                    print(f"[WARN] No embedding for doc {i}, using zeros")
-                    embedding = [0.0] * 768  # Default dimension
-                
-                embeddings.append(embedding)
-                
-            except Exception as e:
-                print(f"[ERROR] Failed to embed doc {i}: {e}")
-                embeddings.append([0.0] * 768)
-        
-        return embeddings
-    
-    def embed_query(self, text: str) -> list[float]:
-        """Embed a single query"""
-        try:
-            result = self.genai.embed_content(model=self.model, content=text)
-            embedding = result.get("embedding")
-            
-            if embedding is None:
-                raise RuntimeError("Gemini returned no embedding for query")
-            
-            return embedding
-            
-        except Exception as e:
-            print(f"[ERROR] Failed to embed query: {e}")
-            raise
+FAISS index not found at C:\Users\T8543\Downloads\project-2\Data\faiss_index. Run build_faiss_index.py first.
+**Programs**
 
-# ==================== Data Loading ====================
+Level | Program | School | Duration | Campus | Source
+--- | --- | --- | --- | --- | ---
+PG |  |  | 2 years | Vellore | M.SC PROCESS.pdf
+PG |  |  | 2 years | Vellore | M.SC PROCESS.pdf
+PG |  |  | 2 years | Vellore | M.SC PROCESS.pdf
+PG |  |  | 2 years | Vellore | M.SC PROCESS.pdf
+PG |  |  | 2 years | Vellore | M.SC PROCESS.pdf
+PG |  |  | 2 years | Vellore | M.SC PROCESS.pdf
+PG |  |  | 2 years | Vellore | M.SC PROCESS.pdf
+PG |  |  | 2 years | Vellore | M.SC PROCESS.pdf
+PG | M.Tech. Applied Computational Fluid Dynamics |  |  |  |
+PG | M.Tech. Artificial Intelligence and Data Science |  |  |  |
+PG | M.Tech. Artificial Intelligence and Data Science (In collaboration with LTIMindtree) |  |  |  |
+PG | M.Tech. Artificial Intelligence and Machine Learning (In collaboration with LTIMindtree) |  |  |  |
+PG | M.Tech. Automotive Electronics |  |  |  |
+PG | M.Tech. Biomedical Engineering |  |  |  |
+PG | M.Tech. Biotechnology |  |  |  |
+PG | M.Tech. CAD / CAM |  |  |  |
+PG | M.Tech. Computer Science and Engineering |  |  |  |
+PG | M.Tech. Computer Science and Engineering (Artificial Intelligence and Machine Learning) |  |  |  |
+PG | M.Tech. Computer Science and Engineering (Big Data Analytics) |  |  |  |
+PG | M.Tech. Computer Science and Engineering (Cyber Security & Digital Forensics) |  |  |  |
+PG | M.Tech. Computer Science and Engineering (Cyber Security) |  |  |  |
+PG | M.Tech. Construction Technology and Management |  |  |  |
+PG | M.Tech. Control and Automation |  |  |  |
+PG | M.Tech. Electric Mobility |  |  |  |
+PG | M.Tech. Electronics and Communication Engineering (Intelligent Communication Systems) |  |  |  |
+PG | M.Tech. Embedded Systems |  |  |  |
+PG | M.Tech. Mechatronics |  |  |  |
+PG | M.Tech. Power Electronics and Drives |  |  |  |
+PG | M.Tech. Smart Mobility |  |  |  |
+PG | M.Tech. Structural Engineering |  |  |  |
+PG | M.Tech. VLSI Design |  |  |  |
+PG | Master of Computer Applications (MCA) | School of Computer Science & Engineering / Information Systems | 2 years (4 semesters) | Vellore | MCA 2 Years PG Program.pdf
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> python -m app.rag_answer "refund policy"                      
+FAISS index not found at C:\Users\T8543\Downloads\project-2\Data\faiss_index. Run build_faiss_index.py first.
+I don't have specific information about that yet. You can ask me about:
+- Programs offered (UG/PG)
+- Eligibility criteria
+- Fee structure
+- Documents required
+- Application process
+- VITMEE/VITEEE details
+- Hostel facilities
+- Scholarships
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> 
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> python -m app.rag_answer "Mens hostel fee structure"
+FAISS index not found at C:\Users\T8543\Downloads\project-2\Data\faiss_index. Run build_faiss_index.py first.
+**Hostel Fee Details (Vellore)**
 
-def load_chunks(jsonl_path: Path) -> tuple[list[str], list[dict], list[str]]:
-    """
-    Load chunks from JSONL file.
-    Returns: (texts, metadatas, ids)
-    """
-    texts, metas, ids = [], [], []
-    
-    print(f"[INFO] Loading chunks from: {jsonl_path}")
-    
-    with jsonl_path.open("r", encoding="utf-8") as f:
-        for line_num, line in enumerate(f, 1):
-            line = line.strip()
-            if not line:
-                continue
-            
-            try:
-                obj = json.loads(line)
-                text = (obj.get("text") or "").strip()
-                
-                if not text:
-                    continue
-                
-                texts.append(text)
-                metas.append(obj.get("metadata", {}))
-                ids.append(obj.get("id") or f"chunk_{len(ids)}")
-                
-            except json.JSONDecodeError as e:
-                print(f"[WARN] Invalid JSON at line {line_num}: {e}")
-                continue
-    
-    print(f"[OK] Loaded {len(texts)} chunks")
-    return texts, metas, ids
+Block | Gender | Level | Type | AY | Category | Occ | AC | Mess | Room+Mess | Admission | Caution | Other | Total | Curr | Source
+--- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | ---
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 136,800 | 15,000 | 15,000 |  | 166,800 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 146,300 | 15,000 | 15,000 |  | 176,300 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 158,200 | 15,000 | 15,000 |  | 188,200 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 145,300 | 15,000 | 15,000 |  | 175,300 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 154,800 | 15,000 | 15,000 |  | 184,800 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 166,700 | 15,000 | 15,000 |  | 196,700 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 158,200 | 15,000 | 15,000 |  | 188,200 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 167,700 | 15,000 | 15,000 |  | 197,700 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 179,600 | 15,000 | 15,000 |  | 209,600 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 165,000 | 15,000 | 15,000 |  | 195,000 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 174,500 | 15,000 | 15,000 |  | 204,500 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 186,400 | 15,000 | 15,000 |  | 216,400 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 198,900 | 15,000 | 15,000 |  | 228,900 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 208,400 | 15,000 | 15,000 |  | 238,400 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 220,300 | 15,000 | 15,000 |  | 250,300 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 146,700 | 15,000 | 15,000 |  | 176,700 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 156,200 | 15,000 | 15,000 |  | 186,200 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 168,100 | 15,000 | 15,000 |  | 198,100 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 156,400 | 15,000 | 15,000 |  | 186,400 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 165,900 | 15,000 | 15,000 |  | 195,900 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 177,800 | 15,000 | 15,000 |  | 207,800 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 167,300 | 15,000 | 15,000 |  | 197,300 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 176,800 | 15,000 | 15,000 |  | 206,800 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 188,700 | 15,000 | 15,000 |  | 218,700 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 182,600 | 15,000 | 15,000 |  | 212,600 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 192,100 | 15,000 | 15,000 |  | 222,100 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 204,000 | 15,000 | 15,000 |  | 234,000 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 196,800 | 15,000 | 15,000 |  | 226,800 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 206,300 | 15,000 | 15,000 |  | 236,300 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 218,200 | 15,000 | 15,000 |  | 248,200 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 2,790 | 250 | 400 |  | 3,440 | USD | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 3,060 | 250 | 400 |  | 3,710 | USD | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 3,430 | 250 | 400 |  | 4,080 | USD | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 3,720 | 250 | 400 |  | 4,370 | USD | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 4,270 | 250 | 400 |  | 4,920 | USD | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 3,070 | 250 | 400 |  | 3,720 | USD | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 3,220 | 250 | 400 |  | 3,870 | USD | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 3,660 | 250 | 400 |  | 4,310 | USD | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 4,020 | 250 | 400 |  | 4,670 | USD | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  | AC |  | 4,550 | 250 | 400 |  | 5,200 | USD | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  |  | 112,400 | 15,000 | 15,000 |  | 142,400 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  |  | 121,900 | 15,000 | 15,000 |  | 151,900 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  |  | 133,800 | 15,000 | 15,000 |  | 163,800 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  |  | 117,500 | 15,000 | 15,000 |  | 147,500 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  |  | 127,000 | 15,000 | 15,000 |  | 157,000 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  |  | 138,900 | 15,000 | 15,000 |  | 168,900 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  |  | 124,100 | 15,000 | 15,000 |  | 154,100 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  |  | 133,600 | 15,000 | 15,000 |  | 163,600 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  |  | 145,500 | 15,000 | 15,000 |  | 175,500 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  |  | 131,100 | 15,000 | 15,000 |  | 161,100 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  |  | 140,600 | 15,000 | 15,000 |  | 170,600 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  |  | 152,500 | 15,000 | 15,000 |  | 182,500 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  |  | 149,100 | 15,000 | 15,000 |  | 179,100 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  |  | 158,600 | 15,000 | 15,000 |  | 188,600 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  |  | 170,500 | 15,000 | 15,000 |  | 200,500 | INR | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  |  | 2,290 | 250 | 400 |  | 2,940 | USD | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  |  | 2,430 | 250 | 400 |  | 3,080 | USD | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  |  | 2,630 | 250 | 400 |  | 3,280 | USD | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  |  | 2,830 | 250 | 400 |  | 3,480 | USD | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
+Men Hostel First-Year | Male | First-Year |  | 2025-26 | NRI |  |  |  | 3,170 | 250 | 400 |  | 3,820 | USD | MH-First-Year-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 136,800 | 15,000 | 15,000 |  | 166,800 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 146,300 | 15,000 | 15,000 |  | 176,300 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 158,200 | 15,000 | 15,000 |  | 188,200 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 145,300 | 15,000 | 15,000 |  | 175,300 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 154,800 | 15,000 | 15,000 |  | 184,800 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 166,700 | 15,000 | 15,000 |  | 196,700 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 158,200 | 15,000 | 15,000 |  | 188,200 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 167,700 | 15,000 | 15,000 |  | 197,700 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 179,600 | 15,000 | 15,000 |  | 209,600 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 165,000 | 15,000 | 15,000 |  | 195,000 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 174,500 | 15,000 | 15,000 |  | 204,500 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 186,400 | 15,000 | 15,000 |  | 216,400 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 198,900 | 15,000 | 15,000 |  | 228,900 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 208,400 | 15,000 | 15,000 |  | 238,400 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 220,300 | 15,000 | 15,000 |  | 250,300 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 167,300 | 15,000 | 15,000 |  | 197,300 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 176,800 | 15,000 | 15,000 |  | 206,800 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 188,700 | 15,000 | 15,000 |  | 218,700 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 182,600 | 15,000 | 15,000 |  | 212,600 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 192,100 | 15,000 | 15,000 |  | 222,100 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 204,000 | 15,000 | 15,000 |  | 234,000 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 196,800 | 15,000 | 15,000 |  | 226,800 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 206,300 | 15,000 | 15,000 |  | 236,300 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 218,200 | 15,000 | 15,000 |  | 248,200 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_1.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 199,900 | 15,000 | 15,000 |  | 229,900 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 209,400 | 15,000 | 15,000 |  | 239,400 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 221,300 | 15,000 | 15,000 |  | 251,300 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 210,300 | 15,000 | 15,000 |  | 240,300 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 219,800 | 15,000 | 15,000 |  | 249,800 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 231,700 | 15,000 | 15,000 |  | 261,700 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 223,600 | 15,000 | 15,000 |  | 253,600 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 233,100 | 15,000 | 15,000 |  | 263,100 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 245,000 | 15,000 | 15,000 |  | 275,000 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_2.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 2,790 | 250 | 400 |  | 3,440 | USD | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 3,060 | 250 | 400 |  | 3,710 | USD | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 3,430 | 250 | 400 |  | 4,080 | USD | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 3,720 | 250 | 400 |  | 4,370 | USD | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 4,270 | 250 | 400 |  | 4,920 | USD | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 3,660 | 250 | 400 |  | 4,310 | USD | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_4.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 4,020 | 250 | 400 |  | 4,670 | USD | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_4.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 4,550 | 250 | 400 |  | 5,200 | USD | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_4.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 4,380 | 250 | 400 |  | 5,030 | USD | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_5.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 4,690 | 250 | 400 |  | 5,340 | USD | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_5.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  | AC |  | 5,120 | 250 | 400 |  | 5,770 | USD | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_5.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  |  | 112,400 | 15,000 | 15,000 |  | 142,400 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  |  | 121,900 | 15,000 | 15,000 |  | 151,900 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  |  | 133,800 | 15,000 | 15,000 |  | 163,800 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  |  | 117,500 | 15,000 | 15,000 |  | 147,500 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  |  | 127,000 | 15,000 | 15,000 |  | 157,000 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  |  | 138,900 | 15,000 | 15,000 |  | 168,900 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  |  | 124,100 | 15,000 | 15,000 |  | 154,100 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  |  | 133,600 | 15,000 | 15,000 |  | 163,600 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  |  | 145,500 | 15,000 | 15,000 |  | 175,500 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  |  | 131,100 | 15,000 | 15,000 |  | 161,100 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  |  | 140,600 | 15,000 | 15,000 |  | 170,600 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  |  | 152,500 | 15,000 | 15,000 |  | 182,500 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  |  | 149,100 | 15,000 | 15,000 |  | 179,100 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  |  | 158,600 | 15,000 | 15,000 |  | 188,600 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  |  | 170,500 | 15,000 | 15,000 |  | 200,500 | INR | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_0.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  |  | 2,290 | 250 | 400 |  | 2,940 | USD | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  |  | 2,430 | 250 | 400 |  | 3,080 | USD | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  |  | 2,630 | 250 | 400 |  | 3,280 | USD | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  |  | 2,830 | 250 | 400 |  | 3,480 | USD | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv
+Men Hostel Senior | Male | Senior |  | 2025-26 | NRI |  |  |  | 3,170 | 250 | 400 |  | 3,820 | USD | MH-Senior-FEE-structure-Indian-NRI-FOREIGN-Category-2025-26__camelot_3.csv
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> python -m app.rag_answer "List out all men hostel block names"
 
-# ==================== FAISS Building ====================
+FAISS index not found at C:\Users\T8543\Downloads\project-2\Data\faiss_index. Run build_faiss_index.py first.
+**Hostel Blocks**
 
-def build_faiss(texts: list[str], metas: list[dict], ids: list[str], 
-                persist_dir: Path, collection: str, embedder: GeminiEmbeddings):
-    """
-    Build and save FAISS index.
-    """
-    if not texts:
-        print("[ERROR] No texts to index!")
-        sys.exit(1)
-    
-    print(f"[INFO] Building FAISS index with {len(texts)} documents...")
-    
-    # Create FAISS store (automatically embeds during creation)
-    store = FAISS.from_texts(
-        texts=texts,
-        embedding=embedder,
-        metadatas=metas
-    )
-    
-    # Save to disk
-    persist_dir.mkdir(parents=True, exist_ok=True)
-    store.save_local(str(persist_dir), index_name=collection)
-    
-    print(f"[DONE] FAISS index saved to: {persist_dir}/{collection}.faiss")
-    print(f"[DONE] Metadata saved to: {persist_dir}/{collection}.pkl")
-    print(f"[INFO] Total documents indexed: {len(texts)}")
+Block | Gender
+--- | ---
+Albert Einstein | Male
+Swami Vivekananda | Male
+Rabindranath Tagore | Male
+Sir C.V.Raman | Male
+R Amanujam | Male
+Socrates | Male
+John F Kennedy | Male
+Muthamizh Arignar Kalaignar M.Karunanidhi | Male
+Mens Hostel T Block | Male
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> python -m app.rag_answer "Mens hostel supervoiser contact details"
+FAISS index not found at C:\Users\T8543\Downloads\project-2\Data\faiss_index. Run build_faiss_index.py first.
+**Hostel Contacts**
 
-# ==================== Main ====================
+Block | Name | Role | Phone | Email
+--- | --- | --- | --- | ---
+ | Ms. Mythily A | Residential Block Supervisor (LH, Transport) | 9488839864, 9791297375 | mythily.a@vit.ac.in      
+ | Ms. G. Subbulakshmi | Section Supervisor (LH) | 0416-220-2711 | gsubbulakshmi@vit.ac.in
+ | Mr. Arasu R | Section Supervisor (MH) | 0416-220-2523 | rarasu@vit.ac.in
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> python -m app.rag_answer "Ladeies hostel supervoiser contact details"
+FAISS index not found at C:\Users\T8543\Downloads\project-2\Data\faiss_index. Run build_faiss_index.py first.
+**Hostel Contacts**
 
-def main():
-    parser = argparse.ArgumentParser(
-        description="Build FAISS index from chunks using Gemini embeddings"
-    )
-    parser.add_argument(
-        "--chunks",
-        required=True,
-        help="Path to chunks_clean_final.jsonl"
-    )
-    parser.add_argument(
-        "--persist",
-        required=True,
-        help="Directory to save FAISS index (e.g., Data/index/faiss)"
-    )
-    parser.add_argument(
-        "--collection",
-        default="vit_faq_vellore",
-        help="Index name (default: vit_faq_vellore)"
-    )
-    
-    args = parser.parse_args()
-    
-    # Validate paths
-    chunks_path = Path(args.chunks).resolve()
-    if not chunks_path.exists():
-        print(f"[ERROR] Chunks file not found: {chunks_path}")
-        sys.exit(1)
-    
-    persist_dir = Path(args.persist).resolve()
-    
-    # Load data
-    texts, metas, ids = load_chunks(chunks_path)
-    
-    if not texts:
-        print("[ERROR] No valid chunks found in JSONL file")
-        sys.exit(1)
-    
-    # Initialize embeddings
-    embedder = GeminiEmbeddings()
-    
-    # Build and save FAISS
-    build_faiss(texts, metas, ids, persist_dir, args.collection, embedder)
-    
-    # Verification
-    print("\n" + "="*60)
-    print("[VERIFY] Testing the saved index...")
-    try:
-        from langchain_community.vectorstores import FAISS
-        
-        loaded_store = FAISS.load_local(
-            str(persist_dir),
-            embeddings=embedder,
-            index_name=args.collection,
-            allow_dangerous_deserialization=True
-        )
-        
-        test_query = "What is VITMEE?"
-        results = loaded_store.similarity_search(test_query, k=2)
-        
-        print(f"[OK] Index loaded successfully")
-        print(f"[OK] Test query: '{test_query}'")
-        print(f"[OK] Retrieved {len(results)} results")
-        
-        if results:
-            print(f"\nSample result:")
-            print(f"  Text: {results[0].page_content[:150]}...")
-            print(f"  Source: {results[0].metadata.get('source_file', 'unknown')}")
-        
-    except Exception as e:
-        print(f"[ERROR] Verification failed: {e}")
-    
-    print("="*60)
-
-if __name__ == "__main__":
-    main()
+Block | Name | Role | Phone | Email
+--- | --- | --- | --- | ---
+ | Ms. Mythily A | Residential Block Supervisor (LH, Transport) | 9488839864, 9791297375 | mythily.a@vit.ac.in      
+ | Ms. G. Subbulakshmi | Section Supervisor (LH) | 0416-220-2711 | gsubbulakshmi@vit.ac.in
+ | Mr. Arasu R | Section Supervisor (MH) | 0416-220-2523 | rarasu@vit.ac.in
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> 
