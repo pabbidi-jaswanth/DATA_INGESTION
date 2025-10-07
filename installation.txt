@@ -1,178 +1,40 @@
-import json
-import pathlib
-from typing import Dict, Any, List, Optional
+Choose a section
 
-import streamlit as st
 
-# --- import your existing router/fallback ---
-# Make sure streamlit runs from repo root so these imports resolve.
-from app.sql_router import (
-    sql_programs, sql_eligibility, sql_documents, sql_academic_fees,
-    sql_scholarships, sql_hostel_overview, sql_block_contacts, sql_list_blocks
-)
-from app.utils.fallback_rag import faiss_answer_or_summary
+UG Admissions
 
-# ---------------- CONFIG ----------------
-REGISTRY_FILES = {
-    "UG Admissions": "Data/processed/ug_admissions_questions_registry.json",
-    "PG":            "Data/processed/pg_questions_registry.json",
-    "MCA":           "Data/processed/mca_questions_registry.json",
-    "MSc":           "Data/processed/msc_questions_registry.json",
-    "HOSTELS":       "Data/processed/hostels_questions_registry.json",
-}
 
-FAISS_INDEX_DIR = pathlib.Path("Data/index/faiss")
-FAISS_COLLECTION = "vit_faq_vellore"     # adapt if your embeddings name differs
+PG
 
-st.set_page_config(page_title="Admissions FAQ — Click to Answer", layout="wide")
 
-# ---------------- HELPERS ----------------
-def _md_table(table: Dict[str, Any]) -> str:
-    """Render a dict(table) => markdown table string."""
-    if not table or not table.get("columns") or not table.get("rows"):
-        return "_No results._"
-    cols = table["columns"]
-    rows = table["rows"]
-    lines = [
-        " | ".join(cols),
-        " | ".join(["---"] * len(cols))
-    ]
-    for r in rows:
-        lines.append(" | ".join("" if x is None else str(x) for x in r))
-    return "\n".join(lines)
+MCA
 
-def _dispatch(handler: str, filters: Dict[str, Any], fallback_query: str) -> Dict[str, Any]:
-    """
-    Returns a structured dict:
-      {
-        "type": "table" | "md",
-        "content": <table_dict or markdown string>
-      }
-    """
-    # --- SQL-first handlers ---
-    if handler == "programs":
-        return {"type": "table", "content": sql_programs(filters, "")}
-    if handler == "eligibility":
-        return {"type": "table", "content": sql_eligibility(filters, "")}
-    if handler == "documents":
-        return {"type": "table", "content": sql_documents(filters, "")}
-    if handler == "fees":
-        return {"type": "table", "content": sql_academic_fees(filters, "")}
-    if handler == "scholarships":
-        return {"type": "table", "content": sql_scholarships(filters, "")}
-    if handler == "hostel":
-        # sql_hostel_overview returns {"table": {...}, "notes": [...]}
-        data = sql_hostel_overview(filters)
-        tbl = data.get("table")
-        notes = data.get("notes") or []
-        md = _md_table(tbl)
-        if notes:
-            md += "\n\n" + "\n".join(f"- {n}" for n in notes)
-        return {"type": "md", "content": md}
-    if handler == "contacts":
-        data = sql_block_contacts(filters)
-        return {"type": "table", "content": data.get("table")}
-    if handler == "blocks":
-        data = sql_list_blocks(filters)
-        return {"type": "table", "content": data.get("table")}
 
-    # --- FAISS fallback ---
-    if handler == "faiss_summary":
-        try:
-            md = faiss_answer_or_summary(FAISS_INDEX_DIR, FAISS_COLLECTION, fallback_query)
-            return {"type": "md", "content": md or "_No context found in PDFs._"}
-        except Exception as e:
-            return {"type": "md", "content": f"_FAISS error: {e}_"}
+MSc
 
-    return {"type": "md", "content": "_Unknown handler._"}
 
-@st.cache_data(show_spinner=False)
-def load_registry(registry_path: str) -> List[Dict[str, Any]]:
-    p = pathlib.Path(registry_path)
-    with p.open("r", encoding="utf-8") as f:
-        data = json.load(f)
-    # sanity
-    for row in data:
-        row.setdefault("filters", {})
-        row.setdefault("fallback_query", row.get("label", ""))
-    return data
+HOSTELS
 
-def filter_questions(rows: List[Dict[str, Any]], q: str) -> List[Dict[str, Any]]:
-    q = (q or "").strip().lower()
-    if not q:
-        return rows
-    return [r for r in rows if q in r["label"].lower() or q in r["qid"].lower()]
-
-# ---------------- UI ----------------
-st.title("🎓 Admissions & Hostel FAQs — Click to Answer")
-
-colA, colB = st.columns([1, 3], gap="large")
-
-with colA:
-    seg = st.radio(
-        "Choose a section",
-        list(REGISTRY_FILES.keys()),
-        index=0,
-        help="These are frozen question sets that map to your SQLite & FAISS sources."
-    )
-    registry_path = REGISTRY_FILES[seg]
-
+FileNotFoundError: [Errno 2] No such file or directory: 'Data\\processed\\ug_admissions_questions_registry.json'
+Traceback:
+File "c:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\streamlit\runtime\scriptrunner\exec_code.py", line 128, in exec_func_with_error_handling
+    result = func()
+File "c:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\streamlit\runtime\scriptrunner\script_runner.py", line 669, in code_to_exec
+    exec(code, module.__dict__)  # noqa: S102
+    ~~~~^^^^^^^^^^^^^^^^^^^^^^^
+File "C:\Users\T8543\Downloads\project-2\streamlit_app.py", line 120, in <module>
     rows = load_registry(registry_path)
-    st.caption(f"Loaded **{len(rows)}** questions from `{registry_path}`")
-
-    q_search = st.text_input("Filter questions", placeholder="Type to filter…")
-    visible_rows = filter_questions(rows, q_search)
-
-    # List as buttons for clean click UX
-    st.write("### Questions")
-    for r in visible_rows:
-        if st.button(f"{r['qid']} — {r['label']}", key=r["qid"]):
-            st.session_state["selected_q"] = r
-
-    if "selected_q" not in st.session_state and visible_rows:
-        # preselect first if nothing chosen yet
-        st.session_state["selected_q"] = visible_rows[0]
-
-with colB:
-    st.subheader("Answer")
-    selected = st.session_state.get("selected_q")
-    if not selected:
-        st.info("Pick a question on the left to see the answer.")
-    else:
-        # route to SQL-first/FAISS fallback
-        handler = selected.get("handler")
-        filters = selected.get("filters", {})
-        fallback_query = selected.get("fallback_query", selected.get("label", ""))
-
-        with st.spinner("Fetching answer…"):
-            result = _dispatch(handler, filters, fallback_query)
-
-        st.markdown(f"**{selected['qid']}** — {selected['label']}")
-        st.caption(f"Handler: `{handler}`  |  Filters: `{filters}`")
-
-        if result["type"] == "table":
-            table = result["content"]
-            if not table:
-                st.warning("No results.")
-            else:
-                # Show native table and also Markdown (copyable)
-                cols = table.get("columns") or []
-                rows = table.get("rows") or []
-                if cols and rows:
-                    # prettier grid
-                    import pandas as pd
-                    df = pd.DataFrame(rows, columns=cols)
-                    st.dataframe(df, use_container_width=True, hide_index=True)
-                    with st.expander("Show as Markdown table"):
-                        st.code(_md_table(table), language="markdown")
-                else:
-                    st.write("_No results._")
-
-        elif result["type"] == "md":
-            st.markdown(result["content"])
-        else:
-            st.write(result)
-
-    st.divider()
-    st.caption("Data sources: SQLite (SQL-first) · FAISS (PDF fallback). No free-form chat — fully constrained to curated content.")
-
+File "c:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\streamlit\runtime\caching\cache_utils.py", line 227, in __call__
+    return self._get_or_create_cached_value(args, kwargs, spinner_message)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "c:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\streamlit\runtime\caching\cache_utils.py", line 269, in _get_or_create_cached_value
+    return self._handle_cache_miss(cache, value_key, func_args, func_kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "c:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\streamlit\runtime\caching\cache_utils.py", line 328, in _handle_cache_miss
+    computed_value = self._info.func(*func_args, **func_kwargs)
+File "C:\Users\T8543\Downloads\project-2\streamlit_app.py", line 92, in load_registry
+    with p.open("r", encoding="utf-8") as f:
+         ~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+File "C:\Program Files\Python313\Lib\pathlib\_local.py", line 537, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
