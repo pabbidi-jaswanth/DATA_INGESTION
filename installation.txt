@@ -1,76 +1,79 @@
 import json, pathlib
 
-REG_PATH = pathlib.Path("Data/processed/ug_admissions_questions_registry.json")
-
-def load_registry():
-    with REG_PATH.open("r", encoding="utf-8") as f:
+def load_registry(name: str):
+    path = pathlib.Path(f"Data/processed/{name}")
+    with path.open("r", encoding="utf-8") as f:
         data = json.load(f)
-    by_id = {row["qid"]: row for row in data}
-    return by_id
+    return {row["qid"]: row for row in data}
 
 
-
-from typing import Optional
 from app.questions_registry import load_registry
 from app.sql_router import (
     sql_programs, sql_eligibility, sql_documents, sql_academic_fees,
     sql_scholarships, sql_hostel_overview, sql_block_contacts, sql_list_blocks
 )
 
-def _pack(table_dict=None, bullets=None):
+def _pack(table_dict=None):
     if not table_dict: return "_No results._"
-    title  = f"**{table_dict.get('title','Results')}**"
-    cols   = table_dict["columns"]
-    lines  = [title, "", " | ".join(cols), " | ".join(["---"]*len(cols))]
-    for r in table_dict["rows"]:
-        lines.append(" | ".join(str(x) if x is not None else "" for x in r))
-    if bullets:
-        lines.append("")
-        lines.extend(f"- {b}" for b in bullets)
+    cols = table_dict["columns"]; rows = table_dict["rows"]
+    lines = [" | ".join(cols), " | ".join(["---"]*len(cols))]
+    for r in rows: lines.append(" | ".join(str(x) if x is not None else "" for x in r))
     return "\n".join(lines)
 
-def _dispatch(handler: str, filters: dict, fallback_query: str) -> str:
-    # Handlers using SQLite
-    if handler == "programs":      return _pack(sql_programs(filters, ""))
-    if handler == "eligibility":   return _pack(sql_eligibility(filters, ""))
-    if handler == "documents":     return _pack(sql_documents(filters, ""))
-    if handler == "fees":          return _pack(sql_academic_fees(filters, ""))
-    if handler == "scholarships":  return _pack(sql_scholarships(filters, ""))
-    if handler == "hostel":        return _pack(sql_hostel_overview(filters).get("table"))
-    if handler == "contacts":      return _pack(sql_block_contacts(filters).get("table"))
-    if handler == "blocks":        return _pack(sql_list_blocks(filters).get("table"))
-
-    # FAISS summary fallback
+def _dispatch(handler, filters, fallback_query):
+    if handler == "programs":     return _pack(sql_programs(filters, ""))
+    if handler == "eligibility":  return _pack(sql_eligibility(filters, ""))
+    if handler == "documents":    return _pack(sql_documents(filters, ""))
+    if handler == "fees":         return _pack(sql_academic_fees(filters, ""))
+    if handler == "scholarships": return _pack(sql_scholarships(filters, ""))
+    if handler == "hostel":       return _pack(sql_hostel_overview(filters).get("table"))
+    if handler == "contacts":     return _pack(sql_block_contacts(filters).get("table"))
+    if handler == "blocks":       return _pack(sql_list_blocks(filters).get("table"))
     if handler == "faiss_summary":
-        try:
-            from app.utils.fallback_rag import faiss_answer_or_summary
-            from pathlib import Path
-            return faiss_answer_or_summary(Path("Data/index/faiss"), "vit_faq_vellore", fallback_query)
-        except Exception:
-            return "_Context not found in PDFs._"
-
+        from app.utils.fallback_rag import faiss_answer_or_summary
+        from pathlib import Path
+        return faiss_answer_or_summary(Path("Data/index/faiss"), "vit_faq_vellore", fallback_query)
     return "_Unknown handler._"
 
-def answer_qid(qid: str) -> str:
-    reg = load_registry()
+def answer_qid_from_registry(qid: str, registry_file: str) -> str:
+    reg = load_registry(registry_file)
     row = reg.get(qid)
-    if not row:
-        return "_Unknown question id._"
-    handler = row.get("handler")
-    filters = row.get("filters") or {}
-    fallback_query = row.get("fallback_query") or row.get("label","")
-    return _dispatch(handler, filters, fallback_query)
+    if not row: return "_Unknown question id._"
+    return _dispatch(row["handler"], row.get("filters") or {}, row.get("fallback_query") or row["label"])
 
 
 
 from fastapi import FastAPI, HTTPException
-from app.handlers.answer_qid import answer_qid
+from app.handlers.answer_qid import answer_qid_from_registry
 
 app = FastAPI()
 
-@app.get("/answer")
-def answer(qid: str):
-    out = answer_qid(qid)
-    if out.startswith("_Unknown"):  # optional
-        raise HTTPException(status_code=404, detail=out)
+@app.get("/answer/ug")
+def answer_ug(qid: str):
+    out = answer_qid_from_registry(qid, "ug_admissions_questions_registry.json")
+    if out.startswith("_Unknown"): raise HTTPException(404, out)
+    return {"qid": qid, "answer_md": out}
+
+@app.get("/answer/pg")
+def answer_pg(qid: str):
+    out = answer_qid_from_registry(qid, "pg_questions_registry.json")
+    if out.startswith("_Unknown"): raise HTTPException(404, out)
+    return {"qid": qid, "answer_md": out}
+
+@app.get("/answer/mca")
+def answer_mca(qid: str):
+    out = answer_qid_from_registry(qid, "mca_questions_registry.json")
+    if out.startswith("_Unknown"): raise HTTPException(404, out)
+    return {"qid": qid, "answer_md": out}
+
+@app.get("/answer/msc")
+def answer_msc(qid: str):
+    out = answer_qid_from_registry(qid, "msc_questions_registry.json")
+    if out.startswith("_Unknown"): raise HTTPException(404, out)
+    return {"qid": qid, "answer_md": out}
+
+@app.get("/answer/hostels")
+def answer_hostels(qid: str):
+    out = answer_qid_from_registry(qid, "hostels_questions_registry.json")
+    if out.startswith("_Unknown"): raise HTTPException(404, out)
     return {"qid": qid, "answer_md": out}
