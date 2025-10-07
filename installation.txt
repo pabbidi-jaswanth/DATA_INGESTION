@@ -3,7 +3,263 @@ Traceback:
 File "c:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\streamlit\runtime\scriptrunner\exec_code.py", line 128, in exec_func_with_error_handling
     result = func()
 File "c:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\streamlit\runtime\scriptrunner\script_runner.py", line 669, in code_to_exec
-    exec(code, module.__dict__)  # noqa: S102
+    exec(code, module.__dict__)  # noqa: S102# streamlit_app.py
+# Static-click FAQ UI with SQL-first + FAISS fallback
+# Sections: UG, PG, MCA, MSc, HOSTELS
+# NOTE: run this from repo root so imports resolve.
+
+import pathlib
+from typing import Dict, Any, List, Tuple
+
+import streamlit as st
+
+# ---- import your existing backend helpers ----
+from app.sql_router import (
+    sql_programs, sql_eligibility, sql_documents, sql_academic_fees,
+    sql_scholarships, sql_hostel_overview, sql_block_contacts, sql_list_blocks
+)
+from app.utils.fallback_rag import faiss_answer_or_summary
+
+FAISS_INDEX_DIR = pathlib.Path("Data/index/faiss")
+FAISS_COLLECTION = "vit_faq_vellore"
+
+st.set_page_config(page_title="VIT FAQs — Click to Answer", layout="wide")
+
+# ---------------- UG — 40 static questions (NO QIDs in UI) ----------------
+UG_REG: List[Dict[str, Any]] = [
+    # Programs / Courses (SQL)
+    {"label":"What UG programs and specializations are offered?",                      "handler":"programs",   "filters":{"level_like":"UG"}},
+    {"label":"Which B.Tech specializations are available at each campus?",            "handler":"programs",   "filters":{"level_like":"UG","program_like":"B.Tech"}},
+    {"label":"What non–B.Tech UG programs are offered (BBA/B.Com/BCA etc.)?",         "handler":"programs",   "filters":{"level_like":"UG","program_like":"BBA B.Com BCA"}},
+
+    # Eligibility (SQL)
+    {"label":"UG eligibility: minimum marks and required subjects",                    "handler":"eligibility","filters":{"level_like":"UG"}},
+    {"label":"Is Mathematics mandatory for specific B.Tech programs?",                 "handler":"eligibility","filters":{"level_like":"UG","program_like":"B.Tech"}},
+    {"label":"Are NIOS/correspondence students eligible for UG?",                      "handler":"eligibility","filters":{"level_like":"UG","program_like":"ALL"}},
+    {"label":"Eligibility for NRI/OCI/PIO applicants (UG)",                            "handler":"eligibility","filters":{"level_like":"UG","program_like":"ALL"}},
+
+    # Documents (SQL)
+    {"label":"Documents to submit for UG admission and reporting",                     "handler":"documents",  "filters":{"level_like":"UG"}},
+    {"label":"Where to download affidavits and fitness forms?",                        "handler":"documents",  "filters":{"level_like":"UG","program_like":"affidavit fitness"}},
+    {"label":"Photo/signature/document upload specifications",                         "handler":"documents",  "filters":{"level_like":"UG","program_like":"photo signature upload"}},
+
+    # Fees (SQL)
+    {"label":"UG tuition fee (Indian category) for AY 2025–26",                        "handler":"fees",       "filters":{"level_like":"UG","category":"Indian","ay":"2025-26"}},
+    {"label":"UG tuition fee (NRI category) for AY 2025–26",                           "handler":"fees",       "filters":{"level_like":"UG","category":"NRI","ay":"2025-26"}},
+    {"label":"UG tuition fee (Foreign category) for AY 2025–26",                       "handler":"fees",       "filters":{"level_like":"UG","category":"Foreign","ay":"2025-26"}},
+    {"label":"Is there a refundable caution deposit for UG?",                          "handler":"fees",       "filters":{"level_like":"UG"}},
+
+    # Scholarships (SQL)
+    {"label":"Scholarships/waivers available for UG students",                         "handler":"scholarships","filters":{"level_like":"UG"}},
+
+    # Process & timelines (FAISS)
+    {"label":"Step-by-step UG application process (Indian/NRI/Foreign)",               "handler":"faiss_summary","filters":{}},
+    {"label":"Important admission dates and deadlines for UG",                         "handler":"faiss_summary","filters":{}},
+    {"label":"How is the merit list prepared and tie-break rules?",                    "handler":"faiss_summary","filters":{}},
+    {"label":"Counselling and seat allotment process (rounds and sliding)",            "handler":"faiss_summary","filters":{}},
+    {"label":"Branch locking and later branch-change policy",                          "handler":"faiss_summary","filters":{}},
+
+    # Category-specific (FAISS)
+    {"label":"Who is treated as NRI vs Foreign applicant?",                            "handler":"faiss_summary","filters":{}},
+    {"label":"NRI application portal & fee payment instructions",                      "handler":"faiss_summary","filters":{}},
+    {"label":"Foreign nationals/OCI/PIO application steps & fees",                     "handler":"faiss_summary","filters":{}},
+
+    # Hostel touchpoints (SQL)
+    {"label":"First-year hostel fee (Indian) AY 2025–26",                              "handler":"hostel",     "filters":{"level":"First-Year","category":"Indian","ay":"2025-26"}},
+    {"label":"First-year hostel fee (NRI/Foreign) AY 2025–26",                         "handler":"hostel",     "filters":{"level":"First-Year","category":"NRI","ay":"2025-26"}},
+    {"label":"Senior hostel fee overview AY 2025–26",                                  "handler":"hostel",     "filters":{"level":"Senior","ay":"2025-26"}},
+    {"label":"Hostel block landlines and key contacts",                                "handler":"contacts",   "filters":{}},
+
+    # International/NRI docs (FAISS)
+    {"label":"Extra documents for NRI/Foreign students at reporting",                  "handler":"faiss_summary","filters":{}},
+    {"label":"AIU equivalence and accepted international boards",                      "handler":"faiss_summary","filters":{}},
+
+    # Payments/Refunds (FAISS)
+    {"label":"Mode and schedule of tuition/hostel fee payment",                        "handler":"faiss_summary","filters":{}},
+    {"label":"Refund policy if I withdraw before/after registration",                  "handler":"faiss_summary","filters":{}},
+
+    # After-offer logistics (FAISS)
+    {"label":"When to pay balance tuition/hostel after provisional admission?",        "handler":"faiss_summary","filters":{}},
+    {"label":"How to check application status and download letters?",                  "handler":"faiss_summary","filters":{}},
+    {"label":"How to correct mistakes in the application after submission?",           "handler":"faiss_summary","filters":{}},
+    {"label":"Uploading pending 12th/board marks and verification process",            "handler":"faiss_summary","filters":{}},
+
+    # Academics quick info (FAISS)
+    {"label":"Medium of instruction and availability of bridge courses",               "handler":"faiss_summary","filters":{}},
+    {"label":"Attendance, exams and grading policy (UG) overview",                     "handler":"faiss_summary","filters":{}},
+
+    # Careers (FAISS)
+    {"label":"Internships and industry-linked projects during UG",                     "handler":"faiss_summary","filters":{}},
+    {"label":"Recent UG placement highlights & top recruiters",                        "handler":"faiss_summary","filters":{}},
+
+    # Support (FAISS)
+    {"label":"Whom to contact for UG admissions help (email/phone)?",                  "handler":"faiss_summary","filters":{}},
+]
+
+# ---- Light registries for PG/MCA/MSc/HOSTELS ----
+# If you already created JSON registries for these, you can load from files instead.
+PG_REG = [{"label":"PG programs and specializations available","handler":"programs","filters":{"level_like":"PG"}}] + \
+         [{"label":f"PG item {i} (demo — plug your registry JSON here)","handler":"faiss_summary","filters":{}} for i in range(2,41)]
+MCA_REG = [{"label":"MCA eligibility: qualifying degree and marks","handler":"eligibility","filters":{"level_like":"MCA"}}] + \
+          [{"label":f"MCA item {i} (demo — plug your registry JSON here)","handler":"faiss_summary","filters":{}} for i in range(2,41)]
+MSC_REG = [{"label":"MSc programs and specializations","handler":"programs","filters":{"level_like":"MSc"}}] + \
+          [{"label":f"MSc item {i} (demo — plug your registry JSON here)","handler":"faiss_summary","filters":{}} for i in range(2,41)]
+# HOSTELS: Men+Ladies questions typically need hostel SQL; keep FAISS for narrative fallbacks
+HST_REG = [
+    {"label":"First-year hostel fee AY 2025–26 (Men)","handler":"hostel","filters":{"level":"First-Year","gender":"Men","ay":"2025-26"}},
+    {"label":"First-year hostel fee AY 2025–26 (Ladies)","handler":"hostel","filters":{"level":"First-Year","gender":"Ladies","ay":"2025-26"}},
+    {"label":"Senior hostel fee AY 2025–26 (Men)","handler":"hostel","filters":{"level":"Senior","gender":"Men","ay":"2025-26"}},
+    {"label":"Senior hostel fee AY 2025–26 (Ladies)","handler":"hostel","filters":{"level":"Senior","gender":"Ladies","ay":"2025-26"}},
+] + [{"label":f"Hostel item {i} (demo — fill from your registry)","handler":"faiss_summary","filters":{}} for i in range(5,41)]
+
+# ---------------- helpers ----------------
+def _md_table(table: Dict[str, Any]) -> str:
+    if not table or not table.get("columns") or not table.get("rows"):
+        return "_No results._"
+    cols = table["columns"]; rows = table["rows"]
+    lines = [" | ".join(cols), " | ".join(["---"]*len(cols))]
+    for r in rows:
+        lines.append(" | ".join("" if x is None else str(x) for x in r))
+    return "\n".join(lines)
+
+def _safe_sql_table(callable_fn, filters: Dict[str, Any]) -> Tuple[bool, Dict[str, Any], str]:
+    """
+    Try the SQL function; if error or empty, return (False, {}, error_msg) to trigger FAISS fallback.
+    """
+    try:
+        tbl = callable_fn(filters, "")
+        # some handlers return dict with 'columns'/'rows'; some return wrapped dict
+        if not tbl: return False, {}, "empty"
+        if isinstance(tbl, dict) and tbl.get("columns") and tbl.get("rows"):
+            if not tbl["rows"]:
+                return False, {}, "no_rows"
+            return True, tbl, ""
+        # Some handlers return {"table": {...}}
+        if isinstance(tbl, dict) and "table" in tbl:
+            table_only = tbl["table"]
+            if table_only and table_only.get("rows"):
+                return True, table_only, ""
+            return False, {}, "no_rows"
+        return False, {}, "bad_shape"
+    except Exception as e:
+        return False, {}, f"exception:{e}"
+
+def _dispatch(handler: str, filters: Dict[str, Any], fallback_query: str) -> Dict[str, Any]:
+    # SQL-first
+    if handler == "programs":
+        ok, table, _ = _safe_sql_table(sql_programs, filters); 
+        if ok: return {"type":"table","content":table}
+    elif handler == "eligibility":
+        ok, table, _ = _safe_sql_table(sql_eligibility, filters); 
+        if ok: return {"type":"table","content":table}
+    elif handler == "documents":
+        ok, table, _ = _safe_sql_table(sql_documents, filters); 
+        if ok: return {"type":"table","content":table}
+    elif handler == "fees":
+        ok, table, _ = _safe_sql_table(sql_academic_fees, filters); 
+        if ok: return {"type":"table","content":table}
+    elif handler == "scholarships":
+        ok, table, _ = _safe_sql_table(sql_scholarships, filters); 
+        if ok: return {"type":"table","content":table}
+    elif handler == "contacts":
+        try:
+            data = sql_block_contacts(filters)
+            table = data.get("table")
+            if table and table.get("rows"):
+                return {"type":"table","content":table}
+        except Exception:
+            pass
+    elif handler == "hostel":
+        try:
+            data = sql_hostel_overview(filters)  # {"table": {...}, "notes":[...]}
+            tbl = data.get("table"); notes = data.get("notes") or []
+            md = _md_table(tbl)
+            if notes: md += "\n\n" + "\n".join(f"- {n}" for n in notes)
+            if tbl and tbl.get("rows"):
+                return {"type":"md","content":md}
+        except Exception:
+            pass
+    elif handler == "blocks":
+        try:
+            data = sql_list_blocks(filters)
+            table = data.get("table")
+            if table and table.get("rows"):
+                return {"type":"table","content":table}
+        except Exception:
+            pass
+
+    # FAISS fallback (never crash UI)
+    try:
+        md = faiss_answer_or_summary(FAISS_INDEX_DIR, FAISS_COLLECTION, fallback_query)
+        return {"type":"md","content": md or "_No context found in PDFs._"}
+    except Exception as e:
+        return {"type":"md","content": f"_FAISS error: {e}_"}
+
+def _render_answer(result: Dict[str, Any]):
+    if result["type"] == "table":
+        table = result["content"]
+        cols = table.get("columns") or []
+        rows = table.get("rows") or []
+        if cols and rows:
+            import pandas as pd
+            df = pd.DataFrame(rows, columns=cols)
+            st.dataframe(df, use_container_width=True, hide_index=True)
+            with st.expander("Copy as Markdown"):
+                st.code(_md_table(table), language="markdown")
+        else:
+            st.write("_No results._")
+    else:
+        st.markdown(result["content"])
+
+# ---------------- UI ----------------
+st.title("🎓 VIT — Static FAQs (Click to Answer)")
+
+# Top-level section selector (exactly 5)
+section = st.radio(
+    "Choose a section",
+    ["UG", "PG", "MCA", "MSc", "HOSTELS"],
+    horizontal=True
+)
+
+# choose registry
+REG_MAP = {"UG": UG_REG, "PG": PG_REG, "MCA": MCA_REG, "MSc": MSC_REG, "HOSTELS": HST_REG}
+REG = REG_MAP[section]
+
+# Left: question list (as buttons); Right: answer
+left, right = st.columns([1.2, 2.0], gap="large")
+
+with left:
+    st.subheader(f"{section} — Questions")
+
+    # optional quick filter
+    qf = st.text_input("Filter", placeholder="type to filter…").strip().lower()
+    filtered = [r for r in REG if (qf in r["label"].lower())] if qf else REG
+
+    # show as a grid of buttons (no QIDs shown)
+    # store last clicked in session
+    cols_per_row = 1  # you can make it 2 if you want a two-column list
+    for i, row in enumerate(filtered):
+        if st.button(row["label"], key=f"{section}-{i}"):
+            st.session_state["selected_item"] = (section, row)
+
+with right:
+    st.subheader("Answer")
+    sel = st.session_state.get("selected_item")
+    if not sel:
+        st.info("Click a question on the left.")
+    else:
+        _, item = sel
+        label   = item["label"]
+        handler = item["handler"]
+        filters = item.get("filters") or {}
+        # fallback_query uses the label
+        with st.spinner("Fetching…"):
+            result = _dispatch(handler, filters, label)
+        st.markdown(f"**{label}**")
+        _render_answer(result)
+
+st.caption("SQL-first from curated CSV → SQLite · FAISS fallback from official PDFs. No free-text chat; answers are deterministic.")
+
     ~~~~^^^^^^^^^^^^^^^^^^^^^^^
 File "C:\Users\T8543\Downloads\project-2\streamlit_app.py", line 185, in <module>
     result = _dispatch(handler, filters, fallback_query)
