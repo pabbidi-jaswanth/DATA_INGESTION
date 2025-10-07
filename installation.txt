@@ -1,2 +1,225 @@
-(.venv) (base) PS C:\Users\T8543\Downloads\project-2> streamlit run streamlit_app.py
-did not find executable at 'C:\Program Files\Python313\python.exe': The system cannot find the file specified.
+# streamlit_app.py
+# Enforce routing: for UG, ONLY Programs & Fees -> SQLite; everything else -> FAISS.
+# Sections: UG, PG, MCA, MSc, HOSTELS (PG/MCA/MSc/Hostels kept as placeholders).
+
+import pathlib
+from typing import Dict, Any, List, Tuple
+import streamlit as st
+
+# ---- your backend helpers ----
+from app.sql_router import (
+    sql_programs, sql_academic_fees,
+)
+from app.utils.fallback_rag import faiss_answer_or_summary
+
+FAISS_INDEX_DIR = pathlib.Path("Data/index/faiss")
+FAISS_COLLECTION = "vit_faq_vellore"
+
+st.set_page_config(page_title="VIT FAQs — Click to Answer", layout="wide")
+
+# =============== UG — 40 questions ===============
+# NOTE: handler values are now either 'programs'/'fees' (SQL) or 'faiss_summary' (PDFs).
+UG_REG: List[Dict[str, Any]] = [
+    # ---- SQL (Programs) ----
+    {"label":"What UG programs and specializations are offered?",
+     "handler":"programs","filters":{"level_like":"UG"}},
+    {"label":"Which B.Tech specializations are available at each campus?",
+     "handler":"programs","filters":{"level_like":"UG","program_like":"B.Tech"}},
+    {"label":"What non–B.Tech UG programs are offered (BBA/B.Com/BCA etc.)?",
+     "handler":"programs","filters":{"level_like":"UG","program_like":"BBA B.Com BCA"}},
+
+    # ---- Everything below is FAISS (PDFs) unless fees (3 items) ----
+    {"label":"UG eligibility: minimum marks and required subjects","handler":"faiss_summary","filters":{}},
+    {"label":"Is Mathematics mandatory for specific B.Tech programs?","handler":"faiss_summary","filters":{}},
+    {"label":"Are NIOS/correspondence students eligible for UG?","handler":"faiss_summary","filters":{}},
+    {"label":"Eligibility for NRI/OCI/PIO applicants (UG)","handler":"faiss_summary","filters":{}},
+
+    {"label":"Documents to submit for UG admission and reporting","handler":"faiss_summary","filters":{}},
+    {"label":"Where to download affidavits and fitness forms?","handler":"faiss_summary","filters":{}},
+    {"label":"Photo/signature/document upload specifications","handler":"faiss_summary","filters":{}},
+
+    # ---- SQL (Fees) ----
+    {"label":"UG tuition fee (Indian category) for AY 2025–26",
+     "handler":"fees","filters":{"level_like":"UG","category":"Indian","ay":"2025-26"}},
+    {"label":"UG tuition fee (NRI category) for AY 2025–26",
+     "handler":"fees","filters":{"level_like":"UG","category":"NRI","ay":"2025-26"}},
+    {"label":"UG tuition fee (Foreign category) for AY 2025–26",
+     "handler":"fees","filters":{"level_like":"UG","category":"Foreign","ay":"2025-26"}},
+
+    # ---- FAISS again ----
+    {"label":"Is there a refundable caution deposit for UG?","handler":"faiss_summary","filters":{}},
+    {"label":"Scholarships/waivers available for UG students","handler":"faiss_summary","filters":{}},
+
+    {"label":"Step-by-step UG application process (Indian/NRI/Foreign)","handler":"faiss_summary","filters":{}},
+    {"label":"Important admission dates and deadlines for UG","handler":"faiss_summary","filters":{}},
+    {"label":"How is the merit list prepared and tie-break rules?","handler":"faiss_summary","filters":{}},
+    {"label":"Counselling and seat allotment process (rounds and sliding)","handler":"faiss_summary","filters":{}},
+    {"label":"Branch locking and later branch-change policy","handler":"faiss_summary","filters":{}},
+
+    {"label":"Who is treated as NRI vs Foreign applicant?","handler":"faiss_summary","filters":{}},
+    {"label":"NRI application portal & fee payment instructions","handler":"faiss_summary","filters":{}},
+    {"label":"Foreign nationals/OCI/PIO application steps & fees","handler":"faiss_summary","filters":{}},
+
+    # HOSTEL & CONTACTS → FAISS (as per your requirement)
+    {"label":"First-year hostel fee (Indian) AY 2025–26","handler":"faiss_summary","filters":{}},
+    {"label":"First-year hostel fee (NRI/Foreign) AY 2025–26","handler":"faiss_summary","filters":{}},
+    {"label":"Senior hostel fee overview AY 2025–26","handler":"faiss_summary","filters":{}},
+    {"label":"Hostel block landlines and key contacts","handler":"faiss_summary","filters":{}},
+
+    {"label":"Extra documents for NRI/Foreign students at reporting","handler":"faiss_summary","filters":{}},
+    {"label":"AIU equivalence and accepted international boards","handler":"faiss_summary","filters":{}},
+
+    {"label":"Mode and schedule of tuition/hostel fee payment","handler":"faiss_summary","filters":{}},
+    {"label":"Refund policy if I withdraw before/after registration","handler":"faiss_summary","filters":{}},
+
+    {"label":"When to pay balance tuition/hostel after provisional admission?","handler":"faiss_summary","filters":{}},
+    {"label":"How to check application status and download letters?","handler":"faiss_summary","filters":{}},
+    {"label":"How to correct mistakes in the application after submission?","handler":"faiss_summary","filters":{}},
+    {"label":"Uploading pending 12th/board marks and verification process","handler":"faiss_summary","filters":{}},
+
+    {"label":"Medium of instruction and availability of bridge courses","handler":"faiss_summary","filters":{}},
+    {"label":"Attendance, exams and grading policy (UG) overview","handler":"faiss_summary","filters":{}},
+
+    {"label":"Internships and industry-linked projects during UG","handler":"faiss_summary","filters":{}},
+    {"label":"Recent UG placement highlights & top recruiters","handler":"faiss_summary","filters":{}},
+
+    {"label":"Whom to contact for UG admissions help (email/phone)?","handler":"faiss_summary","filters":{}},
+]
+
+# ===== placeholders for other sections (you can replace with your own registries later)
+PG_REG  = [{"label":"PG programs and specializations available","handler":"faiss_summary","filters":{}}]
+MCA_REG = [{"label":"MCA eligibility: qualifying degree and marks","handler":"faiss_summary","filters":{}}]
+MSC_REG = [{"label":"MSc programs and specializations","handler":"faiss_summary","filters":{}}]
+HST_REG = [{"label":"Hostel overview & fee types","handler":"faiss_summary","filters":{}}]
+
+# ===== helpers
+def _md_table(table: Dict[str, Any]) -> str:
+    if not table or not table.get("columns") or not table.get("rows"):
+        return "_No results._"
+    cols = table["columns"]; rows = table["rows"]
+    lines = [" | ".join(cols), " | ".join(["---"]*len(cols))]
+    for r in rows:
+        lines.append(" | ".join("" if x is None else str(x) for x in r))
+    return "\n".join(lines)
+
+def _normalize_for_programs(filters: Dict[str, Any]) -> Dict[str, Any]:
+    f = dict(filters or {})
+    # provide keys your sql_programs expects
+    f.setdefault("level", f.get("level_like", "UG"))
+    f.setdefault("prog_is_degree", True)
+    if "program_like" in f and "prog_like" not in f:
+        f["prog_like"] = f["program_like"]
+    f.setdefault("prog_level_like", f.get("level"))
+    return f
+
+def _normalize_for_fees(filters: Dict[str, Any]) -> Dict[str, Any]:
+    f = dict(filters or {})
+    f.setdefault("level", f.get("level_like", "UG"))
+    # keep ay/category if provided
+    return f
+
+def _sql_programs(filters: Dict[str, Any]) -> Tuple[bool, Dict[str, Any], str]:
+    try:
+        nf = _normalize_for_programs(filters)
+        out = sql_programs(nf, "")
+        tbl = out
+        if isinstance(out, dict) and "table" in out:
+            tbl = out["table"]
+        if tbl and tbl.get("columns") and tbl.get("rows"):
+            return True, tbl, ""
+        # retry relaxed once (only level)
+        out2 = sql_programs({"level":"UG", "prog_is_degree": True}, "")
+        tbl2 = out2["table"] if isinstance(out2, dict) and "table" in out2 else out2
+        if tbl2 and tbl2.get("rows"):
+            return True, tbl2, ""
+        return False, {}, "no_rows"
+    except Exception as e:
+        return False, {}, f"exception:{e}"
+
+def _sql_fees(filters: Dict[str, Any]) -> Tuple[bool, Dict[str, Any], str]:
+    try:
+        nf = _normalize_for_fees(filters)
+        out = sql_academic_fees(nf, "")
+        tbl = out
+        if isinstance(out, dict) and "table" in out:
+            tbl = out["table"]
+        if tbl and tbl.get("columns") and tbl.get("rows"):
+            return True, tbl, ""
+        # retry with level=UG only
+        out2 = sql_academic_fees({"level":"UG"}, "")
+        tbl2 = out2["table"] if isinstance(out2, dict) and "table" in out2 else out2
+        if tbl2 and tbl2.get("rows"):
+            return True, tbl2, ""
+        return False, {}, "no_rows"
+    except Exception as e:
+        return False, {}, f"exception:{e}"
+
+def _dispatch(handler: str, filters: Dict[str, Any], fallback_query: str) -> Dict[str, Any]:
+    """
+    UG policy:
+      - SQL ONLY for handler in {'programs','fees'}.
+      - Everything else -> FAISS (PDFs).
+    """
+    if handler == "programs":
+        ok, table, err = _sql_programs(filters)
+        return {"type":"table" if ok else "error", "content": table if ok else f"SQL(programs) → {err}"}
+
+    if handler == "fees":
+        ok, table, err = _sql_fees(filters)
+        return {"type":"table" if ok else "error", "content": table if ok else f"SQL(fees) → {err}"}
+
+    # FAISS only for all other handlers per your rule
+    try:
+        md = faiss_answer_or_summary(FAISS_INDEX_DIR, FAISS_COLLECTION, fallback_query)
+        return {"type":"md", "content": md or "_No context found in PDFs._"}
+    except Exception as e:
+        return {"type":"error","content": f"FAISS error: {e}"}
+
+def _render_answer(result: Dict[str, Any]):
+    if result["type"] == "table":
+        table = result["content"]
+        cols = table.get("columns") or []; rows = table.get("rows") or []
+        if cols and rows:
+            import pandas as pd
+            df = pd.DataFrame(rows, columns=cols)
+            st.dataframe(df, use_container_width=True, hide_index=True)
+            with st.expander("Copy as Markdown"):
+                st.code(_md_table(table), language="markdown")
+        else:
+            st.warning("No rows.")
+    elif result["type"] == "md":
+        st.markdown(result["content"])
+    else:
+        st.error(result["content"])
+
+# =============== UI ===============
+st.title("🎓 VIT — Static FAQs (Click to Answer)")
+
+section = st.radio("Choose a section", ["UG", "PG", "MCA", "MSc", "HOSTELS"], horizontal=True)
+REG_MAP = {"UG": UG_REG, "PG": PG_REG, "MCA": MCA_REG, "MSc": MSC_REG, "HOSTELS": HST_REG}
+REG = REG_MAP[section]
+
+left, right = st.columns([1.3, 2.0], gap="large")
+
+with left:
+    st.subheader(f"{section} — Questions")
+    qf = st.text_input("Filter", placeholder="type to filter…").strip().lower()
+    filtered = [r for r in REG if (qf in r["label"].lower())] if qf else REG
+    for i, row in enumerate(filtered):
+        if st.button(row["label"], key=f"{section}-{i}"):
+            st.session_state["selected_item"] = (section, row)
+
+with right:
+    st.subheader("Answer")
+    sel = st.session_state.get("selected_item")
+    if not sel:
+        st.info("Click a question on the left.")
+    else:
+        _, item = sel
+        label   = item["label"]; handler = item["handler"]; filters = item.get("filters") or {}
+        with st.spinner("Fetching…"):
+            result = _dispatch(handler, filters, label)
+        st.markdown(f"**{label}**")
+        _render_answer(result)
+
+st.caption("UG policy enforced: Programs & Fees → SQLite tables; everything else → PDFs via FAISS.")
