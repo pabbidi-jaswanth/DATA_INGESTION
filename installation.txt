@@ -1,16 +1,14 @@
 # streamlit_app.py
-# Static click-to-answer UI with SQL-first (no FAISS fallback for tabular),
-# FAISS only for narrative questions. Sections: UG, PG, MCA, MSc, HOSTELS.
+# Enforce routing: for UG, ONLY Programs & Fees -> SQLite; everything else -> FAISS.
+# Sections: UG, PG, MCA, MSc, HOSTELS (PG/MCA/MSc/Hostels kept as placeholders).
 
 import pathlib
 from typing import Dict, Any, List, Tuple
-
 import streamlit as st
 
-# ---- your backend ----
+# ---- your backend helpers ----
 from app.sql_router import (
-    sql_programs, sql_eligibility, sql_documents, sql_academic_fees,
-    sql_scholarships, sql_hostel_overview, sql_block_contacts, sql_list_blocks
+    sql_programs, sql_academic_fees,
 )
 from app.utils.fallback_rag import faiss_answer_or_summary
 
@@ -19,76 +17,82 @@ FAISS_COLLECTION = "vit_faq_vellore"
 
 st.set_page_config(page_title="VIT FAQs — Click to Answer", layout="wide")
 
-TABULAR_HANDLERS = {
-    "programs", "eligibility", "documents", "fees", "scholarships",
-    "hostel", "contacts", "blocks"
-}
-
-# ---------------- UG — 40 static questions (no QIDs shown) ----------------
+# =============== UG — 40 questions ===============
+# NOTE: handler values are now either 'programs'/'fees' (SQL) or 'faiss_summary' (PDFs).
 UG_REG: List[Dict[str, Any]] = [
-    # Programs / Courses ------------- SQL
-    {"label":"What UG programs and specializations are offered?",                      "handler":"programs",   "filters":{"level_like":"UG"}},
-    {"label":"Which B.Tech specializations are available at each campus?",            "handler":"programs",   "filters":{"level_like":"UG","program_like":"B.Tech"}},
-    {"label":"What non–B.Tech UG programs are offered (BBA/B.Com/BCA etc.)?",         "handler":"programs",   "filters":{"level_like":"UG","program_like":"BBA B.Com BCA"}},
-    # Eligibility -------------------- SQL
-    {"label":"UG eligibility: minimum marks and required subjects",                    "handler":"eligibility","filters":{"level_like":"UG"}},
-    {"label":"Is Mathematics mandatory for specific B.Tech programs?",                 "handler":"eligibility","filters":{"level_like":"UG","program_like":"B.Tech"}},
-    {"label":"Are NIOS/correspondence students eligible for UG?",                      "handler":"eligibility","filters":{"level_like":"UG","program_like":"ALL"}},
-    {"label":"Eligibility for NRI/OCI/PIO applicants (UG)",                            "handler":"eligibility","filters":{"level_like":"UG","program_like":"ALL"}},
-    # Documents ---------------------- SQL
-    {"label":"Documents to submit for UG admission and reporting",                     "handler":"documents",  "filters":{"level_like":"UG"}},
-    {"label":"Where to download affidavits and fitness forms?",                        "handler":"documents",  "filters":{"level_like":"UG","program_like":"affidavit fitness"}},
-    {"label":"Photo/signature/document upload specifications",                         "handler":"documents",  "filters":{"level_like":"UG","program_like":"photo signature upload"}},
-    # Fees --------------------------- SQL
-    {"label":"UG tuition fee (Indian category) for AY 2025–26",                        "handler":"fees",       "filters":{"level_like":"UG","category":"Indian","ay":"2025-26"}},
-    {"label":"UG tuition fee (NRI category) for AY 2025–26",                           "handler":"fees",       "filters":{"level_like":"UG","category":"NRI","ay":"2025-26"}},
-    {"label":"UG tuition fee (Foreign category) for AY 2025–26",                       "handler":"fees",       "filters":{"level_like":"UG","category":"Foreign","ay":"2025-26"}},
-    {"label":"Is there a refundable caution deposit for UG?",                          "handler":"fees",       "filters":{"level_like":"UG"}},
-    # Scholarships ------------------- SQL
-    {"label":"Scholarships/waivers available for UG students",                         "handler":"scholarships","filters":{"level_like":"UG"}},
-    # Process & timelines ------------ FAISS
-    {"label":"Step-by-step UG application process (Indian/NRI/Foreign)",               "handler":"faiss_summary","filters":{}},
-    {"label":"Important admission dates and deadlines for UG",                         "handler":"faiss_summary","filters":{}},
-    {"label":"How is the merit list prepared and tie-break rules?",                    "handler":"faiss_summary","filters":{}},
-    {"label":"Counselling and seat allotment process (rounds and sliding)",            "handler":"faiss_summary","filters":{}},
-    {"label":"Branch locking and later branch-change policy",                          "handler":"faiss_summary","filters":{}},
-    # Category-specific -------------- FAISS
-    {"label":"Who is treated as NRI vs Foreign applicant?",                            "handler":"faiss_summary","filters":{}},
-    {"label":"NRI application portal & fee payment instructions",                      "handler":"faiss_summary","filters":{}},
-    {"label":"Foreign nationals/OCI/PIO application steps & fees",                     "handler":"faiss_summary","filters":{}},
-    # Hostel touchpoints ------------- SQL
-    {"label":"First-year hostel fee (Indian) AY 2025–26",                              "handler":"hostel",     "filters":{"level":"First-Year","category":"Indian","ay":"2025-26"}},
-    {"label":"First-year hostel fee (NRI/Foreign) AY 2025–26",                         "handler":"hostel",     "filters":{"level":"First-Year","category":"NRI","ay":"2025-26"}},
-    {"label":"Senior hostel fee overview AY 2025–26",                                  "handler":"hostel",     "filters":{"level":"Senior","ay":"2025-26"}},
-    {"label":"Hostel block landlines and key contacts",                                "handler":"contacts",   "filters":{}},
-    # International docs ------------- FAISS
-    {"label":"Extra documents for NRI/Foreign students at reporting",                  "handler":"faiss_summary","filters":{}},
-    {"label":"AIU equivalence and accepted international boards",                      "handler":"faiss_summary","filters":{}},
-    # Payments / Refunds ------------- FAISS
-    {"label":"Mode and schedule of tuition/hostel fee payment",                        "handler":"faiss_summary","filters":{}},
-    {"label":"Refund policy if I withdraw before/after registration",                  "handler":"faiss_summary","filters":{}},
-    # After-offer logistics ---------- FAISS
-    {"label":"When to pay balance tuition/hostel after provisional admission?",        "handler":"faiss_summary","filters":{}},
-    {"label":"How to check application status and download letters?",                  "handler":"faiss_summary","filters":{}},
-    {"label":"How to correct mistakes in the application after submission?",           "handler":"faiss_summary","filters":{}},
-    {"label":"Uploading pending 12th/board marks and verification process",            "handler":"faiss_summary","filters":{}},
-    # Academics quick info ----------- FAISS
-    {"label":"Medium of instruction and availability of bridge courses",               "handler":"faiss_summary","filters":{}},
-    {"label":"Attendance, exams and grading policy (UG) overview",                     "handler":"faiss_summary","filters":{}},
-    # Careers ------------------------ FAISS
-    {"label":"Internships and industry-linked projects during UG",                     "handler":"faiss_summary","filters":{}},
-    {"label":"Recent UG placement highlights & top recruiters",                        "handler":"faiss_summary","filters":{}},
-    # Support ------------------------ FAISS
-    {"label":"Whom to contact for UG admissions help (email/phone)?",                  "handler":"faiss_summary","filters":{}},
+    # ---- SQL (Programs) ----
+    {"label":"What UG programs and specializations are offered?",
+     "handler":"programs","filters":{"level_like":"UG"}},
+    {"label":"Which B.Tech specializations are available at each campus?",
+     "handler":"programs","filters":{"level_like":"UG","program_like":"B.Tech"}},
+    {"label":"What non–B.Tech UG programs are offered (BBA/B.Com/BCA etc.)?",
+     "handler":"programs","filters":{"level_like":"UG","program_like":"BBA B.Com BCA"}},
+
+    # ---- Everything below is FAISS (PDFs) unless fees (3 items) ----
+    {"label":"UG eligibility: minimum marks and required subjects","handler":"faiss_summary","filters":{}},
+    {"label":"Is Mathematics mandatory for specific B.Tech programs?","handler":"faiss_summary","filters":{}},
+    {"label":"Are NIOS/correspondence students eligible for UG?","handler":"faiss_summary","filters":{}},
+    {"label":"Eligibility for NRI/OCI/PIO applicants (UG)","handler":"faiss_summary","filters":{}},
+
+    {"label":"Documents to submit for UG admission and reporting","handler":"faiss_summary","filters":{}},
+    {"label":"Where to download affidavits and fitness forms?","handler":"faiss_summary","filters":{}},
+    {"label":"Photo/signature/document upload specifications","handler":"faiss_summary","filters":{}},
+
+    # ---- SQL (Fees) ----
+    {"label":"UG tuition fee (Indian category) for AY 2025–26",
+     "handler":"fees","filters":{"level_like":"UG","category":"Indian","ay":"2025-26"}},
+    {"label":"UG tuition fee (NRI category) for AY 2025–26",
+     "handler":"fees","filters":{"level_like":"UG","category":"NRI","ay":"2025-26"}},
+    {"label":"UG tuition fee (Foreign category) for AY 2025–26",
+     "handler":"fees","filters":{"level_like":"UG","category":"Foreign","ay":"2025-26"}},
+
+    # ---- FAISS again ----
+    {"label":"Is there a refundable caution deposit for UG?","handler":"faiss_summary","filters":{}},
+    {"label":"Scholarships/waivers available for UG students","handler":"faiss_summary","filters":{}},
+
+    {"label":"Step-by-step UG application process (Indian/NRI/Foreign)","handler":"faiss_summary","filters":{}},
+    {"label":"Important admission dates and deadlines for UG","handler":"faiss_summary","filters":{}},
+    {"label":"How is the merit list prepared and tie-break rules?","handler":"faiss_summary","filters":{}},
+    {"label":"Counselling and seat allotment process (rounds and sliding)","handler":"faiss_summary","filters":{}},
+    {"label":"Branch locking and later branch-change policy","handler":"faiss_summary","filters":{}},
+
+    {"label":"Who is treated as NRI vs Foreign applicant?","handler":"faiss_summary","filters":{}},
+    {"label":"NRI application portal & fee payment instructions","handler":"faiss_summary","filters":{}},
+    {"label":"Foreign nationals/OCI/PIO application steps & fees","handler":"faiss_summary","filters":{}},
+
+    # HOSTEL & CONTACTS → FAISS (as per your requirement)
+    {"label":"First-year hostel fee (Indian) AY 2025–26","handler":"faiss_summary","filters":{}},
+    {"label":"First-year hostel fee (NRI/Foreign) AY 2025–26","handler":"faiss_summary","filters":{}},
+    {"label":"Senior hostel fee overview AY 2025–26","handler":"faiss_summary","filters":{}},
+    {"label":"Hostel block landlines and key contacts","handler":"faiss_summary","filters":{}},
+
+    {"label":"Extra documents for NRI/Foreign students at reporting","handler":"faiss_summary","filters":{}},
+    {"label":"AIU equivalence and accepted international boards","handler":"faiss_summary","filters":{}},
+
+    {"label":"Mode and schedule of tuition/hostel fee payment","handler":"faiss_summary","filters":{}},
+    {"label":"Refund policy if I withdraw before/after registration","handler":"faiss_summary","filters":{}},
+
+    {"label":"When to pay balance tuition/hostel after provisional admission?","handler":"faiss_summary","filters":{}},
+    {"label":"How to check application status and download letters?","handler":"faiss_summary","filters":{}},
+    {"label":"How to correct mistakes in the application after submission?","handler":"faiss_summary","filters":{}},
+    {"label":"Uploading pending 12th/board marks and verification process","handler":"faiss_summary","filters":{}},
+
+    {"label":"Medium of instruction and availability of bridge courses","handler":"faiss_summary","filters":{}},
+    {"label":"Attendance, exams and grading policy (UG) overview","handler":"faiss_summary","filters":{}},
+
+    {"label":"Internships and industry-linked projects during UG","handler":"faiss_summary","filters":{}},
+    {"label":"Recent UG placement highlights & top recruiters","handler":"faiss_summary","filters":{}},
+
+    {"label":"Whom to contact for UG admissions help (email/phone)?","handler":"faiss_summary","filters":{}},
 ]
 
-# Demo placeholders for other sections — plug in your 40s later
-PG_REG  = [{"label":"PG programs and specializations available","handler":"programs","filters":{"level_like":"PG"}}]
-MCA_REG = [{"label":"MCA eligibility: qualifying degree and marks","handler":"eligibility","filters":{"level_like":"MCA"}}]
-MSC_REG = [{"label":"MSc programs and specializations","handler":"programs","filters":{"level_like":"MSc"}}]
-HST_REG = [{"label":"First-year hostel fee AY 2025–26 (Men)","handler":"hostel","filters":{"level":"First-Year","gender":"Men","ay":"2025-26"}}]
+# ===== placeholders for other sections (you can replace with your own registries later)
+PG_REG  = [{"label":"PG programs and specializations available","handler":"faiss_summary","filters":{}}]
+MCA_REG = [{"label":"MCA eligibility: qualifying degree and marks","handler":"faiss_summary","filters":{}}]
+MSC_REG = [{"label":"MSc programs and specializations","handler":"faiss_summary","filters":{}}]
+HST_REG = [{"label":"Hostel overview & fee types","handler":"faiss_summary","filters":{}}]
 
-# -------- helpers --------
+# ===== helpers
 def _md_table(table: Dict[str, Any]) -> str:
     if not table or not table.get("columns") or not table.get("rows"):
         return "_No results._"
@@ -98,128 +102,78 @@ def _md_table(table: Dict[str, Any]) -> str:
         lines.append(" | ".join("" if x is None else str(x) for x in r))
     return "\n".join(lines)
 
-def _normalize_filters(handler: str, filters: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Make filters compatible with your sql_router expectations.
-    Also add safe defaults that prevent KeyError (e.g., prog_is_degree).
-    """
+def _normalize_for_programs(filters: Dict[str, Any]) -> Dict[str, Any]:
     f = dict(filters or {})
-    # common: ensure explicit level where possible
-    if "level_like" in f and "level" not in f:
-        f["level"] = f["level_like"]
-
-    # programs table typically expects these keys
-    if handler == "programs":
-        f.setdefault("prog_is_degree", True)   # avoids KeyError
-        # map our program_like to router's prog_like (if used)
-        if "program_like" in f and "prog_like" not in f:
-            f["prog_like"] = f["program_like"]
-        # be liberal: also pass prog_level/level_like duplicates
-        f.setdefault("prog_level_like", f.get("level_like", f.get("level", "UG")))
-    # eligibility/documents/fees often need level
-    if handler in {"eligibility", "documents", "fees", "scholarships"}:
-        f.setdefault("level", f.get("level_like", "UG"))
-    # hostel: ensure ay if provided
-    if handler == "hostel":
-        if "ay" not in f:
-            f["ay"] = "2025-26"
+    # provide keys your sql_programs expects
+    f.setdefault("level", f.get("level_like", "UG"))
+    f.setdefault("prog_is_degree", True)
+    if "program_like" in f and "prog_like" not in f:
+        f["prog_like"] = f["program_like"]
+    f.setdefault("prog_level_like", f.get("level"))
     return f
 
-def _sql_try(callable_fn, filters: Dict[str, Any]) -> Tuple[bool, Dict[str, Any], str]:
-    """
-    Return (ok, table_dict, errmsg). ok=True only if rows are present.
-    Accepts either {columns, rows} or {"table": {...}} shapes.
-    """
+def _normalize_for_fees(filters: Dict[str, Any]) -> Dict[str, Any]:
+    f = dict(filters or {})
+    f.setdefault("level", f.get("level_like", "UG"))
+    # keep ay/category if provided
+    return f
+
+def _sql_programs(filters: Dict[str, Any]) -> Tuple[bool, Dict[str, Any], str]:
     try:
-        out = callable_fn(filters, "")
+        nf = _normalize_for_programs(filters)
+        out = sql_programs(nf, "")
         tbl = out
         if isinstance(out, dict) and "table" in out:
             tbl = out["table"]
-        if isinstance(tbl, dict) and tbl.get("columns") and tbl.get("rows"):
-            if tbl["rows"]:
-                return True, tbl, ""
-            return False, {}, "no_rows"
-        return False, {}, "bad_shape"
+        if tbl and tbl.get("columns") and tbl.get("rows"):
+            return True, tbl, ""
+        # retry relaxed once (only level)
+        out2 = sql_programs({"level":"UG", "prog_is_degree": True}, "")
+        tbl2 = out2["table"] if isinstance(out2, dict) and "table" in out2 else out2
+        if tbl2 and tbl2.get("rows"):
+            return True, tbl2, ""
+        return False, {}, "no_rows"
+    except Exception as e:
+        return False, {}, f"exception:{e}"
+
+def _sql_fees(filters: Dict[str, Any]) -> Tuple[bool, Dict[str, Any], str]:
+    try:
+        nf = _normalize_for_fees(filters)
+        out = sql_academic_fees(nf, "")
+        tbl = out
+        if isinstance(out, dict) and "table" in out:
+            tbl = out["table"]
+        if tbl and tbl.get("columns") and tbl.get("rows"):
+            return True, tbl, ""
+        # retry with level=UG only
+        out2 = sql_academic_fees({"level":"UG"}, "")
+        tbl2 = out2["table"] if isinstance(out2, dict) and "table" in out2 else out2
+        if tbl2 and tbl2.get("rows"):
+            return True, tbl2, ""
+        return False, {}, "no_rows"
     except Exception as e:
         return False, {}, f"exception:{e}"
 
 def _dispatch(handler: str, filters: Dict[str, Any], fallback_query: str) -> Dict[str, Any]:
     """
-    For tabular handlers, DO NOT fall back to FAISS.
-    For narrative (faiss_summary), use FAISS.
+    UG policy:
+      - SQL ONLY for handler in {'programs','fees'}.
+      - Everything else -> FAISS (PDFs).
     """
-    nf = _normalize_filters(handler, filters)
-
     if handler == "programs":
-        ok, table, err = _sql_try(sql_programs, nf)
-        if not ok:
-            # retry once with relaxed filters
-            relaxed = {k:v for k,v in nf.items() if k not in {"prog_like"}}
-            relaxed.setdefault("prog_is_degree", True)
-            relaxed.setdefault("level", "UG")
-            ok, table, err2 = _sql_try(sql_programs, relaxed)
-        return {"type":"table" if ok else "error", "content": table if ok else f"SQL(programs) → {err if ok==False else ''}"}
-
-    if handler == "eligibility":
-        ok, table, err = _sql_try(sql_eligibility, nf)
-        if not ok:
-            relaxed = {"level":"UG"}
-            ok, table, err2 = _sql_try(sql_eligibility, relaxed)
-        return {"type":"table" if ok else "error", "content": table if ok else f"SQL(eligibility) → {err}"}
-
-    if handler == "documents":
-        ok, table, err = _sql_try(sql_documents, nf)
-        if not ok:
-            relaxed = {"level":"UG"}
-            ok, table, err2 = _sql_try(sql_documents, relaxed)
-        return {"type":"table" if ok else "error", "content": table if ok else f"SQL(documents) → {err}"}
+        ok, table, err = _sql_programs(filters)
+        return {"type":"table" if ok else "error", "content": table if ok else f"SQL(programs) → {err}"}
 
     if handler == "fees":
-        ok, table, err = _sql_try(sql_academic_fees, nf)
-        if not ok:
-            # try with level only, then with category only
-            tries = [{"level":"UG"}, {"level":"UG","category":nf.get("category")}]
-            for t in tries:
-                ok, table, _ = _sql_try(sql_academic_fees, t)
-                if ok: break
+        ok, table, err = _sql_fees(filters)
         return {"type":"table" if ok else "error", "content": table if ok else f"SQL(fees) → {err}"}
 
-    if handler == "scholarships":
-        ok, table, err = _sql_try(sql_scholarships, nf)
-        if not ok:
-            ok, table, _ = _sql_try(sql_scholarships, {"level":"UG"})
-        return {"type":"table" if ok else "error", "content": table if ok else f"SQL(scholarships) → {err}"}
-
-    if handler == "contacts":
-        ok, table, err = _sql_try(lambda f, _: {"table": sql_block_contacts(f).get("table")}, nf)
-        return {"type":"table" if ok else "error", "content": table if ok else f"SQL(contacts) → {err}"}
-
-    if handler == "blocks":
-        ok, table, err = _sql_try(lambda f, _: {"table": sql_list_blocks(f).get("table")}, nf)
-        return {"type":"table" if ok else "error", "content": table if ok else f"SQL(blocks) → {err}"}
-
-    if handler == "hostel":
-        # hostel returns {"table":..., "notes":[...]}
-        try:
-            data = sql_hostel_overview(nf)
-            tbl = data.get("table"); notes = data.get("notes") or []
-            if tbl and tbl.get("rows"):
-                md = _md_table(tbl)
-                if notes: md += "\n\n" + "\n".join(f"- {n}" for n in notes)
-                return {"type":"md", "content": md}
-            return {"type":"error", "content": "SQL(hostel) → no_rows"}
-        except Exception as e:
-            return {"type":"error", "content": f"SQL(hostel) → exception:{e}"}
-
-    # Narrative — FAISS
-    if handler == "faiss_summary":
-        try:
-            md = faiss_answer_or_summary(FAISS_INDEX_DIR, FAISS_COLLECTION, fallback_query)
-            return {"type":"md", "content": md or "_No context found in PDFs._"}
-        except Exception as e:
-            return {"type":"error","content": f"FAISS error: {e}"}
-
-    return {"type":"error","content":"Unknown handler."}
+    # FAISS only for all other handlers per your rule
+    try:
+        md = faiss_answer_or_summary(FAISS_INDEX_DIR, FAISS_COLLECTION, fallback_query)
+        return {"type":"md", "content": md or "_No context found in PDFs._"}
+    except Exception as e:
+        return {"type":"error","content": f"FAISS error: {e}"}
 
 def _render_answer(result: Dict[str, Any]):
     if result["type"] == "table":
@@ -238,7 +192,7 @@ def _render_answer(result: Dict[str, Any]):
     else:
         st.error(result["content"])
 
-# ---------------- UI ----------------
+# =============== UI ===============
 st.title("🎓 VIT — Static FAQs (Click to Answer)")
 
 section = st.radio("Choose a section", ["UG", "PG", "MCA", "MSc", "HOSTELS"], horizontal=True)
@@ -251,8 +205,6 @@ with left:
     st.subheader(f"{section} — Questions")
     qf = st.text_input("Filter", placeholder="type to filter…").strip().lower()
     filtered = [r for r in REG if (qf in r["label"].lower())] if qf else REG
-
-    # show as buttons (no QIDs)
     for i, row in enumerate(filtered):
         if st.button(row["label"], key=f"{section}-{i}"):
             st.session_state["selected_item"] = (section, row)
@@ -270,4 +222,4 @@ with right:
         st.markdown(f"**{label}**")
         _render_answer(result)
 
-st.caption("Tabular = SQLite only. Narrative = FAISS from PDFs. No free-text chat → deterministic answers.")
+st.caption("UG policy enforced: Programs & Fees → SQLite tables; everything else → PDFs via FAISS.")
