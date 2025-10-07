@@ -1,903 +1,273 @@
-What UG programs and specializations are offered?
+# streamlit_app.py
+# Static click-to-answer UI with SQL-first (no FAISS fallback for tabular),
+# FAISS only for narrative questions. Sections: UG, PG, MCA, MSc, HOSTELS.
 
-Answer (from your PDFs): with L & T) - Offered Location: Vellore, Chennai B.Tech - Computer Science and Engineering - Offered Location: Vellore, Chennai, VIT-AP, VIT-Bhopal B.Tech - Computer Science and Engineering (Bioinformatics) - Offered Location: Vellore B.Tech - Computer Science and Engineering and Business Systems(in collaboration with TCS) - Offered Location: Vellore B.Tech - Computer Science and Engineering (Blockchain) - Offered Location: VIT-AP B.Tech Offered Location: VIT-Bhopal B.Tech - Computer Science and Engineering (Data Analytics) - Offered Location: VIT-AP B.Tech - Electrical and Computer Science Engineering - Offered Location: Vellore, Chennai B.Tech - Electronics and Communication Engineering - Offered Location: Vellore, Chennai, VIT-AP, VIT-Bhopal B.Tech - Electronics and Communication Engineering (VLSI) - Offered Location: VIT-AP B.Tech - Electrical and Electronics Engineering Industrial Design - Offered Location: Vellore B.Arch - Offered Location: Vellore, VIT-Bhopal B.Sc. (Hons.) Agriculture Offered Location: Vellore B.Sc. in Hospitality and Hotel Administration - Offered Location: Vellore B.Sc. Computer Science - Offered Location: Vellore, Chennai B.Sc. Fashion Design - Offered Location: Chennai B. Sc. Economics (Hons.) - Offered Location: Chennai B.Sc. Multimedia & Animation - Offered Location: Vellore B.Sc Science and B.Tech - Electrical and Computer Science Engineering Engineering B.Tech - Computer Science and B.Tech - Electronics and Communication Engineering Engineering (Artificial Intelligence and Machine Learning) B.Tech - Computer Science and B.Tech - Electronics and Communication Engineering (Artificial Intelligence and Engineering (Artificial Intelligence & Cybernetics) Robotics) GROUP - B B.Tech - Computer Science and B.Tech - Electronics and Communication Engineering (Artificial Intelligence and Engineering (Biomedical Engineering) Data Engineering) B.Tech - Computer Science and B.Tech - Electronics and Communication Engineering (Bioinformatics) Engineering (Embedded systems) B.Tech - Computer Science and B.Tech - Electronics and Communication Engineering (Block chain) Engineering (VLSI) B.Tech - Computer Science and Programmes Offered - UG Admissions: Engineering Programmes: B.Tech - Aerospace Engineering - Offered Location: VIT-Bhopal B.Tech - Biotechnology - Offered Location: Vellore B.Tech - Bioengineering - Offered Location: VIT-Bhopal B.Tech - Chemical Engineering - Offered Location: Vellore B.Tech - Civil Engineering - Offered Location: Vellore, Chennai B.Tech - Civil Engineering (In Collaboration with L & T) - Offered Location: Vellore, Chennai B.Tech We offer a broad assortment of programmes in Information Technology, Artificial Intelligence and Data Engineering, Cyber Security, Software Engineering, Computer Science and Computer Applications.
+import pathlib
+from typing import Dict, Any, List, Tuple
 
-Sources: UG Programmes Offered.pdf, Academic Fee.pdf, M.SC PROCESS.pdf, UG NRI PROCESS.pdf,
+import streamlit as st
 
-
-
-Which B.Tech specializations are available at each campus?
-
-Answer (from your PDFs): Academic Fee - 2025 - 2026: B.Tech Programme GROUP A B.Tech - Bioengineering B.Tech - Biotechnology B.Tech - Chemical Engineering B.Tech - Civil Engineering B.Tech - Civil Engineering (In collaboration with L&T) ** B.Tech - Electrical and Electronics Engineering B.Tech - Electronics and Instrumentation Engineering B.Tech - Fashion Technology B.Tech - Health Sciences and Technology GROUP - A Tuition Fees (Per Annum) INR 1,73,000 Caution Deposit (Refundable) (One time payment) INR GROUP - B B.Tech - Aerospace Engineering B.Tech - Computer Science and Engineering (Software Engineering) B.Tech - Computer Science & B.Tech - Computer Science and Business Systems Engineering (E-Commerce Technology) B.Tech - Computer Science & B.Tech - Computer Science and Engineering Engineering (Education Technology) and Business Systems (in collaboration with TCS) B.Tech - Computer Science and B.Tech - Electrical and Computer Science M.Tech CSE, any Computer Science related branches/ Int. M.Sc Computer Science, Software Engg., IT, Software Tech., Data Science CSE (Artificial Intelligence and B.E/B.Tech. Degree in any branch / M.S / M.Sc. Machine Computer Science or IT or Software Engineering / MCA Learning) / Int. M.Tech CSE, any Computer Science related branches/ Int. M.Sc Computer Science, Software Engg., IT, Software Tech., Data Science B.E/B.Tech chain) Engineering (VLSI) B.Tech - Computer Science and B.Tech - Electronics and Computer Engineering Engineering (Cloud Computing & Automation) B.Tech - Computer Science and B.Tech - Electronics Engineering Engineering (Cyber Physical Systems) (VLSI Design and Technology) B.Tech - Computer Science and B.Tech - Information Technology Engineering (Cyber Security & Digital Forensics) B.Tech - Computer Science and B.Tech - Mechanical Engineering GROUP - B B.Tech - Computer Science and B.Tech - Mechanical Engineering Engineering (Data Analytics) (Artificial Intelligence & Robotics) B.Tech - Mechanical Engineering B.Tech - Computer Science and Engineering (Automotive Design) (Data Science) B.Tech - Computer Science and B.Tech - Mechanical Engineering (Electric Vehicles) Engineering (Gaming Technology) B.Tech - Computer Science and B.Tech - Mechanical Engineering (Robotics) Engineering NRI UG Programmes Offered: VIT-VELLORE: - B.Tech. Biotechnology - B.Tech. Chemical Engineering - B.Tech.
-
-
-What non–B.Tech UG programs are offered (BBA/B.Com/BCA etc.)?
-
-Answer (from your PDFs): GROUP - B B.Tech - Aerospace Engineering B.Tech - Computer Science and Engineering (Software Engineering) B.Tech - Computer Science & B.Tech - Computer Science and Business Systems Engineering (E-Commerce Technology) B.Tech - Computer Science & B.Tech - Computer Science and Engineering Engineering (Education Technology) and Business Systems (in collaboration with TCS) B.Tech - Computer Science and B.Tech - Electrical and Computer Science M.Tech CSE, any Computer Science related branches/ Int. M.Sc Computer Science, Software Engg., IT, Software Tech., Data Science CSE (Artificial Intelligence and B.E/B.Tech. Degree in any branch / M.S / M.Sc. Machine Computer Science or IT or Software Engineering / MCA Learning) / Int. M.Tech CSE, any Computer Science related branches/ Int. M.Sc Computer Science, Software Engg., IT, Software Tech., Data Science B.E/B.Tech Science & Engineering (Cloud Computing & Automation) - Offered Location: VIT-Bhopal B.Tech - Computer Science & Engineering (E-Commerce Technology) - Offered Location: VIT-Bhopal B.Tech - Computer Science & Engineering (Education Technology) - Offered Location: VIT-Bhopal B.Tech - Computer Science & Engineering (Gaming Technology) - Offered Location: VIT-Bhopal B.Tech chain) Engineering (VLSI) B.Tech - Computer Science and B.Tech - Electronics and Computer Engineering Engineering (Cloud Computing & Automation) B.Tech - Computer Science and B.Tech - Electronics Engineering Engineering (Cyber Physical Systems) (VLSI Design and Technology) B.Tech - Computer Science and B.Tech - Information Technology Engineering (Cyber Security & Digital Forensics) B.Tech - Computer Science and B.Tech - Mechanical Engineering B.B.A with Specilisation in FinTech - Offered Location: VIT-AP BBA with Specialisation in General Management - Offered Location: VIT-AP B.Com (Bachelor of Commerce) - Offered Location: Vellore B.Com. - Business Process Services - Offered Location: Vellore B.Com. - Banking and Capital Markets - Offered Location: Vellore B.Com.
-
-
-UG eligibility: minimum marks and required subjects
-
-Answer (from your PDFs): 2. 11th grade marksheet/AS Level/Form V(for appearing candidates) & 12th grade mark sheet/A Level/Form VI (for passed out candidates). 3. Both 11th and 12th Marksheets (for Nepal Education Board Candidates) Equivalent certificate from Association of Indian Universities(AIU) is mandatory, if passed from Universities/Boards other than India. - Stage 6 Download Application Filled in application will be available for download after completion Qualifying Examination - candidates should have completed 12 years of schooling (equivalent to the 10+2 system of Indian Education) with Physics, Chemistry and Mathematics or Biology or Biotechnology as compulsory subjects - A pass with Minimum aggregate of 60% or equivalent Grade in Physics, Chemistry and Mathematics (PCM) or Biology or Biotechnology (PCB) in standard XII or Equivalent Degree - In case if they have studied Physical science Eligibility Criteria - Candidates should have graduated with a full-time degree from any recognized University/Institute with a minimum aggregate of 60% or First class for M.Tech. degree programmes. - A minimum of 60% aggregate in X and XII Std / Diploma - Candidates appearing for their final degree exam / final semester exam in the current year are also eligible to apply Eligibility Criteria - Candidates should have graduated with a full-time degree from any recognized University/Institute with a minimum aggregate of 60% or First class for MCA degree programme. - Consistent Record in X and XII Std is required.
-
-
-UG eligibility: minimum marks and required subjects
-
-Answer (from your PDFs): 2. 11th grade marksheet/AS Level/Form V(for appearing candidates) & 12th grade mark sheet/A Level/Form VI (for passed out candidates). 3. Both 11th and 12th Marksheets (for Nepal Education Board Candidates) Equivalent certificate from Association of Indian Universities(AIU) is mandatory, if passed from Universities/Boards other than India. - Stage 6 Download Application Filled in application will be available for download after completion Qualifying Examination - candidates should have completed 12 years of schooling (equivalent to the 10+2 system of Indian Education) with Physics, Chemistry and Mathematics or Biology or Biotechnology as compulsory subjects - A pass with Minimum aggregate of 60% or equivalent Grade in Physics, Chemistry and Mathematics (PCM) or Biology or Biotechnology (PCB) in standard XII or Equivalent Degree - In case if they have studied Physical science Eligibility Criteria - Candidates should have graduated with a full-time degree from any recognized University/Institute with a minimum aggregate of 60% or First class for M.Tech. degree programmes. - A minimum of 60% aggregate in X and XII Std / Diploma - Candidates appearing for their final degree exam / final semester exam in the current year are also eligible to apply Eligibility Criteria - Candidates should have graduated with a full-time degree from any recognized University/Institute with a minimum aggregate of 60% or First class for MCA degree programme. - Consistent Record in X and XII Std is required.
-
-
-Is Mathematics mandatory for specific B.Tech programs?
-
-Answer (from your PDFs): (Bioinformatics), (4) B.Tech Computer Science and Engineering (Health Informatics) (5) B.Tech Electronics and Communication Engineering (Biomedical Engineering) (6) B.Tech Health Sciences and Technology (7) B.Tech. Computer Science & Engineering (Education Technology) VITEEE RANKING RELATED QUERIES: What's the cut off / rank in VITEEE required for my desirable course? Admissions for B.Tech Programmes are based on the merit rank from VITEEE and therefore it differs from year to year chain) Engineering (VLSI) B.Tech - Computer Science and B.Tech - Electronics and Computer Engineering Engineering (Cloud Computing & Automation) B.Tech - Computer Science and B.Tech - Electronics Engineering Engineering (Cyber Physical Systems) (VLSI Design and Technology) B.Tech - Computer Science and B.Tech - Information Technology Engineering (Cyber Security & Digital Forensics) B.Tech - Computer Science and B.Tech - Mechanical Engineering GROUP - B B.Tech - Aerospace Engineering B.Tech - Computer Science and Engineering (Software Engineering) B.Tech - Computer Science & B.Tech - Computer Science and Business Systems Engineering (E-Commerce Technology) B.Tech - Computer Science & B.Tech - Computer Science and Engineering Engineering (Education Technology) and Business Systems (in collaboration with TCS) B.Tech - Computer Science and B.Tech - Electrical and Computer Science There is no lateral entry admission offered for B.Tech. programme VITEEE RELATED QUERIES: Is VITEEE mandatory or would merit of XII/ Higher Secondary Board, JEE Main/ SAT scores be considered for admission to the B.Tech. Degree programme? 'Yes'. VITEEE is mandatory for admission to the B.Tech. Programme in VIT.
-
-
-Are NIOS/correspondence students eligible for UG?
-
-Answer (from your PDFs): FOREIGN FAQS: 1. Who is considered a "Foreign" nationals for admissions? Any foreign national holding a valid foreign passport is eligible to apply under this category. For Nepal and Bhutan nationals , passport is not mandatory What documents are required to prove foreign nationality? You'll need to provide a copy of your valid passport or National ID as proof of your foreign nationality National ID (For Nepal and Bhutan Candidates) as proof of your foreign nationality. Is there an entrance exam for Foreign admissions? We offer direct admission to all programmes for Foreign students based on their eligibility requirements Admission Process: 01: Students with Indian nationality and one of the parents working abroad can apply for NRI direct admission. 02: Application form and attached documents are scrutinized.
-
-
-Eligibility for NRI/OCI/PIO applicants (UG)
-
-Answer (from your PDFs): Is there an entrance exam for NRI admission? We offer direct admission to B.Tech programs for NRI students based on their eligibility requirements. However NRI candidates can also appear for VITEEE, where the Admission is based on the VITEEE rank and the counselling procedure. For more details https://viteee.vit.ac.in FOREIGN FAQS: 1. Who is considered a "Foreign" nationals for admissions? Any foreign national holding a valid foreign passport is eligible to apply under this category. For Nepal and Bhutan nationals , passport is not mandatory What documents are required to prove foreign nationality? You'll need to provide a copy of your valid passport or National ID as proof of your foreign nationality Read More ELIGIBILITY A) NATIONALITY - The applicants for admission must be Resident Indian National and must have pursued their graduation in regular, full time and formal education colleges located in India and abroad.
-
-
-Documents to submit for UG admission and reporting
-
-Answer (from your PDFs): FOREIGN FAQS: 1. Who is considered a "Foreign" nationals for admissions? Any foreign national holding a valid foreign passport is eligible to apply under this category. For Nepal and Bhutan nationals , passport is not mandatory What documents are required to prove foreign nationality? You'll need to provide a copy of your valid passport or National ID as proof of your foreign nationality Nativity Certificate (for candidates hailing from North-eastern states and Jammu & Kashmir, Ladakh) - Provisional Certificate / Degree Certificate (if available) - Aadhaar Card DOCUMENTS TO BE SUBMITTED (While reporting) The following documents are required to be submitted at the time of Admission: - X and XII Std. Marks statement - Mark Sheets of qualifying examination of all attempts (semester/year wise) and consolidated mark sheet 2. 11th grade marksheet/AS Level/Form V(for appearing candidates) & 12th grade mark sheet/A Level/Form VI (for passed out candidates). 3.
-
-
-Where to download affidavits and fitness forms?
-
-Answer (from your PDFs): Computer Science and Engineering (Bioinformatics) - B.Tech. Computer Science and Engineering (Cyber Security) - B.Tech. Computer Science and Engineering and Business Systems(in collaboration with TCS) - B.Tech. Computer Science and Engineering (Data Science) - B.Tech. Electrical and Electronics Engineering - B.Tech. Electrical and Computer Science Engineering - B.Tech. Electronics and Communication Engineering - B.Tech 2. 11th grade marksheet/AS Level/Form V(for appearing candidates) & 12th grade mark sheet/A Level/Form VI (for passed out candidates).
-
-
-Photo/signature/document upload specifications
-
-Answer (from your PDFs): Final-year students can also apply, provided they submit proof of graduation by the specified deadline. What is the application process for VITMEE? 1.Register online at the official VIT admissions portal. 2. Complete the application form with personal, academic, and program details. 3. Pay the application fee. 4.
-
-UG tuition fee (Indian category) for AY 2025–26
-
-Answer (from your PDFs): FEE STRUCTURE INTERNATIONAL ADMISSIONS: International Undergraduate Admissions B.Tech (2025-2026) Tuition Fees (Per Annum) Caution Deposit (Refundable) (One time 
-100
-p
-a
-y
-m
-e
-n
-t
+# ---- your backend ----
+from app.sql_router import (
+    sql_programs, sql_eligibility, sql_documents, sql_academic_fees,
+    sql_scholarships, sql_hostel_overview, sql_block_contacts, sql_list_blocks
 )
-T
-o
-t
-a
-l
-f
-e
-e
-s
-t
-o
-b
-e
-p
-a
-i
-d
-f
-o
-r
-t
-h
-e
-f
-i
-r
-s
-t
-y
-e
-a
-r
-100payment)Totalfeestobepaidforthefirstyear9100 B.Tech Programmes (2025-2026) Integrated Programmes Integrated M.Tech. (5 Years) (20242025) Tuition Fee (Per 
-5
-,
-500
-A
-n
-n
-u
-m
-)
-C
-a
-u
-t
-i
-o
-n
-D
-e
-p
-o
-s
-i
-t
-5,500Annum)CautionDeposit100 Total Fee in USD 
-5600
-I
-n
-t
-e
-g
-r
-a
-t
-e
-d
-M
-.
-S
-c
-.
-(
-5
-Y
-e
-a
-r
-s
-)
-(
-20242025
-)
-T
-u
-i
-t
-i
-o
-n
-F
-e
-e
-(
-P
-e
-r
-5600IntegratedM.Sc.(5Years)(20242025)TuitionFee(Per3,450 Annum) Caution Deposit 
-50
-T
-o
-t
-a
-l
-F
-e
-e
-i
-n
-U
-S
-D
-50TotalFeeinUSD3,500 International UG Science Programmes FOR BCA / B.Sc (Computer Science)/ B.Com / BBA Tuition Fee (Per 
-3
-,
-450
-A
-n
-n
-u
-m
-)
-C
-a
-u
-t
-i
-o
-n
-D
-e
-p
-o
-s
-i
-t
-3,450Annum)CautionDeposit50 Total Fee (Per Annum) 
-3
-,
-500
-B
-.
-S
-c
-.
-M
-u
-l
-t
-i
-m
-e
-d
-i
-a
-a
-n
-d
-A
-n
-i
-m
-a
-t
-i
-o
-n
-T
-u
-i
-t
-i
-o
-n
-F
-e
-e
-(
-P
-e
-r
-A
-n
-n
-u
-m
-)
-3,500B.Sc.MultimediaandAnimationTuitionFee(PerAnnum)4,250 Caution Deposit 
-50
-T
-o
-t
-a
-l
-F
-e
-e
-(
-P
-e
-r
-A
-n
-n
-u
-m
-)
-50TotalFee(PerAnnum)4,300 International Research Based Programmes Ph. D / Direct Ph Degree in Mechanical / Automobile / Smart Mobility Production / Manufacturing Engineering / Mechatronics / Aerospace / EEE / ECE / E&I / Instrumentation / CSE / IT M.Tech Fee Structure Program Category-1 Category-2 Caution Total Fees Total Fees Tuition Tuition Deposit (Category- (CategoryFees Fees 1) 2) M.Tech. 150000 230000.0 3000 153000.0 233000.0 Biomedical Engineering M.Tech. CAD / 150000 230000.0 3000 153000.0 233000.0 CAM M.Tech A minimum aggregate of 55% in PCM or PCB Please refer the link for more details: https://vit.ac.in/admissions/international/btecheligibilityandprocedure What is the fee structure for Foreign students? Please follow the link for the Foreign/ NRI fee structure: https://vit.ac.in/admissions/international/fee Admission Fee (non-refundable) 2.
-
-UG tuition fee (NRI category) for AY 2025–26
-
-Answer (from your PDFs): What is the fee structure for NRI students? Please follow the link for the NRI fee structure: https://vit.ac.in/admissions/international/fee How do I apply for B.Tech admission under the NRI category? The application process is usually online. You'll need to fill out the application form, upload required documents, and pay the application fee FEE STRUCTURE INTERNATIONAL ADMISSIONS: International Undergraduate Admissions B.Tech (2025-2026) Tuition Fees (Per Annum) Caution Deposit (Refundable) (One time 
-100
-p
-a
-y
-m
-e
-n
-t
-)
-T
-o
-t
-a
-l
-f
-e
-e
-s
-t
-o
-b
-e
-p
-a
-i
-d
-f
-o
-r
-t
-h
-e
-f
-i
-r
-s
-t
-y
-e
-a
-r
-100payment)Totalfeestobepaidforthefirstyear9100 B.Tech Programmes (2025-2026) Integrated Programmes Integrated M.Tech. (5 Years) (20242025) Tuition Fee (Per 
-5
-,
-500
-A
-n
-n
-u
-m
-)
-C
-a
-u
-t
-i
-o
-n
-D
-e
-p
-o
-s
-i
-t
-5,500Annum)CautionDeposit100 Total Fee in USD 
-5600
-I
-n
-t
-e
-g
-r
-a
-t
-e
-d
-M
-.
-S
-c
-.
-(
-5
-Y
-e
-a
-r
-s
-)
-(
-20242025
-)
-T
-u
-i
-t
-i
-o
-n
-F
-e
-e
-(
-P
-e
-r
-5600IntegratedM.Sc.(5Years)(20242025)TuitionFee(Per3,450 Annum) Caution Deposit 
-50
-T
-o
-t
-a
-l
-F
-e
-e
-i
-n
-U
-S
-D
-50TotalFeeinUSD3,500 International UG Science Programmes FOR BCA / B.Sc (Computer Science)/ B.Com / BBA Tuition Fee (Per 
-3
-,
-450
-A
-n
-n
-u
-m
-)
-C
-a
-u
-t
-i
-o
-n
-D
-e
-p
-o
-s
-i
-t
-3,450Annum)CautionDeposit50 Total Fee (Per Annum) 
-3
-,
-500
-B
-.
-S
-c
-.
-M
-u
-l
-t
-i
-m
-e
-d
-i
-a
-a
-n
-d
-A
-n
-i
-m
-a
-t
-i
-o
-n
-T
-u
-i
-t
-i
-o
-n
-F
-e
-e
-(
-P
-e
-r
-A
-n
-n
-u
-m
-)
-3,500B.Sc.MultimediaandAnimationTuitionFee(PerAnnum)4,250 Caution Deposit 
-50
-T
-o
-t
-a
-l
-F
-e
-e
-(
-P
-e
-r
-A
-n
-n
-u
-m
-)
-50TotalFee(PerAnnum)4,300 International Research Based Programmes Ph. D / Direct Ph Degree in Mechanical / Automobile / Smart Mobility Production / Manufacturing Engineering / Mechatronics / Aerospace / EEE / ECE / E&I / Instrumentation / CSE / IT M.Tech Fee Structure Program Category-1 Category-2 Caution Total Fees Total Fees Tuition Tuition Deposit (Category- (CategoryFees Fees 1) 2) M.Tech.
-
-
-UG tuition fee (Foreign category) for AY 2025–26
-
-Answer (from your PDFs): FOREIGN FAQS: 1. Who is considered a "Foreign" nationals for admissions? Any foreign national holding a valid foreign passport is eligible to apply under this category. For Nepal and Bhutan nationals , passport is not mandatory What documents are required to prove foreign nationality? You'll need to provide a copy of your valid passport or National ID as proof of your foreign nationality FEE STRUCTURE INTERNATIONAL ADMISSIONS: International Undergraduate Admissions B.Tech (2025-2026) Tuition Fees (Per Annum) Caution Deposit (Refundable) (One time 
-100
-p
-a
-y
-m
-e
-n
-t
-)
-T
-o
-t
-a
-l
-f
-e
-e
-s
-t
-o
-b
-e
-p
-a
-i
-d
-f
-o
-r
-t
-h
-e
-f
-i
-r
-s
-t
-y
-e
-a
-r
-100payment)Totalfeestobepaidforthefirstyear9100 B.Tech Programmes (2025-2026) Integrated Programmes Integrated M.Tech. (5 Years) (20242025) Tuition Fee (Per 
-5
-,
-500
-A
-n
-n
-u
-m
-)
-C
-a
-u
-t
-i
-o
-n
-D
-e
-p
-o
-s
-i
-t
-5,500Annum)CautionDeposit100 Total Fee in USD 
-5600
-I
-n
-t
-e
-g
-r
-a
-t
-e
-d
-M
-.
-S
-c
-.
-(
-5
-Y
-e
-a
-r
-s
-)
-(
-20242025
-)
-T
-u
-i
-t
-i
-o
-n
-F
-e
-e
-(
-P
-e
-r
-5600IntegratedM.Sc.(5Years)(20242025)TuitionFee(Per3,450 Annum) Caution Deposit 
-50
-T
-o
-t
-a
-l
-F
-e
-e
-i
-n
-U
-S
-D
-50TotalFeeinUSD3,500 International UG Science Programmes FOR BCA / B.Sc (Computer Science)/ B.Com / BBA Tuition Fee (Per 
-3
-,
-450
-A
-n
-n
-u
-m
-)
-C
-a
-u
-t
-i
-o
-n
-D
-e
-p
-o
-s
-i
-t
-3,450Annum)CautionDeposit50 Total Fee (Per Annum) 
-3
-,
-500
-B
-.
-S
-c
-.
-M
-u
-l
-t
-i
-m
-e
-d
-i
-a
-a
-n
-d
-A
-n
-i
-m
-a
-t
-i
-o
-n
-T
-u
-i
-t
-i
-o
-n
-F
-e
-e
-(
-P
-e
-r
-A
-n
-n
-u
-m
-)
-3,500B.Sc.MultimediaandAnimationTuitionFee(PerAnnum)4,250 Caution Deposit 
-50
-T
-o
-t
-a
-l
-F
-e
-e
-(
-P
-e
-r
-A
-n
-n
-u
-m
-)
-50TotalFee(PerAnnum)4,300 International Research Based Programmes Ph.
-
-Is there a refundable caution deposit for UG?
-
-Answer (from your PDFs): FEE REFUND POLICY: AS PER UGC NORMS: (Caution Deposit Rs.2000/- (Vellore and Chennai campus) refundable for First Year only) (Caution Deposit Rs.3000/- (VIT-AP University) refundable for First Year only) (Caution Deposit Rs.3000/- (Vellore Campus for M.Sc. Artificial Intelligence & Machine Learning) refundable for First Year only) How To Apply ? Candidate should apply through online Refund will be credited to the student account as updated in VTOP within 45 days of submitting the hostel vacating form. 3. Caution Deposit Caution deposit is a refundable deposit collected at the time of joining the hostel .Caution deposit is collected from first year students as well as from students who join hostel in subsequent academic year. Caution deposit is refundable after completion of academic program to the student in Indian rupee Caution Deposit (Refundable) (One time payment) INR 3,000 Total fees to be paid for the first year INR 1,76,000 GROUP - A ** Tuition Fees (Per Annum) INR 2,07,000 Caution Deposit (Refundable) (One time payment) INR 3,000 Total fees to be paid for the first year INR 2,10,000 Programme - vellore: B.Arch. Programme Tuition Fees (Per Annum) INR 3,10,000 Caution Deposit (Refundable) (One time payment) INR 5,000 Total fees to be paid for the first year INR 3,15,000 B.Des (Industrial Design) - Vellore: B.Des (Industrial Design) Tuition Fees (Per Annum) INR 1,73,000 Caution Deposit (Refundable) (One time INR 5,000 payment) Total fees to be paid for the first year INR 1,78,000 FEE STRUCTURE INTERNATIONAL ADMISSIONS: International Undergraduate Admissions B.Tech (2025-2026) Tuition Fees (Per Annum) Caution Deposit (Refundable) (One time 
-100
-p
-a
-y
-m
-e
-n
-t
-)
-T
-o
-t
-a
-l
-f
-e
-e
-s
-t
-o
-b
-e
-p
-a
-i
-d
-f
-o
-r
-t
-h
-e
-f
-i
-r
-s
-t
-y
-e
-a
-r
-100payment)Totalfeestobepaidforthefirstyear9100 B.Tech Programmes (2025-2026) Integrated Programmes Integrated M.Tech. (5 Years) (20242025) Tuition Fee (Per 
-5
-,
-500
-A
-n
-n
-u
-m
-)
-C
-a
-u
-t
-i
-o
-n
-D
-e
-p
-o
-s
-i
-t
-5,500Annum)CautionDeposit100 Total Fee in USD $5600 Admission Fee (non-refundable) 2.
-
-Step-by-step UG application process (Indian/NRI/Foreign)
-
-Answer (from your PDFs): Application Process: Step1: New user and Registration Step2: Verify via SMS and e-mail Step3: Sign in for Registered User Step4: Fill the details of personal and education Step5: Payment of application fees Step6: Photo & Sign Upload Step7: Upload required documents Step8: Download filled in Application Admission Guidelines: Selection Process Academic performance 60% and above or equivalent CGPA in 10th, 12th / Diploma and qualifying degree VIT Step 1: New user and Registration Step 2: Verify via SMS and e-mail Step 3: Sign in for Registered User Step 4: Fill the details of personal and education Step 5: Payment of application fees Step 6: Photo & Sign Upload Step 7: Upload required documents Step 8: Download filled in Application 06: Document verification. Application Process: Steps involved in the process of filling NRI online application form - New User Registration - Login with Password - Filling Online application form - Payment - Photo Upload - Documents Upload - Download Application New User Registration 1. Enter all the relevant details carefully. 2. A password will be sent from VIT to your registered e-mail id. 3 What is the fee structure for NRI students? Please follow the link for the NRI fee structure: https://vit.ac.in/admissions/international/fee How do I apply for B.Tech admission under the NRI category? The application process is usually online.
-
-Important admission dates and deadlines for UG
-
-Answer (from your PDFs): 2. 11th grade marksheet/AS Level/Form V(for appearing candidates) & 12th grade mark sheet/A Level/Form VI (for passed out candidates). 3. Both 11th and 12th Marksheets (for Nepal Education Board Candidates) Equivalent certificate from Association of Indian Universities(AIU) is mandatory, if passed from Universities/Boards other than India. - Stage 6 Download Application Filled in application will be available for download after completion The list of short-listed candidates will be published in the website or personal SMS will be sent to the registered mobile number for online counselling. - Short-listed Candidates will be asked to choose the preference of campus and branch. Selected candidates will have to pay an advance payment of Rs. 1 lakh.
-
-
-How is the merit list prepared and tie-break rules?
-
-Answer (from your PDFs): (or its equivalent) - The candidates short-listed based on their merit will be called for the admission - Candidates will be allot the seat in the order of merit based on the U.G. marks. - The fact that a candidate has qualified is does not guarantee for admission. This depends upon the cut-off fixed on the merit list and the availability of seats - The short listed candidate list will be published on our website The applicants should register for VITMEE, a Computer Based Objective test at indicated test centres. - The list of short-listed candidates will be published in the website and personal SMS will be sent to the registered mobile number for online counselling. - Short-listed Candidates will be asked to choose the preference of campus and branch. Selected candidates will have to pay the full fees When is VITMEE conducted? The exam is typically held in the first half of the year (April-May), depending on the admission cycle.
-
-
-Counselling and seat allotment process (rounds and sliding)
-
-Answer (from your PDFs): (or its equivalent) - The candidates short-listed based on their merit will be called for the admission - Candidates will be allot the seat in the order of merit based on the U.G. marks. - The fact that a candidate has qualified is does not guarantee for admission. This depends upon the cut-off fixed on the merit list and the availability of seats - The short listed candidate list will be published on our website Application Process: Step1: New user and Registration Step2: Verify via SMS and e-mail Step3: Sign in for Registered User Step4: Fill the details of personal and education Step5: Payment of application fees Step6: Photo & Sign Upload Step7: Upload required documents Step8: Download filled in Application Admission Guidelines: Selection Process Academic performance 60% and above or equivalent CGPA in 10th, 12th / Diploma and qualifying degree VIT The list of short-listed candidates will be published in the website or personal SMS will be sent to the registered mobile number for online counselling. - Short-listed Candidates will be asked to choose the preference of campus and branch. Selected candidates will have to pay an advance payment of Rs. 1 lakh. - Candidates who fail to pay the advance before deadline, will not be considered for admission The applicants should register for VITMEE, a Computer Based Objective test at indicated test centres.
-
-
-Branch locking and later branch-change policy
-
-Answer (from your PDFs): The details on the sessions and timings would be intimated before slot booking. If a student has selected / allotted a particular branch of Engineering through counseling, in a selected campus, under a specific category, would it be possible to change the branch, campus or category later after allotment? Once allotted. There is no Sliding/ up gradation in category / change of campus/ change of branch option offered further to admission B.E/B.Tech. Degree in any branch / M.S / M.Sc. Computer Science or IT or Software Engineering / MCA Computer / Int. M.Tech CSE, any Computer Science related Science and branches/ Int. M.Sc Computer Science, Software Engg., Engineering IT, Software Tech., Data Science B.E/B.Tech.
-
-Who is treated as NRI vs Foreign applicant?
-
-Answer (from your PDFs): FOREIGN FAQS: 1. Who is considered a "Foreign" nationals for admissions? Any foreign national holding a valid foreign passport is eligible to apply under this category. For Nepal and Bhutan nationals , passport is not mandatory What documents are required to prove foreign nationality? You'll need to provide a copy of your valid passport or National ID as proof of your foreign nationality Kindly refer the link for more details: https://vit.ac.in/admissions/international/btech-eligibilityandprocedure Who is considered an NRI for admission? Children of Indian citizens' parents working abroad are considered under the NRI category. Can a relative sponsor my admission? NRI sponsorship to be provided only by your parent (father or mother).
-
-NRI application portal & fee payment instructions
-
-Answer (from your PDFs): What is the fee structure for NRI students? Please follow the link for the NRI fee structure: https://vit.ac.in/admissions/international/fee How do I apply for B.Tech admission under the NRI category? The application process is usually online. You'll need to fill out the application form, upload required documents, and pay the application fee Filling Online Application Form 1. Provide all relevant details carefully, before submission. 2. An application number will be generated after completion. 3.
-
-Foreign nationals/OCI/PIO application steps & fees
-
-Answer (from your PDFs): FOREIGN FAQS: 1. Who is considered a "Foreign" nationals for admissions? Any foreign national holding a valid foreign passport is eligible to apply under this category. For Nepal and Bhutan nationals , passport is not mandatory What documents are required to prove foreign nationality? You'll need to provide a copy of your valid passport or National ID as proof of your foreign nationality For Nepal and Bhutan Nationals, passport is not mandatory OCI (Overseas Citizen of India) Candidates / PIO (Person of Indian Origin) - Application form and attached documents are scrutinized - Eligible students will receive provisional admission letter Programme allotment on the 'first-come, first served' basis - Candidates to pay Advance Fee in USD - Balance Tuition fee & Hostel fee payment - Document verification Application Process Steps 06: Document verification. Application Process: Steps involved in the process of filling NRI online application form - New User Registration - Login with Password - Filling Online application form - Payment - Photo Upload - Documents Upload - Download Application New User Registration 1. Enter all the relevant details carefully. 2.
-
-
-First-year hostel fee (Indian) AY 2025–26
-
-Answer (from your PDFs): Admission Fee (non-refundable) 2. Hostel Fee 3. Caution deposit (refundable) Policy herein below speaks out the refund norms applicable for the academic year 2025 - 26 as and when a student is withdrawing / vacating the hostel room allotted. 1. Admission Fee Admission fee is collected from students who are willing to avail the hostel facility inside the campus. Admission fee is a one-time fee payable at the time of joining the hostel 2. Hostel Fee Hostel fee is collected at different rates depending upon the type of block, room allotted and type of mess selected by the student. Hostel fee is refundable at the time of withdrawal / vacating the hostel room.
-
-First-year hostel fee (NRI/Foreign) AY 2025–26
-
-Answer (from your PDFs): Admission Fee (non-refundable) 2. Hostel Fee 3. Caution deposit (refundable) Policy herein below speaks out the refund norms applicable for the academic year 2025 - 26 as and when a student is withdrawing / vacating the hostel room allotted. 1. Admission Fee Admission fee is collected from students who are willing to avail the hostel facility inside the campus. Admission fee is a one-time fee payable at the time of joining the hostel 2. Hostel Fee Hostel fee is collected at different rates depending upon the type of block, room allotted and type of mess selected by the student. Hostel fee is refundable at the time of withdrawal / vacating the hostel room.
-
-Senior hostel fee overview AY 2025–26
-
-Answer (from your PDFs): vii) Senior Student not joined the Hostel Hostel room is allotted to senior students through hostel allotment and counselling process. Students who took part in hostel room counselling and accepted and paid the hostel fee for the allotted room is deemed to occupy the room. Such students who apply for refund, will get the hostel fee refunded after deducting 10% of hostel fee paid Admission Fee (non-refundable) 2. Hostel Fee 3. Caution deposit (refundable) Policy herein below speaks out the refund norms applicable for the academic year 2025 - 26 as and when a student is withdrawing / vacating the hostel room allotted. 1. Admission Fee Admission fee is collected from students who are willing to avail the hostel facility inside the campus. Admission fee is a one-time fee payable at the time of joining the hostel HOSTEL FEE- REFUND POLICY Hostel Fee A fully residential campus offering hostel facility with cuisines serving different variety of food to match the requirements of students stay across the globe.
-
-Hostel block landlines and key contacts
-
-
-Extra documents for NRI/Foreign students at reporting
-
-Answer (from your PDFs): FOREIGN FAQS: 1. Who is considered a "Foreign" nationals for admissions? Any foreign national holding a valid foreign passport is eligible to apply under this category. For Nepal and Bhutan nationals , passport is not mandatory What documents are required to prove foreign nationality? You'll need to provide a copy of your valid passport or National ID as proof of your foreign nationality National ID (For Nepal and Bhutan Candidates) as proof of your foreign nationality. Is there an entrance exam for Foreign admissions? We offer direct admission to all programmes for Foreign students based on their eligibility requirements What is the fee structure for NRI students? Please follow the link for the NRI fee structure: https://vit.ac.in/admissions/international/fee How do I apply for B.Tech admission under the NRI category?
-
-AIU equivalence and accepted international boards
-
-Answer (from your PDFs): Computer Science and Engineering (Bioinformatics) - B.Tech. Computer Science and Engineering (Cyber Security) - B.Tech. Computer Science and Engineering and Business Systems(in collaboration with TCS) - B.Tech. Computer Science and Engineering (Data Science) - B.Tech. Electrical and Electronics Engineering - B.Tech. Electrical and Computer Science Engineering - B.Tech. Electronics and Communication Engineering - B.Tech 2. 11th grade marksheet/AS Level/Form V(for appearing candidates) & 12th grade mark sheet/A Level/Form VI (for passed out candidates).
-
-
-Mode and schedule of tuition/hostel fee payment
-
-Answer (from your PDFs): Admission Fee (non-refundable) 2. Hostel Fee 3. Caution deposit (refundable) Policy herein below speaks out the refund norms applicable for the academic year 2025 - 26 as and when a student is withdrawing / vacating the hostel room allotted. 1. Admission Fee Admission fee is collected from students who are willing to avail the hostel facility inside the campus. Admission fee is a one-time fee payable at the time of joining the hostel 10% of hostel fee will be deducted for every month and the balance hostel fee will be refunded. Under this clause part of month is calculated as month. iii) Students vacating hostel after 4 months Student is eligible to apply for refund of hostel fee after staying 4 months in hostel room allotted.
-
-Refund policy if I withdraw before/after registration
-
-Answer (from your PDFs): Withdrawal from hostel under any other reason is not entertained. (a) Before Commencement of Program Hostel fees paid is fully refunded if withdrawal request is before the commencement of academic program. Even in such cases, admission fee is not refundable 2. Hostel Fee Hostel fee is collected at different rates depending upon the type of block, room allotted and type of mess selected by the student. Hostel fee is refundable at the time of withdrawal / vacating the hostel room. Refund norms applicable to different scenario is laid down below. i) Withdrawal by first year students In case of first year student, withdrawal from hostel is allowed only if withdrawal is along with academic program Admission Fee (non-refundable) 2. Hostel Fee 3.
-
-
-When to pay balance tuition/hostel after provisional admission?
-
-Answer (from your PDFs): Admission Fee (non-refundable) 2. Hostel Fee 3. Caution deposit (refundable) Policy herein below speaks out the refund norms applicable for the academic year 2025 - 26 as and when a student is withdrawing / vacating the hostel room allotted. 1. Admission Fee Admission fee is collected from students who are willing to avail the hostel facility inside the campus. Admission fee is a one-time fee payable at the time of joining the hostel Admission Process: 01: Students with Indian nationality and one of the parents working abroad can apply for NRI direct admission. 02: Application form and attached documents are scrutinized. 03: Eligible students will receive a provisional admission letter.
-
-
-How to check application status and download letters?
-
-Answer (from your PDFs): 2. 11th grade marksheet/AS Level/Form V(for appearing candidates) & 12th grade mark sheet/A Level/Form VI (for passed out candidates). 3. Both 11th and 12th Marksheets (for Nepal Education Board Candidates) Equivalent certificate from Association of Indian Universities(AIU) is mandatory, if passed from Universities/Boards other than India. - Stage 6 Download Application Filled in application will be available for download after completion Computer Science and Engineering (Bioinformatics) - B.Tech. Computer Science and Engineering (Cyber Security) - B.Tech. Computer Science and Engineering and Business Systems(in collaboration with TCS) - B.Tech. Computer Science and Engineering (Data Science) - B.Tech.
-
-
-How to correct mistakes in the application after submission?
-
-Answer (from your PDFs): (After making the payment and uploading your photo & Signature) How do I edit my application? You will find the 'Edit' option on top of the screen at the application- download stage. (You would be able to edit all fields inclusive of test city) What am I supposed to do if my PIN code is not found in application form ? Kindly mail to btechapplication@vit.ac.in When will be the mock exam for VITEEE? Mock test will be scheduled after slot booking What would be the valid ID proofs needed to be produced in the entrance examination hall, in addition to the E-admit card with photograph? You should bring original of either Aadhar card/ Driving license/ PAN card / Passport/ Voter ID card or else School ID card. Is there an option to 'Edit' the application form in web? 'Yes'.
-
-Uploading pending 12th/board marks and verification process
-
-Answer (from your PDFs): 2. 11th grade marksheet/AS Level/Form V(for appearing candidates) & 12th grade mark sheet/A Level/Form VI (for passed out candidates). 3. Both 11th and 12th Marksheets (for Nepal Education Board Candidates) Equivalent certificate from Association of Indian Universities(AIU) is mandatory, if passed from Universities/Boards other than India. - Stage 6 Download Application Filled in application will be available for download after completion Application Process: Step1: New user and Registration Step2: Verify via SMS and e-mail Step3: Sign in for Registered User Step4: Fill the details of personal and education Step5: Payment of application fees Step6: Photo & Sign Upload Step7: Upload required documents Step8: Download filled in Application Admission Guidelines: Selection Process Academic performance 60% and above or equivalent CGPA in 10th, 12th / Diploma and qualifying degree VIT For Nepal and Bhutan Nationals, passport is not mandatory OCI (Overseas Citizen of India) Candidates / PIO (Person of Indian Origin) - Application form and attached documents are scrutinized - Eligible students will receive provisional admission letter Programme allotment on the 'first-come, first served' basis - Candidates to pay Advance Fee in USD - Balance Tuition fee & Hostel fee payment - Document verification Application Process Steps (or its equivalent) - The candidates short-listed based on their merit will be called for the admission - Candidates will be allot the seat in the order of merit based on the U.G. marks. - The fact that a candidate has qualified is does not guarantee for admission. This depends upon the cut-off fixed on the merit list and the availability of seats - The short listed candidate list will be published on our website View More - The qualifying marks is relaxed by 10 % i.e.
-
-
-Medium of instruction and availability of bridge courses
-
-Answer (from your PDFs): Computer Science and Engineering (Bioinformatics) - B.Tech. Computer Science and Engineering (Cyber Security) - B.Tech. Computer Science and Engineering and Business Systems(in collaboration with TCS) - B.Tech. Computer Science and Engineering (Data Science) - B.Tech. Electrical and Electronics Engineering - B.Tech. Electrical and Computer Science Engineering - B.Tech. Electronics and Communication Engineering - B.Tech UG FOREIGN Programmes Offered VIT VELLORE: - B.Tech. Biotechnology - B.Tech.
-
-Attendance, exams and grading policy (UG) overview
-
-Answer (from your PDFs): (or its equivalent) - The candidates short-listed based on their merit will be called for the admission - Candidates will be allot the seat in the order of merit based on the U.G. marks. - The fact that a candidate has qualified is does not guarantee for admission. This depends upon the cut-off fixed on the merit list and the availability of seats - The short listed candidate list will be published on our website For Nepal and Bhutan Nationals, passport is not mandatory OCI (Overseas Citizen of India) Candidates / PIO (Person of Indian Origin) - Application form and attached documents are scrutinized - Eligible students will receive provisional admission letter Programme allotment on the 'first-come, first served' basis - Candidates to pay Advance Fee in USD - Balance Tuition fee & Hostel fee payment - Document verification Application Process Steps programmes only) - Community Certificate (only for SC/ST categories) - Conduct Certificate (Original) - Admission letter and a photocopy of the programme fee receipt - Four copies of recent passport size colour photograph - An undertaking for good conduct and behavior in a prescribed form (to be issued by the University/Institute at the time of admission) - University Registration Number/ID will be generated to the candidates those who have Eligibility Criteria - Candidates should have graduated with a full-time degree from any recognized University/Institute with a minimum aggregate of 60% or First class for M.Tech. degree programmes. - A minimum of 60% aggregate in X and XII Std / Diploma - Candidates appearing for their final degree exam / final semester exam in the current year are also eligible to apply Eligibility Criteria - Candidates should have graduated with a full-time degree from any recognized University/Institute with a minimum aggregate of 60% or First class for MCA degree programme. - Consistent Record in X and XII Std is required. - Candidates appearing for their final degree exam / final semester exam in the current year are also eligible to apply How can I get the MCA seat allotment?
-
-
-Internships and industry-linked projects during UG
-
-Answer (from your PDFs): Science and B.Tech - Electrical and Computer Science Engineering Engineering B.Tech - Computer Science and B.Tech - Electronics and Communication Engineering Engineering (Artificial Intelligence and Machine Learning) B.Tech - Computer Science and B.Tech - Electronics and Communication Engineering (Artificial Intelligence and Engineering (Artificial Intelligence & Cybernetics) Robotics) Computer Science and Engineering (Bioinformatics) - B.Tech. Computer Science and Engineering (Cyber Security) - B.Tech. Computer Science and Engineering and Business Systems(in collaboration with TCS) - B.Tech. Computer Science and Engineering (Data Science) - B.Tech. Electrical and Electronics Engineering - B.Tech. Electrical and Computer Science Engineering - B.Tech. Electronics and Communication Engineering - B.Tech GROUP - B B.Tech - Computer Science and B.Tech - Electronics and Communication Engineering (Artificial Intelligence and Engineering (Biomedical Engineering) Data Engineering) B.Tech - Computer Science and B.Tech - Electronics and Communication Engineering (Bioinformatics) Engineering (Embedded systems) B.Tech - Computer Science and B.Tech - Electronics and Communication Engineering (Block chain) Engineering (VLSI) B.Tech - Computer Science and GROUP - B B.Tech - Aerospace Engineering B.Tech - Computer Science and Engineering (Software Engineering) B.Tech - Computer Science & B.Tech - Computer Science and Business Systems Engineering (E-Commerce Technology) B.Tech - Computer Science & B.Tech - Computer Science and Engineering Engineering (Education Technology) and Business Systems (in collaboration with TCS) B.Tech - Computer Science and B.Tech - Electrical and Computer Science chain) Engineering (VLSI) B.Tech - Computer Science and B.Tech - Electronics and Computer Engineering Engineering (Cloud Computing & Automation) B.Tech - Computer Science and B.Tech - Electronics Engineering Engineering (Cyber Physical Systems) (VLSI Design and Technology) B.Tech - Computer Science and B.Tech - Information Technology Engineering (Cyber Security & Digital Forensics) B.Tech - Computer Science and B.Tech - Mechanical Engineering UG FOREIGN Programmes Offered VIT VELLORE: - B.Tech. Biotechnology - B.Tech.
-
-
-Recent UG placement highlights & top recruiters
-
-Answer (from your PDFs): How can I get the MCA seat allotment? - Based on your rank and choice of campus, you will be allocated a seat. After that, you will need to confirm your seat by paying the admission fee within the specified timeline. There is no management quota. What is the MCA Placement procedure? Minimum 60% required for 10th, 12th standard and UG degree for placement 2. Verification of academic credentials. 3.
-
-Whom to contact for UG admissions help (email/phone)?
-
-Answer (from your PDFs): Whom should I contact for more information? For any queries, contact the VIT Admissions Office: - Email: mcaadmission@vit.ac.in - Phone: Refer to the contact numbers listed on the official website Ladies hostel: Director Ladies Hostels Dr. Nirmala G S Email-id : director.lh@vit.ac.in Phone No : 0416 - 220 2712 Chief Warden, Ladies Hostels Dr. Mythili S Email-id : cw.lh@vit.ac.in Phone No :0416 - 220 2713 Associate Chief Warden Dr. Jagatheswari S Email-id : acw.lh@vit.ac.in Phone No : 0416 - 220 2896 Manager Ms. Esther Jhansi Rani M S Email-id : manager.lh1@vit.ac.in | lh@vit.ac.in Phone No : 0416 - 220 2710 / 2711 Assistant Managers Dr. K MENS HOSTEL: Director Dr. Mohanasundaram R Email-id : director.mh@vit.ac.in Phone No : 0416 - 220 2520 Chief Warden Dr.
+from app.utils.fallback_rag import faiss_answer_or_summary
+
+FAISS_INDEX_DIR = pathlib.Path("Data/index/faiss")
+FAISS_COLLECTION = "vit_faq_vellore"
+
+st.set_page_config(page_title="VIT FAQs — Click to Answer", layout="wide")
+
+TABULAR_HANDLERS = {
+    "programs", "eligibility", "documents", "fees", "scholarships",
+    "hostel", "contacts", "blocks"
+}
+
+# ---------------- UG — 40 static questions (no QIDs shown) ----------------
+UG_REG: List[Dict[str, Any]] = [
+    # Programs / Courses ------------- SQL
+    {"label":"What UG programs and specializations are offered?",                      "handler":"programs",   "filters":{"level_like":"UG"}},
+    {"label":"Which B.Tech specializations are available at each campus?",            "handler":"programs",   "filters":{"level_like":"UG","program_like":"B.Tech"}},
+    {"label":"What non–B.Tech UG programs are offered (BBA/B.Com/BCA etc.)?",         "handler":"programs",   "filters":{"level_like":"UG","program_like":"BBA B.Com BCA"}},
+    # Eligibility -------------------- SQL
+    {"label":"UG eligibility: minimum marks and required subjects",                    "handler":"eligibility","filters":{"level_like":"UG"}},
+    {"label":"Is Mathematics mandatory for specific B.Tech programs?",                 "handler":"eligibility","filters":{"level_like":"UG","program_like":"B.Tech"}},
+    {"label":"Are NIOS/correspondence students eligible for UG?",                      "handler":"eligibility","filters":{"level_like":"UG","program_like":"ALL"}},
+    {"label":"Eligibility for NRI/OCI/PIO applicants (UG)",                            "handler":"eligibility","filters":{"level_like":"UG","program_like":"ALL"}},
+    # Documents ---------------------- SQL
+    {"label":"Documents to submit for UG admission and reporting",                     "handler":"documents",  "filters":{"level_like":"UG"}},
+    {"label":"Where to download affidavits and fitness forms?",                        "handler":"documents",  "filters":{"level_like":"UG","program_like":"affidavit fitness"}},
+    {"label":"Photo/signature/document upload specifications",                         "handler":"documents",  "filters":{"level_like":"UG","program_like":"photo signature upload"}},
+    # Fees --------------------------- SQL
+    {"label":"UG tuition fee (Indian category) for AY 2025–26",                        "handler":"fees",       "filters":{"level_like":"UG","category":"Indian","ay":"2025-26"}},
+    {"label":"UG tuition fee (NRI category) for AY 2025–26",                           "handler":"fees",       "filters":{"level_like":"UG","category":"NRI","ay":"2025-26"}},
+    {"label":"UG tuition fee (Foreign category) for AY 2025–26",                       "handler":"fees",       "filters":{"level_like":"UG","category":"Foreign","ay":"2025-26"}},
+    {"label":"Is there a refundable caution deposit for UG?",                          "handler":"fees",       "filters":{"level_like":"UG"}},
+    # Scholarships ------------------- SQL
+    {"label":"Scholarships/waivers available for UG students",                         "handler":"scholarships","filters":{"level_like":"UG"}},
+    # Process & timelines ------------ FAISS
+    {"label":"Step-by-step UG application process (Indian/NRI/Foreign)",               "handler":"faiss_summary","filters":{}},
+    {"label":"Important admission dates and deadlines for UG",                         "handler":"faiss_summary","filters":{}},
+    {"label":"How is the merit list prepared and tie-break rules?",                    "handler":"faiss_summary","filters":{}},
+    {"label":"Counselling and seat allotment process (rounds and sliding)",            "handler":"faiss_summary","filters":{}},
+    {"label":"Branch locking and later branch-change policy",                          "handler":"faiss_summary","filters":{}},
+    # Category-specific -------------- FAISS
+    {"label":"Who is treated as NRI vs Foreign applicant?",                            "handler":"faiss_summary","filters":{}},
+    {"label":"NRI application portal & fee payment instructions",                      "handler":"faiss_summary","filters":{}},
+    {"label":"Foreign nationals/OCI/PIO application steps & fees",                     "handler":"faiss_summary","filters":{}},
+    # Hostel touchpoints ------------- SQL
+    {"label":"First-year hostel fee (Indian) AY 2025–26",                              "handler":"hostel",     "filters":{"level":"First-Year","category":"Indian","ay":"2025-26"}},
+    {"label":"First-year hostel fee (NRI/Foreign) AY 2025–26",                         "handler":"hostel",     "filters":{"level":"First-Year","category":"NRI","ay":"2025-26"}},
+    {"label":"Senior hostel fee overview AY 2025–26",                                  "handler":"hostel",     "filters":{"level":"Senior","ay":"2025-26"}},
+    {"label":"Hostel block landlines and key contacts",                                "handler":"contacts",   "filters":{}},
+    # International docs ------------- FAISS
+    {"label":"Extra documents for NRI/Foreign students at reporting",                  "handler":"faiss_summary","filters":{}},
+    {"label":"AIU equivalence and accepted international boards",                      "handler":"faiss_summary","filters":{}},
+    # Payments / Refunds ------------- FAISS
+    {"label":"Mode and schedule of tuition/hostel fee payment",                        "handler":"faiss_summary","filters":{}},
+    {"label":"Refund policy if I withdraw before/after registration",                  "handler":"faiss_summary","filters":{}},
+    # After-offer logistics ---------- FAISS
+    {"label":"When to pay balance tuition/hostel after provisional admission?",        "handler":"faiss_summary","filters":{}},
+    {"label":"How to check application status and download letters?",                  "handler":"faiss_summary","filters":{}},
+    {"label":"How to correct mistakes in the application after submission?",           "handler":"faiss_summary","filters":{}},
+    {"label":"Uploading pending 12th/board marks and verification process",            "handler":"faiss_summary","filters":{}},
+    # Academics quick info ----------- FAISS
+    {"label":"Medium of instruction and availability of bridge courses",               "handler":"faiss_summary","filters":{}},
+    {"label":"Attendance, exams and grading policy (UG) overview",                     "handler":"faiss_summary","filters":{}},
+    # Careers ------------------------ FAISS
+    {"label":"Internships and industry-linked projects during UG",                     "handler":"faiss_summary","filters":{}},
+    {"label":"Recent UG placement highlights & top recruiters",                        "handler":"faiss_summary","filters":{}},
+    # Support ------------------------ FAISS
+    {"label":"Whom to contact for UG admissions help (email/phone)?",                  "handler":"faiss_summary","filters":{}},
+]
+
+# Demo placeholders for other sections — plug in your 40s later
+PG_REG  = [{"label":"PG programs and specializations available","handler":"programs","filters":{"level_like":"PG"}}]
+MCA_REG = [{"label":"MCA eligibility: qualifying degree and marks","handler":"eligibility","filters":{"level_like":"MCA"}}]
+MSC_REG = [{"label":"MSc programs and specializations","handler":"programs","filters":{"level_like":"MSc"}}]
+HST_REG = [{"label":"First-year hostel fee AY 2025–26 (Men)","handler":"hostel","filters":{"level":"First-Year","gender":"Men","ay":"2025-26"}}]
+
+# -------- helpers --------
+def _md_table(table: Dict[str, Any]) -> str:
+    if not table or not table.get("columns") or not table.get("rows"):
+        return "_No results._"
+    cols = table["columns"]; rows = table["rows"]
+    lines = [" | ".join(cols), " | ".join(["---"]*len(cols))]
+    for r in rows:
+        lines.append(" | ".join("" if x is None else str(x) for x in r))
+    return "\n".join(lines)
+
+def _normalize_filters(handler: str, filters: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Make filters compatible with your sql_router expectations.
+    Also add safe defaults that prevent KeyError (e.g., prog_is_degree).
+    """
+    f = dict(filters or {})
+    # common: ensure explicit level where possible
+    if "level_like" in f and "level" not in f:
+        f["level"] = f["level_like"]
+
+    # programs table typically expects these keys
+    if handler == "programs":
+        f.setdefault("prog_is_degree", True)   # avoids KeyError
+        # map our program_like to router's prog_like (if used)
+        if "program_like" in f and "prog_like" not in f:
+            f["prog_like"] = f["program_like"]
+        # be liberal: also pass prog_level/level_like duplicates
+        f.setdefault("prog_level_like", f.get("level_like", f.get("level", "UG")))
+    # eligibility/documents/fees often need level
+    if handler in {"eligibility", "documents", "fees", "scholarships"}:
+        f.setdefault("level", f.get("level_like", "UG"))
+    # hostel: ensure ay if provided
+    if handler == "hostel":
+        if "ay" not in f:
+            f["ay"] = "2025-26"
+    return f
+
+def _sql_try(callable_fn, filters: Dict[str, Any]) -> Tuple[bool, Dict[str, Any], str]:
+    """
+    Return (ok, table_dict, errmsg). ok=True only if rows are present.
+    Accepts either {columns, rows} or {"table": {...}} shapes.
+    """
+    try:
+        out = callable_fn(filters, "")
+        tbl = out
+        if isinstance(out, dict) and "table" in out:
+            tbl = out["table"]
+        if isinstance(tbl, dict) and tbl.get("columns") and tbl.get("rows"):
+            if tbl["rows"]:
+                return True, tbl, ""
+            return False, {}, "no_rows"
+        return False, {}, "bad_shape"
+    except Exception as e:
+        return False, {}, f"exception:{e}"
+
+def _dispatch(handler: str, filters: Dict[str, Any], fallback_query: str) -> Dict[str, Any]:
+    """
+    For tabular handlers, DO NOT fall back to FAISS.
+    For narrative (faiss_summary), use FAISS.
+    """
+    nf = _normalize_filters(handler, filters)
+
+    if handler == "programs":
+        ok, table, err = _sql_try(sql_programs, nf)
+        if not ok:
+            # retry once with relaxed filters
+            relaxed = {k:v for k,v in nf.items() if k not in {"prog_like"}}
+            relaxed.setdefault("prog_is_degree", True)
+            relaxed.setdefault("level", "UG")
+            ok, table, err2 = _sql_try(sql_programs, relaxed)
+        return {"type":"table" if ok else "error", "content": table if ok else f"SQL(programs) → {err if ok==False else ''}"}
+
+    if handler == "eligibility":
+        ok, table, err = _sql_try(sql_eligibility, nf)
+        if not ok:
+            relaxed = {"level":"UG"}
+            ok, table, err2 = _sql_try(sql_eligibility, relaxed)
+        return {"type":"table" if ok else "error", "content": table if ok else f"SQL(eligibility) → {err}"}
+
+    if handler == "documents":
+        ok, table, err = _sql_try(sql_documents, nf)
+        if not ok:
+            relaxed = {"level":"UG"}
+            ok, table, err2 = _sql_try(sql_documents, relaxed)
+        return {"type":"table" if ok else "error", "content": table if ok else f"SQL(documents) → {err}"}
+
+    if handler == "fees":
+        ok, table, err = _sql_try(sql_academic_fees, nf)
+        if not ok:
+            # try with level only, then with category only
+            tries = [{"level":"UG"}, {"level":"UG","category":nf.get("category")}]
+            for t in tries:
+                ok, table, _ = _sql_try(sql_academic_fees, t)
+                if ok: break
+        return {"type":"table" if ok else "error", "content": table if ok else f"SQL(fees) → {err}"}
+
+    if handler == "scholarships":
+        ok, table, err = _sql_try(sql_scholarships, nf)
+        if not ok:
+            ok, table, _ = _sql_try(sql_scholarships, {"level":"UG"})
+        return {"type":"table" if ok else "error", "content": table if ok else f"SQL(scholarships) → {err}"}
+
+    if handler == "contacts":
+        ok, table, err = _sql_try(lambda f, _: {"table": sql_block_contacts(f).get("table")}, nf)
+        return {"type":"table" if ok else "error", "content": table if ok else f"SQL(contacts) → {err}"}
+
+    if handler == "blocks":
+        ok, table, err = _sql_try(lambda f, _: {"table": sql_list_blocks(f).get("table")}, nf)
+        return {"type":"table" if ok else "error", "content": table if ok else f"SQL(blocks) → {err}"}
+
+    if handler == "hostel":
+        # hostel returns {"table":..., "notes":[...]}
+        try:
+            data = sql_hostel_overview(nf)
+            tbl = data.get("table"); notes = data.get("notes") or []
+            if tbl and tbl.get("rows"):
+                md = _md_table(tbl)
+                if notes: md += "\n\n" + "\n".join(f"- {n}" for n in notes)
+                return {"type":"md", "content": md}
+            return {"type":"error", "content": "SQL(hostel) → no_rows"}
+        except Exception as e:
+            return {"type":"error", "content": f"SQL(hostel) → exception:{e}"}
+
+    # Narrative — FAISS
+    if handler == "faiss_summary":
+        try:
+            md = faiss_answer_or_summary(FAISS_INDEX_DIR, FAISS_COLLECTION, fallback_query)
+            return {"type":"md", "content": md or "_No context found in PDFs._"}
+        except Exception as e:
+            return {"type":"error","content": f"FAISS error: {e}"}
+
+    return {"type":"error","content":"Unknown handler."}
+
+def _render_answer(result: Dict[str, Any]):
+    if result["type"] == "table":
+        table = result["content"]
+        cols = table.get("columns") or []; rows = table.get("rows") or []
+        if cols and rows:
+            import pandas as pd
+            df = pd.DataFrame(rows, columns=cols)
+            st.dataframe(df, use_container_width=True, hide_index=True)
+            with st.expander("Copy as Markdown"):
+                st.code(_md_table(table), language="markdown")
+        else:
+            st.warning("No rows.")
+    elif result["type"] == "md":
+        st.markdown(result["content"])
+    else:
+        st.error(result["content"])
+
+# ---------------- UI ----------------
+st.title("🎓 VIT — Static FAQs (Click to Answer)")
+
+section = st.radio("Choose a section", ["UG", "PG", "MCA", "MSc", "HOSTELS"], horizontal=True)
+REG_MAP = {"UG": UG_REG, "PG": PG_REG, "MCA": MCA_REG, "MSc": MSC_REG, "HOSTELS": HST_REG}
+REG = REG_MAP[section]
+
+left, right = st.columns([1.3, 2.0], gap="large")
+
+with left:
+    st.subheader(f"{section} — Questions")
+    qf = st.text_input("Filter", placeholder="type to filter…").strip().lower()
+    filtered = [r for r in REG if (qf in r["label"].lower())] if qf else REG
+
+    # show as buttons (no QIDs)
+    for i, row in enumerate(filtered):
+        if st.button(row["label"], key=f"{section}-{i}"):
+            st.session_state["selected_item"] = (section, row)
+
+with right:
+    st.subheader("Answer")
+    sel = st.session_state.get("selected_item")
+    if not sel:
+        st.info("Click a question on the left.")
+    else:
+        _, item = sel
+        label   = item["label"]; handler = item["handler"]; filters = item.get("filters") or {}
+        with st.spinner("Fetching…"):
+            result = _dispatch(handler, filters, label)
+        st.markdown(f"**{label}**")
+        _render_answer(result)
+
+st.caption("Tabular = SQLite only. Narrative = FAISS from PDFs. No free-text chat → deterministic answers.")
