@@ -28,7 +28,7 @@ UG_REG: List[Dict[str, Any]] = [
     {"label": "What UG programs and specializations are offered?",
      "handler": "programs", "filters": {"level_like": "UG"}},
     {"label": "Which B.Tech specializations are available at each campus?",
-     "handler": "programs", "filters": {"level_like": "UG", "program_like": "B.Tech"}},
+    "handler": "programs", "filters": {"level_like": "UG", "program_like": "B.Tech"}},
     {"label": "What non–B.Tech UG programs are offered (BBA/B.Com/BCA etc.)?",
      "handler": "programs", "filters": {"level_like": "UG", "program_like": "BBA B.Com BCA"}},
 
@@ -140,7 +140,7 @@ def _normalize_for_fees(filters: Dict[str, Any]) -> Dict[str, Any]:
     lvl = f.get("level", f.get("level_like", "UG"))
     f["level"] = lvl
     f["level_like"] = lvl
-    f["LEVEL"] = lvl   # uppercase mirror (router safety)
+    f["LEVEL"] = lvl   # uppercase mirror
 
     # category
     cat = f.get("category", f.get("fee_category"))
@@ -153,7 +153,7 @@ def _normalize_for_fees(filters: Dict[str, Any]) -> Dict[str, Any]:
     ay = f.get("ay", f.get("academic_year", "2025-26"))
     f["ay"] = ay
     f["academic_year"] = ay
-    f["AY"] = ay  # uppercase mirror (this fixes your KeyError: 'AY')
+    f["AY"] = ay  # uppercase mirror
 
     # program_like / prog_like — router seems to expect this always
     prog_like = f.get("program_like", f.get("prog_like", "%"))
@@ -197,29 +197,50 @@ def _sql_programs(filters: Dict[str, Any]) -> Tuple[bool, Dict[str, Any], str]:
         return False, {}, f"exception:{e}"
 
 def _sql_fees(filters: Dict[str, Any]) -> Tuple[bool, Dict[str, Any], str]:
-    """Call sql_academic_fees with mirrored keys; backoff to level-only, then empty."""
+    """Call sql_academic_fees with mirrored keys; backoff while ALWAYS carrying ay/AY (and category)."""
     def _to_table(out):
         return out["table"] if isinstance(out, dict) and "table" in out else out
 
     try:
+        # Normalize once; reuse its canonical values in all retries.
+        base = _normalize_for_fees(filters)
+        ay = base.get("ay", "2025-26")
+        AY = base.get("AY", ay)
+        cat = base.get("category")
+        CAT = base.get("CATEGORY", cat)
+        lvl = base.get("level", "UG")
+        LVL = base.get("LEVEL", lvl)
+
         # 1) full filters
-        f1 = _normalize_for_fees(filters)
-        t1 = _to_table(sql_academic_fees(f1, ""))
+        t1 = _to_table(sql_academic_fees(base, ""))
         if t1 and t1.get("columns") and t1.get("rows"):
             return True, t1, ""
 
-        # 2) backoff: only level (+ wildcard program_like) and degree guard
+        # 2) backoff: level + ay (+ category if present) + wildcard program + degree guard
         f2 = {
-            "level": "UG", "level_like": "UG", "LEVEL": "UG",
+            "level": lvl, "level_like": lvl, "LEVEL": LVL,
+            "ay": ay, "AY": AY,
             "program_like": "%", "prog_like": "%",
-            "prog_is_degree": True, "prog_level_like": "UG",
+            "prog_is_degree": True, "prog_level_like": lvl,
         }
+        if cat is not None:
+            f2["category"] = cat
+            f2["fee_category"] = cat
+            f2["CATEGORY"] = CAT
         t2 = _to_table(sql_academic_fees(f2, ""))
         if t2 and t2.get("rows"):
             return True, t2, ""
 
-        # 3) last try: minimal guard + wildcard program filter
-        f3 = {"program_like": "%", "prog_like": "%", "prog_is_degree": True}
+        # 3) last try: just ay (+category if present) + wildcard program + degree guard
+        f3 = {
+            "ay": ay, "AY": AY,
+            "program_like": "%", "prog_like": "%",
+            "prog_is_degree": True
+        }
+        if cat is not None:
+            f3["category"] = cat
+            f3["fee_category"] = cat
+            f3["CATEGORY"] = CAT
         t3 = _to_table(sql_academic_fees(f3, ""))
         if t3 and t3.get("rows"):
             return True, t3, ""
