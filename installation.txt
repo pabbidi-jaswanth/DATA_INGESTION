@@ -132,6 +132,7 @@ def _normalize_for_fees(filters: Dict[str, Any]) -> Dict[str, Any]:
     """
     Mirror keys both ways; always include program_like/prog_like with a wildcard;
     keep AY/category flexible; include prog_is_degree expected by router.
+    Also mirror to UPPERCASE keys (AY / CATEGORY / LEVEL) to satisfy routers that read those.
     """
     f = dict(filters or {})
 
@@ -139,24 +140,27 @@ def _normalize_for_fees(filters: Dict[str, Any]) -> Dict[str, Any]:
     lvl = f.get("level", f.get("level_like", "UG"))
     f["level"] = lvl
     f["level_like"] = lvl
+    f["LEVEL"] = lvl   # uppercase mirror (router safety)
 
     # category
     cat = f.get("category", f.get("fee_category"))
     if cat is not None:
         f["category"] = cat
         f["fee_category"] = cat
+        f["CATEGORY"] = cat  # uppercase mirror
 
     # academic year
     ay = f.get("ay", f.get("academic_year", "2025-26"))
     f["ay"] = ay
     f["academic_year"] = ay
+    f["AY"] = ay  # uppercase mirror (this fixes your KeyError: 'AY')
 
     # program_like / prog_like — router seems to expect this always
     prog_like = f.get("program_like", f.get("prog_like", "%"))
     f["program_like"] = prog_like
     f["prog_like"] = prog_like
 
-    # router expects this even for fees
+    # router expects these even for fees
     f.setdefault("prog_is_degree", True)
     f.setdefault("prog_level_like", lvl)
 
@@ -206,7 +210,7 @@ def _sql_fees(filters: Dict[str, Any]) -> Tuple[bool, Dict[str, Any], str]:
 
         # 2) backoff: only level (+ wildcard program_like) and degree guard
         f2 = {
-            "level": "UG", "level_like": "UG",
+            "level": "UG", "level_like": "UG", "LEVEL": "UG",
             "program_like": "%", "prog_like": "%",
             "prog_is_degree": True, "prog_level_like": "UG",
         }
