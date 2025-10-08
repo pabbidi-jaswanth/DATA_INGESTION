@@ -131,7 +131,7 @@ def _normalize_for_programs(filters: Dict[str, Any]) -> Dict[str, Any]:
 def _normalize_for_fees(filters: Dict[str, Any]) -> Dict[str, Any]:
     """
     Mirror keys both ways; always include program_like/prog_like with a wildcard;
-    keep AY/category flexible.
+    keep AY/category flexible; include prog_is_degree expected by router.
     """
     f = dict(filters or {})
 
@@ -155,6 +155,10 @@ def _normalize_for_fees(filters: Dict[str, Any]) -> Dict[str, Any]:
     prog_like = f.get("program_like", f.get("prog_like", "%"))
     f["program_like"] = prog_like
     f["prog_like"] = prog_like
+
+    # router expects this even for fees
+    f.setdefault("prog_is_degree", True)
+    f.setdefault("prog_level_like", lvl)
 
     return f
 
@@ -200,14 +204,18 @@ def _sql_fees(filters: Dict[str, Any]) -> Tuple[bool, Dict[str, Any], str]:
         if t1 and t1.get("columns") and t1.get("rows"):
             return True, t1, ""
 
-        # 2) backoff: only level (+ wildcard program_like)
-        f2 = {"level": "UG", "level_like": "UG", "program_like": "%", "prog_like": "%"}
+        # 2) backoff: only level (+ wildcard program_like) and degree guard
+        f2 = {
+            "level": "UG", "level_like": "UG",
+            "program_like": "%", "prog_like": "%",
+            "prog_is_degree": True, "prog_level_like": "UG",
+        }
         t2 = _to_table(sql_academic_fees(f2, ""))
         if t2 and t2.get("rows"):
             return True, t2, ""
 
-        # 3) last try: empty but with wildcard program filter just in case router insists
-        f3 = {"program_like": "%", "prog_like": "%"}
+        # 3) last try: minimal guard + wildcard program filter
+        f3 = {"program_like": "%", "prog_like": "%", "prog_is_degree": True}
         t3 = _to_table(sql_academic_fees(f3, ""))
         if t3 and t3.get("rows"):
             return True, t3, ""
