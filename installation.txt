@@ -1,30 +1,29 @@
 # streamlit_app.py
-# VIT FAQs — Static click-to-answer UI
-# Sections: UG, PG, MCA, MSc, HOSTELS
-# UG policy: ONLY "Programs" and "Fees" use SQLite; everything else uses FAISS (PDFs).
+# VIT FAQs — Static click-to-answer UI (hybrid: SQLite for Programs/Fees; FAISS for the rest)
+# Sections: UG, PG, MCA, MSc, HOSTELS (non-UG kept as placeholders you can fill later)
 
 import pathlib
 from typing import Dict, Any, List, Tuple
-
 import streamlit as st
 
-# ---- your backend helpers (must exist) ----
+# ---- backend helpers (must exist in your repo) ----
 from app.sql_router import (
-    sql_programs,        # Programs table accessor
-    sql_academic_fees,   # Fees table accessor
+    sql_programs,        # tabular programs accessor
+    sql_academic_fees,   # tabular fees accessor
 )
 from app.utils.fallback_rag import faiss_answer_or_summary
 
 # ---- config ----
 FAISS_INDEX_DIR = pathlib.Path("Data/index/faiss")
-FAISS_COLLECTION = "vit_faq_vellore"  # change if your collection name differs
+FAISS_COLLECTION = "vit_faq_vellore"  # change if your collection differs
 
 st.set_page_config(page_title="VIT FAQs — Click to Answer", layout="wide")
 
-# ===================== UG — 40 questions =====================
-# IMPORTANT: handlers are only 'programs'/'fees' (SQL) or 'faiss_summary' (PDFs).
+# ===================== UG — 30 questions (curated) =====================
+# SQL routes: "programs", "fees". Everything else: "faiss_summary".
+
 UG_REG: List[Dict[str, Any]] = [
-    # ---- SQL (Programs) ----
+    # ---------- SQL (Programs) ----------
     {"label": "What UG programs and specializations are offered?",
      "handler": "programs", "filters": {"level_like": "UG"}},
     {"label": "Which B.Tech specializations are available at each campus?",
@@ -32,17 +31,7 @@ UG_REG: List[Dict[str, Any]] = [
     {"label": "What non–B.Tech UG programs are offered (BBA/B.Com/BCA etc.)?",
      "handler": "programs", "filters": {"level_like": "UG", "program_like": "BBA B.Com BCA"}},
 
-    # ---- FAISS (PDFs) ----
-    {"label": "UG eligibility: minimum marks and required subjects", "handler": "faiss_summary", "filters": {}},
-    {"label": "Is Mathematics mandatory for specific B.Tech programs?", "handler": "faiss_summary", "filters": {}},
-    {"label": "Are NIOS/correspondence students eligible for UG?", "handler": "faiss_summary", "filters": {}},
-    {"label": "Eligibility for NRI/OCI/PIO applicants (UG)", "handler": "faiss_summary", "filters": {}},
-
-    {"label": "Documents to submit for UG admission and reporting", "handler": "faiss_summary", "filters": {}},
-    {"label": "Where to download affidavits and fitness forms?", "handler": "faiss_summary", "filters": {}},
-    {"label": "Photo/signature/document upload specifications", "handler": "faiss_summary", "filters": {}},
-
-    # ---- SQL (Fees) ----
+    # ---------- SQL (Fees) ----------
     {"label": "UG tuition fee (Indian category) for AY 2025–26",
      "handler": "fees", "filters": {"level_like": "UG", "category": "Indian", "ay": "2025-26"}},
     {"label": "UG tuition fee (NRI category) for AY 2025–26",
@@ -50,9 +39,19 @@ UG_REG: List[Dict[str, Any]] = [
     {"label": "UG tuition fee (Foreign category) for AY 2025–26",
      "handler": "fees", "filters": {"level_like": "UG", "category": "Foreign", "ay": "2025-26"}},
 
-    # ---- FAISS (PDFs) ----
-    {"label": "Is there a refundable caution deposit for UG?", "handler": "faiss_summary", "filters": {}},
-    {"label": "Scholarships/waivers available for UG students", "handler": "faiss_summary", "filters": {}},
+    # ---------- FAISS (PDFs) ----------
+    {"label": "UG eligibility: minimum marks and required subjects", "handler": "faiss_summary", "filters": {}},
+    {"label": "Is Mathematics mandatory for specific B.Tech programs?", "handler": "faiss_summary", "filters": {}},
+    {"label": "Are NIOS/correspondence students eligible for UG?", "handler": "faiss_summary", "filters": {}},
+    {"label": "Eligibility for NRI/OCI/PIO applicants (UG)", "handler": "faiss_summary", "filters": {}},
+
+    {"label": "Who is treated as NRI vs Foreign applicant?", "handler": "faiss_summary", "filters": {}},
+    {"label": "NRI application portal & fee payment instructions", "handler": "faiss_summary", "filters": {}},
+    {"label": "Foreign nationals/OCI/PIO application steps & fees", "handler": "faiss_summary", "filters": {}},
+
+    {"label": "Documents to submit for UG admission and reporting", "handler": "faiss_summary", "filters": {}},
+    {"label": "Where to download affidavits and fitness forms?", "handler": "faiss_summary", "filters": {}},
+    {"label": "Photo/signature/document upload specifications", "handler": "faiss_summary", "filters": {}},
 
     {"label": "Step-by-step UG application process (Indian/NRI/Foreign)", "handler": "faiss_summary", "filters": {}},
     {"label": "Important admission dates and deadlines for UG", "handler": "faiss_summary", "filters": {}},
@@ -60,37 +59,25 @@ UG_REG: List[Dict[str, Any]] = [
     {"label": "Counselling and seat allotment process (rounds and sliding)", "handler": "faiss_summary", "filters": {}},
     {"label": "Branch locking and later branch-change policy", "handler": "faiss_summary", "filters": {}},
 
-    {"label": "Who is treated as NRI vs Foreign applicant?", "handler": "faiss_summary", "filters": {}},
-    {"label": "NRI application portal & fee payment instructions", "handler": "faiss_summary", "filters": {}},
-    {"label": "Foreign nationals/OCI/PIO application steps & fees", "handler": "faiss_summary", "filters": {}},
+    {"label": "Is VITEEE mandatory for B.Tech admissions?", "handler": "faiss_summary", "filters": {}},
+    {"label": "Is lateral entry available for B.Tech?", "handler": "faiss_summary", "filters": {}},
 
-    # HOSTEL & CONTACTS → FAISS (as you wanted; no hostel SQL here)
-    {"label": "First-year hostel fee (Indian) AY 2025–26", "handler": "faiss_summary", "filters": {}},
-    {"label": "First-year hostel fee (NRI/Foreign) AY 2025–26", "handler": "faiss_summary", "filters": {}},
-    {"label": "Senior hostel fee overview AY 2025–26", "handler": "faiss_summary", "filters": {}},
-    {"label": "Hostel block landlines and key contacts", "handler": "faiss_summary", "filters": {}},
-
-    {"label": "Extra documents for NRI/Foreign students at reporting", "handler": "faiss_summary", "filters": {}},
-    {"label": "AIU equivalence and accepted international boards", "handler": "faiss_summary", "filters": {}},
-
-    {"label": "Mode and schedule of tuition/hostel fee payment", "handler": "faiss_summary", "filters": {}},
-    {"label": "Refund policy if I withdraw before/after registration", "handler": "faiss_summary", "filters": {}},
-
-    {"label": "When to pay balance tuition/hostel after provisional admission?", "handler": "faiss_summary", "filters": {}},
+    {"label": "Can I edit my UG application after submission?", "handler": "faiss_summary", "filters": {}},
     {"label": "How to check application status and download letters?", "handler": "faiss_summary", "filters": {}},
-    {"label": "How to correct mistakes in the application after submission?", "handler": "faiss_summary", "filters": {}},
-    {"label": "Uploading pending 12th/board marks and verification process", "handler": "faiss_summary", "filters": {}},
+    {"label": "How to upload/update 12th/board marks later?", "handler": "faiss_summary", "filters": {}},
+    {"label": "Requirement for AIU equivalence / accepted international boards", "handler": "faiss_summary", "filters": {}},
 
-    {"label": "Medium of instruction and availability of bridge courses", "handler": "faiss_summary", "filters": {}},
-    {"label": "Attendance, exams and grading policy (UG) overview", "handler": "faiss_summary", "filters": {}},
+    {"label": "When is the VITEEE mock test scheduled?", "handler": "faiss_summary", "filters": {}},
+    {"label": "What valid ID proofs are accepted in the exam hall?", "handler": "faiss_summary", "filters": {}},
 
-    {"label": "Internships and industry-linked projects during UG", "handler": "faiss_summary", "filters": {}},
-    {"label": "Recent UG placement highlights & top recruiters", "handler": "faiss_summary", "filters": {}},
-
-    {"label": "Whom to contact for UG admissions help (email/phone)?", "handler": "faiss_summary", "filters": {}},
+    {"label": "How to pay the UG application fee and accepted modes?", "handler": "faiss_summary", "filters": {}},
 ]
 
-# ============ placeholders for other sections (replace later with your registries) ============
+# Removed (the noisy/incorrect ones): hostel fee questions, hostel contacts, scholarships, placements, internships,
+# attendance/exam/grading policy, medium of instruction, “when to pay balance tuition/hostel” — these were not
+# reliably covered by your 9 UG PDFs, so they produced mismatched answers.
+
+# ===== placeholders for other sections (you can replace later) =====
 PG_REG  = [{"label": "PG programs and specializations available", "handler": "faiss_summary", "filters": {}}]
 MCA_REG = [{"label": "MCA eligibility: qualifying degree and marks", "handler": "faiss_summary", "filters": {}}]
 MSC_REG = [{"label": "MSc programs and specializations", "handler": "faiss_summary", "filters": {}}]
@@ -107,75 +94,57 @@ def _md_table(table: Dict[str, Any]) -> str:
     return "\n".join(lines)
 
 def _normalize_for_programs(filters: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Mirror keys both ways so sql_programs won't KeyError regardless of
-    whether it expects 'program_like' or 'prog_like', etc.
-    """
+    """Mirror keys both ways so sql_programs can’t KeyError regardless of expected names."""
     f = dict(filters or {})
     lvl = f.get("level", f.get("level_like", "UG"))
     f["level"] = lvl
     f["level_like"] = lvl
-
     prog_like = f.get("program_like", f.get("prog_like"))
     if prog_like is not None:
         f["program_like"] = prog_like
         f["prog_like"] = prog_like
-
-    f.setdefault("prog_is_degree", True)    # common guard
-    f.setdefault("prog_level_like", lvl)    # some routers need this
+    f.setdefault("prog_is_degree", True)
+    f.setdefault("prog_level_like", lvl)
     return f
 
 def _normalize_for_fees(filters: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Mirror keys both ways so sql_academic_fees won't KeyError, and keep
-    AY/category flexible.
-    """
+    """Mirror keys both ways so sql_academic_fees can’t KeyError; keep AY/category flexible."""
     f = dict(filters or {})
     lvl = f.get("level", f.get("level_like", "UG"))
     f["level"] = lvl
     f["level_like"] = lvl
-
     cat = f.get("category", f.get("fee_category"))
     if cat is not None:
         f["category"] = cat
         f["fee_category"] = cat
-
     ay = f.get("ay", f.get("academic_year", "2025-26"))
     f["ay"] = ay
     f["academic_year"] = ay
-
-    # sometimes fees are filtered by program family; mirror if present
     prog_like = f.get("program_like", f.get("prog_like"))
     if prog_like is not None:
         f["program_like"] = prog_like
         f["prog_like"] = prog_like
-
     return f
 
 def _sql_programs(filters: Dict[str, Any]) -> Tuple[bool, Dict[str, Any], str]:
-    """Call sql_programs with mirrored keys; backoff to broader filters if empty."""
+    """Call sql_programs with mirrored keys; back off to broader filters if empty."""
     def _to_table(out):
         return out["table"] if isinstance(out, dict) and "table" in out else out
-
     try:
-        # 1) full filters
         f1 = _normalize_for_programs(filters)
         t1 = _to_table(sql_programs(f1, ""))
         if t1 and t1.get("columns") and t1.get("rows"):
             return True, t1, ""
-
-        # 2) backoff: only level + degree flag
+        # backoff: only UG + degree guard
         f2 = {"level": "UG", "level_like": "UG", "prog_is_degree": True}
         t2 = _to_table(sql_programs(f2, ""))
         if t2 and t2.get("rows"):
             return True, t2, ""
-
-        # 3) last try: minimal guard
+        # last resort
         f3 = {"prog_is_degree": True}
         t3 = _to_table(sql_programs(f3, ""))
         if t3 and t3.get("rows"):
             return True, t3, ""
-
         return False, {}, "no_rows"
     except KeyError as e:
         return False, {}, f"keyerror:{e}"
@@ -183,28 +152,23 @@ def _sql_programs(filters: Dict[str, Any]) -> Tuple[bool, Dict[str, Any], str]:
         return False, {}, f"exception:{e}"
 
 def _sql_fees(filters: Dict[str, Any]) -> Tuple[bool, Dict[str, Any], str]:
-    """Call sql_academic_fees with mirrored keys; backoff to level-only, then empty."""
+    """Call sql_academic_fees with mirrored keys; back off to level-only, then empty."""
     def _to_table(out):
         return out["table"] if isinstance(out, dict) and "table" in out else out
-
     try:
-        # 1) full filters
         f1 = _normalize_for_fees(filters)
         t1 = _to_table(sql_academic_fees(f1, ""))
         if t1 and t1.get("columns") and t1.get("rows"):
             return True, t1, ""
-
-        # 2) backoff: only level
+        # backoff: only level
         f2 = {"level": "UG", "level_like": "UG"}
         t2 = _to_table(sql_academic_fees(f2, ""))
         if t2 and t2.get("rows"):
             return True, t2, ""
-
-        # 3) last try: empty
+        # last resort: empty
         t3 = _to_table(sql_academic_fees({}, ""))
         if t3 and t3.get("rows"):
             return True, t3, ""
-
         return False, {}, "no_rows"
     except KeyError as e:
         return False, {}, f"keyerror:{e}"
@@ -212,24 +176,23 @@ def _sql_fees(filters: Dict[str, Any]) -> Tuple[bool, Dict[str, Any], str]:
         return False, {}, f"exception:{e}"
 
 def _dispatch(handler: str, filters: Dict[str, Any], fallback_query: str) -> Dict[str, Any]:
-    """
-    UG policy:
-      - SQL ONLY for handler in {'programs','fees'}.
-      - Everything else -> FAISS (PDFs).
-    """
+    """UG policy: SQL for Programs/Fees; FAISS for everything else."""
     if handler == "programs":
         ok, table, err = _sql_programs(filters)
         return {"type": "table" if ok else "error",
                 "content": table if ok else f"SQL(programs) → {err}"}
-
     if handler == "fees":
         ok, table, err = _sql_fees(filters)
         return {"type": "table" if ok else "error",
                 "content": table if ok else f"SQL(fees) → {err}"}
-
-    # FAISS for everything else (UG) and for all placeholders in other sections
+    # FAISS for non-tabular
+    concise_prompt = (
+        f"{fallback_query}\n\n"
+        "Instruction: Answer ONLY from VIT UG admissions PDFs you were indexed with. "
+        "Keep it concise and relevant to the question, prefer bullet points, and avoid unrelated PG/MCA/hostel details."
+    )
     try:
-        md = faiss_answer_or_summary(FAISS_INDEX_DIR, FAISS_COLLECTION, fallback_query)
+        md = faiss_answer_or_summary(FAISS_INDEX_DIR, FAISS_COLLECTION, concise_prompt)
         return {"type": "md", "content": md or "_No context found in PDFs._"}
     except Exception as e:
         return {"type": "error", "content": f"FAISS error: {e}"}
@@ -262,7 +225,7 @@ left, right = st.columns([1.3, 2.0], gap="large")
 
 with left:
     st.subheader(f"{section} — Questions")
-    qf = st.text_input("Filter", placeholder="type to filter…").strip().lower()
+    qf = st.text_input("type to filter…", placeholder="type to filter…").strip().lower()
     filtered = [r for r in REG if (qf in r["label"].lower())] if qf else REG
     for i, row in enumerate(filtered):
         if st.button(row["label"], key=f"{section}-{i}"):
@@ -281,4 +244,4 @@ with right:
         st.markdown(f"**{label}**")
         _render_answer(result)
 
-st.caption("Policy: UG Programs & Fees → SQLite tables; everything else → PDFs via FAISS. No chat — deterministic answers.")
+st.caption("UG policy: Programs & Fees → SQLite; all other UG questions → PDFs via FAISS. No chat — deterministic answers.")
