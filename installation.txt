@@ -28,7 +28,7 @@ UG_REG: List[Dict[str, Any]] = [
     {"label": "What UG programs and specializations are offered?",
      "handler": "programs", "filters": {"level_like": "UG"}},
     {"label": "Which B.Tech specializations are available at each campus?",
-    "handler": "programs", "filters": {"level_like": "UG", "program_like": "B.Tech"}},
+     "handler": "programs", "filters": {"level_like": "UG", "program_like": "B.Tech"}},
     {"label": "What non–B.Tech UG programs are offered (BBA/B.Com/BCA etc.)?",
      "handler": "programs", "filters": {"level_like": "UG", "program_like": "BBA B.Com BCA"}},
 
@@ -197,7 +197,7 @@ def _sql_programs(filters: Dict[str, Any]) -> Tuple[bool, Dict[str, Any], str]:
         return False, {}, f"exception:{e}"
 
 def _sql_fees(filters: Dict[str, Any]) -> Tuple[bool, Dict[str, Any], str]:
-    """Call sql_academic_fees with mirrored keys; backoff while ALWAYS carrying ay/AY (and category)."""
+    """Call sql_academic_fees with mirrored keys; backoff while ALWAYS carrying ay/AY, level/level_like, and category."""
     def _to_table(out):
         return out["table"] if isinstance(out, dict) and "table" in out else out
 
@@ -231,8 +231,10 @@ def _sql_fees(filters: Dict[str, Any]) -> Tuple[bool, Dict[str, Any], str]:
         if t2 and t2.get("rows"):
             return True, t2, ""
 
-        # 3) last try: just ay (+category if present) + wildcard program + degree guard
+        # 3) last try: ay + level (+ category if present) + wildcard program + degree guard
+        #    (This is the fix: include level_like here to avoid KeyError.)
         f3 = {
+            "level": lvl, "level_like": lvl, "LEVEL": LVL,
             "ay": ay, "AY": AY,
             "program_like": "%", "prog_like": "%",
             "prog_is_degree": True
