@@ -1,370 +1,76 @@
-# streamlit_app.py
-# VIT FAQs — Static click-to-answer UI (classy + glass UI edition)
-# NOTE: Only UI was upgraded. All logic & routing remain unchanged.
 
-import pathlib
-from typing import Dict, Any, List, Tuple
-import streamlit as st
+# app/utils/fallback_rag.py
+# Section-aware FAISS retrieval that uses TF-IDF only (vectorizer.pkl must exist).
 
-# ---- backend helpers (unchanged) ----
-from app.sql_router import sql_programs, sql_academic_fees
-from app.utils.fallback_rag import faiss_answer_or_summary
+import json, pathlib
+import numpy as np
+import faiss
 
-# ---- config ----
-FAISS_INDEX_DIR = pathlib.Path("Data/index/faiss")
-COLL = {
-    "UG": "vit_ug",
-    "PG": "vit_pg",
-    "MCA": "vit_pg",
-    "MSc": "vit_pg",
-    "HOSTELS": "vit_hostels",
-}
+from backend.utils.embeddings import get_encoder_for_query
 
-st.set_page_config(page_title="VIT FAQs — Click to Answer", layout="wide")
+def _paths(base_dir: pathlib.Path, collection: str):
+    d = base_dir / collection
+    return d, d / "index.faiss", d / "texts.json", d / "metas.json"
 
-# ===================== QUESTIONS (unchanged) =====================
-UG_REG: List[Dict[str, Any]] = [
-    {"label": "What UG programs and specializations are offered?",
-     "handler": "programs", "filters": {"level_like": "UG"}},
-    {"label": "Which B.Tech specializations are available at each campus?",
-     "handler": "programs", "filters": {"level_like": "UG", "program_like": "B.Tech"}},
-    {"label": "What non–B.Tech UG programs are offered (BBA/B.Com/BCA etc.)?",
-     "handler": "programs", "filters": {"level_like": "UG", "program_like": "BBA B.Com BCA"}},
-
-    {"label": "UG eligibility: minimum marks and required subjects", "handler": "faiss_summary", "filters": {}},
-    {"label": "Is Mathematics mandatory for specific B.Tech programs?", "handler": "faiss_summary", "filters": {}},
-    {"label": "Are NIOS/correspondence students eligible for UG?", "handler": "faiss_summary", "filters": {}},
-    {"label": "Eligibility for NRI/OCI/PIO applicants (UG)", "handler": "faiss_summary", "filters": {}},
-
-    {"label": "Documents to submit for UG admission and reporting", "handler": "faiss_summary", "filters": {}},
-    {"label": "Where to download affidavits and fitness forms?", "handler": "faiss_summary", "filters": {}},
-    {"label": "Photo/signature/document upload specifications", "handler": "faiss_summary", "filters": {}},
-
-    {"label": "UG tuition fee (Indian category) for AY 2025–26",
-     "handler": "fees", "filters": {"level_like": "UG", "category": "Indian", "ay": "2025-26"}},
-    {"label": "UG tuition fee (NRI category) for AY 2025–26",
-     "handler": "fees", "filters": {"level_like": "UG", "category": "NRI", "ay": "2025-26"}},
-    {"label": "UG tuition fee (Foreign category) for AY 2025–26",
-     "handler": "fees", "filters": {"level_like": "UG", "category": "Foreign", "ay": "2025-26"}},
-
-    {"label": "Is there a refundable caution deposit for UG?", "handler": "faiss_summary", "filters": {}},
-    {"label": "Scholarships/waivers available for UG students", "handler": "faiss_summary", "filters": {}},
-
-    {"label": "Step-by-step UG application process (Indian/NRI/Foreign)", "handler": "faiss_summary", "filters": {}},
-    {"label": "Important admission dates and deadlines for UG", "handler": "faiss_summary", "filters": {}},
-    {"label": "How is the merit list prepared and tie-break rules?", "handler": "faiss_summary", "filters": {}},
-    {"label": "Counselling and seat allotment process (rounds and sliding)", "handler": "faiss_summary", "filters": {}},
-    {"label": "Branch locking and later branch-change policy", "handler": "faiss_summary", "filters": {}},
-
-    {"label": "Who is treated as NRI vs Foreign applicant?", "handler": "faiss_summary", "filters": {}},
-    {"label": "NRI application portal & fee payment instructions", "handler": "faiss_summary", "filters": {}},
-    {"label": "Foreign nationals/OCI/PIO application steps & fees", "handler": "faiss_summary", "filters": {}},
-
-    {"label": "First-year hostel fee (Indian) AY 2025–26", "handler": "faiss_summary", "filters": {}},
-    {"label": "First-year hostel fee (NRI/Foreign) AY 2025–26", "handler": "faiss_summary", "filters": {}},
-    {"label": "Senior hostel fee overview AY 2025–26", "handler": "faiss_summary", "filters": {}},
-    {"label": "Hostel block landlines and key contacts", "handler": "faiss_summary", "filters": {}},
-
-    {"label": "Extra documents for NRI/Foreign students at reporting", "handler": "faiss_summary", "filters": {}},
-    {"label": "AIU equivalence and accepted international boards", "handler": "faiss_summary", "filters": {}},
-
-    {"label": "Mode and schedule of tuition/hostel fee payment", "handler": "faiss_summary", "filters": {}},
-    {"label": "Refund policy if I withdraw before/after registration", "handler": "faiss_summary", "filters": {}},
-
-    {"label": "When to pay balance tuition/hostel after provisional admission?", "handler": "faiss_summary", "filters": {}},
-    {"label": "How to check application status and download letters?", "handler": "faiss_summary", "filters": {}},
-    {"label": "How to correct mistakes in the application after submission?", "handler": "faiss_summary", "filters": {}},
-    {"label": "Uploading pending 12th/board marks and verification process", "handler": "faiss_summary", "filters": {}},
-
-    {"label": "Medium of instruction and availability of bridge courses", "handler": "faiss_summary", "filters": {}},
-    {"label": "Attendance, exams and grading policy (UG) overview", "handler": "faiss_summary", "filters": {}},
-
-    {"label": "Internships and industry-linked projects during UG", "handler": "faiss_summary", "filters": {}},
-    {"label": "Recent UG placement highlights & top recruiters", "handler": "faiss_summary", "filters": {}},
-
-    {"label": "Whom to contact for UG admissions help (email/phone)?", "handler": "faiss_summary", "filters": {}},
-]
-
-PG_REG  = [{"label": q, "handler": "faiss_summary", "filters": {}} for q in [
-    "PG eligibility & qualifying degrees", "PG admission process & important dates",
-    "VITMEE/VITREE overview", "M.Tech specializations", "MBA/PG programs offered",
-    "PG document checklist", "PG scholarships/assistantships", "PG attendance & exams",
-    "PG hostel overview", "PG contact emails/phones"
-]]
-
-MCA_REG = [{"label": q, "handler": "faiss_summary", "filters": {}} for q in [
-    "MCA eligibility & qualifying degrees", "MCA program structure", "MCA admissions process",
-    "MCA document checklist", "MCA placement highlights", "MCA contact emails/phones"
-]]
-
-MSC_REG = [{"label": q, "handler": "faiss_summary", "filters": {}} for q in [
-    "MSc programs offered", "MSc eligibility", "MSc admissions steps",
-    "MSc scholarships", "MSc research opportunities", "MSc contacts"
-]]
-
-HST_REG = [{"label": q, "handler": "faiss_summary", "filters": {}} for q in [
-    "Hostel overview & fee types", "Hostel refund policy", "Hostel documents",
-    "Ladies hostel contacts", "Mens hostel contacts"
-]]
-
-# ===================== LOGIC HELPERS (unchanged) =====================
-def _md_table(table: Dict[str, Any]) -> str:
-    if not table or not table.get("columns") or not table.get("rows"):
-        return "_No results._"
-    cols = table["columns"]; rows = table["rows"]
-    lines = [" | ".join(cols), " | ".join(["---"] * len(cols))]
-    for r in rows:
-        lines.append(" | ".join("" if x is None else str(x) for x in r))
-    return "\n".join(lines)
-
-def _normalize_values(v: Any) -> Any:
-    if isinstance(v, str):
-        v = v.replace("–", "-").strip()
-        if v.lower() == "foreign":
-            return "International"
-    return v
-
-def _seed_missing_keys(d: Dict[str, Any]) -> Dict[str, Any]:
-    base = dict(d or {})
-    lvl = _normalize_values(base.get("level", base.get("level_like", "UG")))
-    base["level"] = lvl; base["level_like"] = lvl
-    ay = base.get("ay", base.get("AY", base.get("academic_year", "2025-26"))); ay = _normalize_values(ay)
-    base["ay"] = ay; base["AY"] = ay; base["academic_year"] = ay
-    cat = base.get("category", base.get("fee_category", "Indian")); cat = _normalize_values(cat)
-    base["category"] = cat; base["fee_category"] = cat
-    prog_like = base.get("program_like", base.get("prog_like", "")); base["program_like"] = prog_like; base["prog_like"] = prog_like
-    if "prog_is_degree" not in base: base["prog_is_degree"] = True
-    for k in ["level","level_like","ay","AY","academic_year","category","fee_category","program_like","prog_like"]:
-        if k in base and base[k] is None: base[k] = ""
-        if isinstance(base.get(k), str): base[k] = base[k].strip()
-    return base
-
-def _normalize_for_programs(filters: Dict[str, Any]) -> Dict[str, Any]:
-    f = _seed_missing_keys(filters); f["prog_is_degree"] = True; return f
-
-def _normalize_for_fees(filters: Dict[str, Any]) -> Dict[str, Any]:
-    return _seed_missing_keys(filters)
-
-def _to_table(out): return out["table"] if isinstance(out, dict) and "table" in out else out
-
-def _sql_programs(filters: Dict[str, Any]) -> Tuple[bool, Dict[str, Any], str]:
-    try:
-        f1 = _normalize_for_programs(filters); t1 = _to_table(sql_programs(f1, ""))
-        if t1 and t1.get("columns") and t1.get("rows"): return True, t1, ""
-        f2 = _normalize_for_programs({"level_like": f1["level"], "program_like": ""}); t2 = _to_table(sql_programs(f2, ""))
-        if t2 and t2.get("rows"): return True, t2, ""
-        f3 = _normalize_for_programs({}); t3 = _to_table(sql_programs(f3, ""))
-        if t3 and t3.get("rows"): return True, t3, ""
-        return False, {}, "no_rows"
-    except KeyError as e: return False, {}, f"keyerror:{e}"
-    except Exception as e: return False, {}, f"exception:{e}"
-
-def _sql_fees(filters: Dict[str, Any]) -> Tuple[bool, Dict[str, Any], str]:
-    try:
-        f1 = _normalize_for_fees(filters); t1 = _to_table(sql_academic_fees(f1, ""))
-        if t1 and t1.get("columns") and t1.get("rows"): return True, t1, ""
-        f2 = _normalize_for_fees({"level_like": f1["level"], "category": f1["category"]}); t2 = _to_table(sql_academic_fees(f2, ""))
-        if t2 and t2.get("rows"): return True, t2, ""
-        f3 = _normalize_for_fees({"level_like": f1["level"]}); t3 = _to_table(sql_academic_fees(f3, ""))
-        if t3 and t3.get("rows"): return True, t3, ""
-        f4 = _normalize_for_fees({}); t4 = _to_table(sql_academic_fees(f4, ""))
-        if t4 and t4.get("rows"): return True, t4, ""
-        return False, {}, "no_rows"
-    except KeyError as e: return False, {}, f"keyerror:{e}"
-    except Exception as e: return False, {}, f"exception:{e}"
-
-def _dispatch(section: str, handler: str, filters: Dict[str, Any], fallback_query: str) -> Dict[str, Any]:
-    if section == "UG" and handler == "programs":
-        ok, table, err = _sql_programs(filters)
-        return {"type": "table" if ok else "error", "content": table if ok else f"SQL(programs) → {err}"}
-    if section == "UG" and handler == "fees":
-        ok, table, err = _sql_fees(filters)
-        return {"type": "table" if ok else "error", "content": table if ok else f"SQL(fees) → {err}"}
-    try:
-        col = COLL.get(section, "vit_ug"); q = f"[{section}] {fallback_query}"
-        md = faiss_answer_or_summary(FAISS_INDEX_DIR, col, q)
-        return {"type": "md", "content": md or "_No context found in PDFs._"}
-    except Exception as e:
-        return {"type": "error", "content": f"FAISS error: {e}"}
-
-def _render_answer(result: Dict[str, Any]):
-    if result["type"] == "table":
-        table = result["content"]; cols = table.get("columns") or []; rows = table.get("rows") or []
-        if cols and rows:
-            import pandas as pd
-            df = pd.DataFrame(rows, columns=cols)
-            st.dataframe(df, use_container_width=True, hide_index=True)
-            with st.expander("Copy as Markdown"):
-                st.code(_md_table(table), language="markdown")
+def _mmr_select(embs, query_vec, k=6, lambda_div=0.65):
+    sims = np.dot(embs, query_vec)
+    selected = []
+    candidates = list(range(len(sims)))
+    while candidates and len(selected) < k:
+        if not selected:
+            idx = int(np.argmax(sims[candidates]))
+            selected.append(candidates[idx])
+            candidates.pop(idx)
         else:
-            st.warning("No rows.")
-    elif result["type"] == "md":
-        st.markdown(result["content"])
-    else:
-        st.error(result["content"])
+            q_scores = sims[candidates]
+            div_scores = []
+            for c in candidates:
+                div_scores.append(max([float(np.dot(embs[c], embs[s])) for s in selected]))
+            div_scores = np.array(div_scores)
+            mmr = lambda_div * q_scores - (1 - lambda_div) * div_scores
+            idx = int(np.argmax(mmr))
+            selected.append(candidates[idx])
+            candidates.pop(idx)
+    return selected
 
-# ===================== UI THEME / STYLES (NEW) =====================
+def faiss_answer_or_summary(base_dir, collection, query: str, top_k: int = 10) -> str:
+    base_dir = pathlib.Path(base_dir)
+    col_dir, fa, ft, fm = _paths(base_dir, collection)
+    if not fa.exists():
+        return f"_No FAISS index at {fa}. Build indexes first._"
+    if not (col_dir / "vectorizer.pkl").exists():
+        return f"_No TF-IDF vectorizer at {col_dir/'vectorizer.pkl'}. Build indexes first._"
 
-PRIMARY = "#5A2A83"   # royal purple
-ACCENT  = "#10B6A6"   # teal
+    index = faiss.read_index(str(fa))
+    texts = json.loads(pathlib.Path(ft).read_text(encoding="utf-8"))
+    metas = json.loads(pathlib.Path(fm).read_text(encoding="utf-8"))
 
-def _inject_css(selected_label: str = ""):
-    sel = (selected_label or "").replace('"', '\\"')
-    st.markdown(
-        f"""
-<style>
-/* Page background: subtle royal→teal gradient */
-.stApp {{
-  background: linear-gradient(135deg, {PRIMARY} 0%, #1d0f2c 30%, #0a2d2f 100%);
-  color: #f7f7fb;
-}}
+    encoder = get_encoder_for_query(col_dir)  # TF-IDF vectorizer
 
-/* Glassy card containers */
-.block-container {{
-  padding-top: 2rem !important;
-}}
-header[data-testid="stHeader"] {{ background: transparent; }}
-section.main > div:has(> div[data-testid="column"]) {{
-  backdrop-filter: blur(10px);
-}}
+    # Encode query
+    q = encoder.encode([query])[0].astype(np.float32)  # (d,)
 
-/* Left / right columns glass cards */
-div[data-testid="column"] > div {{
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 18px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
-  padding: 18px 18px 8px 18px;
-}}
+    # ANN search
+    D, I = index.search(q.reshape(1, -1), top_k)
+    I = I[0].tolist()
+    if not I:
+        return "_No similar passages found._"
 
-/* Headings */
-h1, h2, h3 {{
-  color: #f6f1ff !important;
-  letter-spacing: .2px;
-}}
-h1 {{
-  font-weight: 800;
-  text-shadow: 0 2px 12px rgba(0,0,0,.35);
-}}
-h2 {{
-  border-left: 6px solid {ACCENT};
-  padding-left: 10px;
-}}
+    # pool & MMR rerank
+    pool = I + [i for i in range(len(texts)) if i not in I][:top_k]
+    pool_texts = [texts[i] for i in pool]
+    pool_embs = encoder.encode(pool_texts)
+    norms = np.linalg.norm(pool_embs, axis=1, keepdims=True) + 1e-12
+    pool_embs = pool_embs / norms
 
-/* Filter input */
-input[type="text"] {{
-  background: rgba(255,255,255,0.08) !important;
-  color: #fff !important;
-  border-radius: 14px !important;
-  border: 1px solid rgba(255,255,255,0.15) !important;
-}}
-input[type="text"]::placeholder {{ color: rgba(255,255,255,0.55); }}
+    q_norm = q / (np.linalg.norm(q) + 1e-12)
+    sel_idx = _mmr_select(pool_embs, q_norm, k=min(6, len(pool)))
+    chosen = [pool[i] for i in sel_idx]
 
-/* Radio (section selector) */
-div[role="radiogroup"] > label {{
-  background: rgba(255,255,255,0.07);
-  border: 1px solid rgba(255,255,255,0.15);
-  border-radius: 999px;
-  padding: 6px 12px;
-  margin-right: 8px;
-}}
-div[role="radiogroup"] input:checked + div {{
-  color: #0e0e12 !important;
-  background: linear-gradient(135deg, {ACCENT}, #43e0d0);
-}}
-
-/* Question buttons (glass pills) */
-.stButton > button {{
-  width: 100%;
-  text-align: left;
-  padding: 12px 14px;
-  margin-bottom: 10px;
-  border-radius: 14px;
-  border: 1px solid rgba(255,255,255,0.14);
-  background: rgba(255,255,255,0.06);
-  color: #fdfbff;
-  transition: all .15s ease;
-  box-shadow: 0 4px 18px rgba(0,0,0,.22);
-}}
-.stButton > button:hover {{
-  transform: translateY(-1px);
-  background: rgba(255,255,255,0.11);
-  border-color: rgba(255,255,255,0.28);
-}}
-/* Selected question highlight via aria-label match */
-.stButton > button[aria-label="{sel}"] {{
-  background: linear-gradient(135deg, {ACCENT}, #6be8db) !important;
-  color: #071617 !important;
-  border-color: transparent !important;
-  box-shadow: 0 10px 26px rgba(16,182,166,.35) !important;
-}}
-
-/* Answer panel */
-div[data-testid="stMarkdownContainer"] p, div[data-testid="stMarkdownContainer"] li {{
-  color: #fbfbff;
-}}
-/* Dataframe glass look */
-.stDataFrame, .stTable {{
-  background: rgba(255,255,255,0.04) !important;
-  border-radius: 14px !important;
-  border: 1px solid rgba(255,255,255,0.14) !important;
-  overflow: hidden !important;
-}}
-/* Expander styling */
-details[data-testid="stExpander"] {{
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.14);
-  border-radius: 14px;
-}}
-summary p {{
-  color: #e9fefd !important;
-}}
-/* Caption */
-.css-1xarl3l, .st-emotion-cache-16idsys p {{
-  opacity: .8;
-}}
-</style>
-        """,
-        unsafe_allow_html=True,
-    )
-
-# ===================== UI =====================
-st.title("🎓 VIT — Static FAQs (Click to Answer)")
-
-section = st.radio("Choose a section", ["UG", "PG", "MCA", "MSc", "HOSTELS"], horizontal=True)
-REG_MAP = {"UG": UG_REG, "PG": PG_REG, "MCA": MCA_REG, "MSc": MSC_REG, "HOSTELS": HST_REG}
-REG = REG_MAP[section]
-
-# currently selected item label (for highlight)
-_current = st.session_state.get("selected_item")
-_selected_label = (_current[1]["label"] if _current else "")
-
-# inject CSS after we know the selected label
-_inject_css(_selected_label)
-
-left, right = st.columns([1.25, 2.0], gap="large")
-
-with left:
-    st.subheader(f"{section} — Questions")
-    qf = st.text_input("Filter", placeholder="type to filter…").strip().lower()
-    filtered = [r for r in REG if (qf in r["label"].lower())] if qf else REG
-    for i, row in enumerate(filtered):
-        if st.button(row["label"], key=f"{section}-{i}"):
-            st.session_state["selected_item"] = (section, row)
-            # refresh highlight instantly
-            st.rerun()
-
-with right:
-    st.subheader("Answer")
-    sel = st.session_state.get("selected_item")
-    if not sel:
-        st.info("Click a question on the left.")
-    else:
-        sec, item = sel
-        label = item["label"]; handler = item["handler"]; filters = item.get("filters") or {}
-        with st.spinner("Fetching…"):
-            result = _dispatch(sec, handler, filters, label)
-        st.markdown(f"**{label}**")
-        _render_answer(result)
-
-st.caption("Policy: UG Programs & Fees → SQLite tables (safe key-normalization). Everything else → section-scoped PDFs via FAISS.")
+    out_lines = []
+    for i in chosen:
+        t = texts[i]
+        m = metas[i]
+        doc = m.get("doc_name", "source")
+        out_lines.append(f"- **{doc}**: {t[:1000]}{'...' if len(t)>1000 else ''}")
+    return "\n".join(out_lines)
