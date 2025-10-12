@@ -1,17 +1,129 @@
-# ---- bootstrap imports (top of streamlit_app.py, before any other imports) ----
-import os, sys, importlib.util
+# backend/utils/fallback_rag.py
+# Section-aware retrieval with optional FAISS.
+# If FAISS isn't installed or index.faiss is missing, we fall back to TF-IDF.
 
-# Point to the repo root even if the app is launched from elsewhere
-APP_DIR = os.path.dirname(os.path.abspath(__file__))
-REPO_ROOT = APP_DIR  # if streamlit_app.py is at repo root
-if REPO_ROOT not in sys.path:
-    sys.path.insert(0, REPO_ROOT)
+from __future__ import annotations
+import json, pathlib, pickle
+from typing import List
+import numpy as np
 
-# Defensive: if 'backend' still isn't importable, load it by path
-backend_pkg_dir = os.path.join(REPO_ROOT, "backend")
-backend_init = os.path.join(backend_pkg_dir, "__init__.py")
-if os.path.isdir(backend_pkg_dir) and os.path.exists(backend_init) and "backend" not in sys.modules:
-    spec = importlib.util.spec_from_file_location("backend", backend_init)
-    mod = importlib.util.module_from_spec(spec)
-    sys.modules["backend"] = mod
-    spec.loader.exec_module(mod)
+# Try FAISS, but don't crash if it's not there (Streamlit Cloud often lacks it)
+try:
+    import faiss  # type: ignore
+    HAVE_FAISS = True
+except Exception:
+    faiss = None  # type: ignore
+    HAVE_FAISS = False
+
+from scipy.sparse import load_npz, csr_matrix  # TF-IDF fallback
+from sklearn.feature_extraction.text import TfidfVectorizer
+
+# ---------------- paths ----------------
+
+def _paths(base_dir: pathlib.Path, collection: str):
+    d = base_dir / collection
+    return {
+        "dir": d,
+        "faiss": d / "index.faiss",
+        "texts": d / "texts.json",
+        "metas": d / "metas.json",
+        "tfidf_vec": d / "vectorizer.pkl",
+        "tfidf_mat": d / "tfidf_matrix.npz",
+    }
+
+# ---------------- helpers ----------------
+
+def _mmr_select(embs: np.ndarray, query_vec: np.ndarray, k=6, lambda_div=0.65):
+    # embs and query_vec are L2-normalized
+    sims = embs @ query_vec
+    selected: List[int] = []
+    candidates = list(range(len(sims)))
+    while candidates and len(selected) < k:
+        if not selected:
+            best_local_idx = int(np.argmax(sims[candidates]))
+            selected.append(candidates.pop(best_local_idx))
+        else:
+            q_scores = sims[candidates]
+            # max similarity to already selected (diversity)
+            div_scores = []
+            for c in candidates:
+                div_scores.append(float(np.max(embs[c] @ embs[selected].T)))
+            div_scores = np.asarray(div_scores)
+            mmr = lambda_div * q_scores - (1 - lambda_div) * div_scores
+            best_local_idx = int(np.argmax(mmr))
+            selected.append(candidates.pop(best_local_idx))
+    return selected
+
+def _format_snippets(texts, metas, indices: List[int]) -> str:
+    out_lines = []
+    for i in indices:
+        t = texts[i]
+        m = metas[i]
+        doc = m.get("doc_name", "source")
+        out_lines.append(f"- **{doc}**: {t[:1000]}{'...' if len(t) > 1000 else ''}")
+    return "\n".join(out_lines)
+
+# ---------------- main API ----------------
+
+def faiss_answer_or_summary(base_dir, collection, query: str, top_k: int = 10) -> str:
+    """
+    Returns a bulleted list of the top snippets with doc names.
+    Tries FAISS first (if present), else TF-IDF cosine search.
+    """
+    base_dir = pathlib.Path(base_dir)
+    p = _paths(base_dir, collection)
+
+    # Load corpora
+    texts = json.loads(p["texts"].read_text(encoding="utf-8"))
+    metas = json.loads(p["metas"].read_text(encoding="utf-8"))
+
+    # -------- Route 1: FAISS (if available and index present) --------
+    if HAVE_FAISS and p["faiss"].exists():
+        index = faiss.read_index(str(p["faiss"]))
+        # We don't have ST query encoder in Cloud; FAISS index was built with TF-IDF
+        # so use the TF-IDF vectorizer to encode the query to the same space if files exist.
+        if p["tfidf_vec"].exists():
+            with open(p["tfidf_vec"], "rb") as f:
+                vectorizer: TfidfVectorizer = pickle.load(f)
+            q = vectorizer.transform([query]).astype(np.float32)
+            # faiss expects a dense (n,d) float32 array
+            q_dense = q.toarray().astype(np.float32)
+            D, I = index.search(q_dense, top_k)
+            idxs = [int(i) for i in I[0] if i >= 0]
+            if not idxs:
+                return ""
+            # small diversity pass using the TF-IDF space
+            # build a pool around I plus a few extras
+            pool = idxs + [i for i in range(min(len(texts), top_k * 2)) if i not in idxs]
+            # encode pool the same way (TF-IDF dense)
+            mat = load_npz(p["tfidf_mat"]).astype(np.float32) if p["tfidf_mat"].exists() else None
+            if mat is not None:
+                pool_mat = mat[pool].toarray()
+                # L2 normalize
+                pool_mat /= (np.linalg.norm(pool_mat, axis=1, keepdims=True) + 1e-12)
+                q_norm = q_dense / (np.linalg.norm(q_dense) + 1e-12)
+                sel_local = _mmr_select(pool_mat, q_norm.reshape(-1), k=min(6, len(pool)))
+                chosen = [pool[i] for i in sel_local]
+                return _format_snippets(texts, metas, chosen)
+            else:
+                return _format_snippets(texts, metas, idxs[:6])
+
+    # -------- Route 2: TF-IDF fallback (no FAISS) --------
+    if not p["tfidf_vec"].exists() or not p["tfidf_mat"].exists():
+        # Nothing to search
+        return ""
+
+    with open(p["tfidf_vec"], "rb") as f:
+        vectorizer: TfidfVectorizer = pickle.load(f)
+    mat = load_npz(p["tfidf_mat"])  # (N, d) sparse CSR
+
+    qv = vectorizer.transform([query])  # (1, d) CSR
+    # cosine scores = (q · X) because vectors are L2-normed in build step; if not,
+    # this is still fine as TF-IDF cosine up to scale.
+    scores = (qv @ mat.T).toarray()[0]  # (N,)
+
+    if scores.size == 0:
+        return ""
+
+    top = np.argsort(-scores)[: max(6, min(top_k, 10))]
+    return _format_snippets(texts, metas, top.tolist())
