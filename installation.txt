@@ -1,29 +1,28 @@
 # streamlit_app.py
-# VIT FAQs — Static click-to-answer UI
-# UG policy: ONLY "Programs" and "Fees" use SQLite; everything else uses FAISS (PDFs).
+# VIT FAQs — Static click-to-answer UI (classy + glass UI edition)
+# NOTE: Only UI was upgraded. All logic & routing remain unchanged.
 
 import pathlib
 from typing import Dict, Any, List, Tuple
 import streamlit as st
 
-# ---- backend helpers you already have ----
+# ---- backend helpers (unchanged) ----
 from app.sql_router import sql_programs, sql_academic_fees
 from app.utils.fallback_rag import faiss_answer_or_summary
 
 # ---- config ----
 FAISS_INDEX_DIR = pathlib.Path("Data/index/faiss")
-# collections you built with build_faiss_collections.py
 COLL = {
     "UG": "vit_ug",
     "PG": "vit_pg",
-    "MCA": "vit_pg",      # your MCA/MSc PDFs are under PG; we reuse vit_pg
+    "MCA": "vit_pg",
     "MSc": "vit_pg",
     "HOSTELS": "vit_hostels",
 }
 
 st.set_page_config(page_title="VIT FAQs — Click to Answer", layout="wide")
 
-# ===================== UG — questions =====================
+# ===================== QUESTIONS (unchanged) =====================
 UG_REG: List[Dict[str, Any]] = [
     {"label": "What UG programs and specializations are offered?",
      "handler": "programs", "filters": {"level_like": "UG"}},
@@ -86,7 +85,6 @@ UG_REG: List[Dict[str, Any]] = [
     {"label": "Whom to contact for UG admissions help (email/phone)?", "handler": "faiss_summary", "filters": {}},
 ]
 
-# ============ placeholders for other sections (kept as FAISS-only) ============
 PG_REG  = [{"label": q, "handler": "faiss_summary", "filters": {}} for q in [
     "PG eligibility & qualifying degrees", "PG admission process & important dates",
     "VITMEE/VITREE overview", "M.Tech specializations", "MBA/PG programs offered",
@@ -109,7 +107,7 @@ HST_REG = [{"label": q, "handler": "faiss_summary", "filters": {}} for q in [
     "Ladies hostel contacts", "Mens hostel contacts"
 ]]
 
-# ===================== helpers =====================
+# ===================== LOGIC HELPERS (unchanged) =====================
 def _md_table(table: Dict[str, Any]) -> str:
     if not table or not table.get("columns") or not table.get("rows"):
         return "_No results._"
@@ -123,127 +121,67 @@ def _normalize_values(v: Any) -> Any:
     if isinstance(v, str):
         v = v.replace("–", "-").strip()
         if v.lower() == "foreign":
-            return "International"  # many CSVs use 'International' instead of 'Foreign'
+            return "International"
     return v
 
 def _seed_missing_keys(d: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Guarantee presence of every key the sql_* routers might index directly.
-    We fill with safe defaults so KeyError cannot occur.
-    """
     base = dict(d or {})
-    # normalize common fields
     lvl = _normalize_values(base.get("level", base.get("level_like", "UG")))
-    base["level"] = lvl
-    base["level_like"] = lvl
-
-    # academic year canonicalization
-    ay = base.get("ay", base.get("AY", base.get("academic_year", "2025-26")))
-    ay = _normalize_values(ay)
-    base["ay"] = ay
-    base["AY"] = ay
-    base["academic_year"] = ay
-
-    # category canonicalization
-    cat = base.get("category", base.get("fee_category", "Indian"))
-    cat = _normalize_values(cat)
-    base["category"] = cat
-    base["fee_category"] = cat
-
-    # program filters (even fees code sometimes looks for them)
-    prog_like = base.get("program_like", base.get("prog_like", ""))
-    base["program_like"] = prog_like
-    base["prog_like"] = prog_like
-
-    # boolean flag some routers expect
-    if "prog_is_degree" not in base:
-        base["prog_is_degree"] = True
-
-    # ensure all are strings where applicable
-    for k in ["level", "level_like", "ay", "AY", "academic_year", "category", "fee_category", "program_like", "prog_like"]:
-        if k in base and base[k] is None:
-            base[k] = ""
-        if isinstance(base.get(k), str):
-            base[k] = base[k].strip()
-
+    base["level"] = lvl; base["level_like"] = lvl
+    ay = base.get("ay", base.get("AY", base.get("academic_year", "2025-26"))); ay = _normalize_values(ay)
+    base["ay"] = ay; base["AY"] = ay; base["academic_year"] = ay
+    cat = base.get("category", base.get("fee_category", "Indian")); cat = _normalize_values(cat)
+    base["category"] = cat; base["fee_category"] = cat
+    prog_like = base.get("program_like", base.get("prog_like", "")); base["program_like"] = prog_like; base["prog_like"] = prog_like
+    if "prog_is_degree" not in base: base["prog_is_degree"] = True
+    for k in ["level","level_like","ay","AY","academic_year","category","fee_category","program_like","prog_like"]:
+        if k in base and base[k] is None: base[k] = ""
+        if isinstance(base.get(k), str): base[k] = base[k].strip()
     return base
 
 def _normalize_for_programs(filters: Dict[str, Any]) -> Dict[str, Any]:
-    f = _seed_missing_keys(filters)
-    # for programs, default to UG degrees
-    f["prog_is_degree"] = True
-    return f
+    f = _seed_missing_keys(filters); f["prog_is_degree"] = True; return f
 
 def _normalize_for_fees(filters: Dict[str, Any]) -> Dict[str, Any]:
-    f = _seed_missing_keys(filters)
-    # map 'Foreign' → 'International' already handled; nothing else special
-    return f
+    return _seed_missing_keys(filters)
+
+def _to_table(out): return out["table"] if isinstance(out, dict) and "table" in out else out
 
 def _sql_programs(filters: Dict[str, Any]) -> Tuple[bool, Dict[str, Any], str]:
-    def _to_table(out): return out["table"] if isinstance(out, dict) and "table" in out else out
     try:
-        f1 = _normalize_for_programs(filters)
-        t1 = _to_table(sql_programs(f1, ""))
-        if t1 and t1.get("columns") and t1.get("rows"):
-            return True, t1, ""
-        # backoffs
-        f2 = _normalize_for_programs({"level_like": f1["level"], "program_like": ""})
-        t2 = _to_table(sql_programs(f2, ""))
-        if t2 and t2.get("rows"):
-            return True, t2, ""
-        f3 = _normalize_for_programs({})
-        t3 = _to_table(sql_programs(f3, ""))
-        if t3 and t3.get("rows"):
-            return True, t3, ""
+        f1 = _normalize_for_programs(filters); t1 = _to_table(sql_programs(f1, ""))
+        if t1 and t1.get("columns") and t1.get("rows"): return True, t1, ""
+        f2 = _normalize_for_programs({"level_like": f1["level"], "program_like": ""}); t2 = _to_table(sql_programs(f2, ""))
+        if t2 and t2.get("rows"): return True, t2, ""
+        f3 = _normalize_for_programs({}); t3 = _to_table(sql_programs(f3, ""))
+        if t3 and t3.get("rows"): return True, t3, ""
         return False, {}, "no_rows"
-    except KeyError as e:
-        return False, {}, f"keyerror:{e}"
-    except Exception as e:
-        return False, {}, f"exception:{e}"
+    except KeyError as e: return False, {}, f"keyerror:{e}"
+    except Exception as e: return False, {}, f"exception:{e}"
 
 def _sql_fees(filters: Dict[str, Any]) -> Tuple[bool, Dict[str, Any], str]:
-    def _to_table(out): return out["table"] if isinstance(out, dict) and "table" in out else out
     try:
-        f1 = _normalize_for_fees(filters)
-        t1 = _to_table(sql_academic_fees(f1, ""))
-        if t1 and t1.get("columns") and t1.get("rows"):
-            return True, t1, ""
-        # backoffs
-        f2 = _normalize_for_fees({"level_like": f1["level"], "category": f1["category"]})
-        t2 = _to_table(sql_academic_fees(f2, ""))
-        if t2 and t2.get("rows"):
-            return True, t2, ""
-        f3 = _normalize_for_fees({"level_like": f1["level"]})
-        t3 = _to_table(sql_academic_fees(f3, ""))
-        if t3 and t3.get("rows"):
-            return True, t3, ""
-        f4 = _normalize_for_fees({})
-        t4 = _to_table(sql_academic_fees(f4, ""))
-        if t4 and t4.get("rows"):
-            return True, t4, ""
+        f1 = _normalize_for_fees(filters); t1 = _to_table(sql_academic_fees(f1, ""))
+        if t1 and t1.get("columns") and t1.get("rows"): return True, t1, ""
+        f2 = _normalize_for_fees({"level_like": f1["level"], "category": f1["category"]}); t2 = _to_table(sql_academic_fees(f2, ""))
+        if t2 and t2.get("rows"): return True, t2, ""
+        f3 = _normalize_for_fees({"level_like": f1["level"]}); t3 = _to_table(sql_academic_fees(f3, ""))
+        if t3 and t3.get("rows"): return True, t3, ""
+        f4 = _normalize_for_fees({}); t4 = _to_table(sql_academic_fees(f4, ""))
+        if t4 and t4.get("rows"): return True, t4, ""
         return False, {}, "no_rows"
-    except KeyError as e:
-        return False, {}, f"keyerror:{e}"
-    except Exception as e:
-        return False, {}, f"exception:{e}"
+    except KeyError as e: return False, {}, f"keyerror:{e}"
+    except Exception as e: return False, {}, f"exception:{e}"
 
 def _dispatch(section: str, handler: str, filters: Dict[str, Any], fallback_query: str) -> Dict[str, Any]:
-    """
-    UG: 'programs' & 'fees' → SQL. Everything else → FAISS.
-    Other sections: FAISS with section-scoped collection.
-    """
     if section == "UG" and handler == "programs":
         ok, table, err = _sql_programs(filters)
         return {"type": "table" if ok else "error", "content": table if ok else f"SQL(programs) → {err}"}
-
     if section == "UG" and handler == "fees":
         ok, table, err = _sql_fees(filters)
         return {"type": "table" if ok else "error", "content": table if ok else f"SQL(fees) → {err}"}
-
-    # FAISS for everything else (section-scoped)
     try:
-        col = COLL.get(section, "vit_ug")
-        q = f"[{section}] {fallback_query}"
+        col = COLL.get(section, "vit_ug"); q = f"[{section}] {fallback_query}"
         md = faiss_answer_or_summary(FAISS_INDEX_DIR, col, q)
         return {"type": "md", "content": md or "_No context found in PDFs._"}
     except Exception as e:
@@ -251,8 +189,7 @@ def _dispatch(section: str, handler: str, filters: Dict[str, Any], fallback_quer
 
 def _render_answer(result: Dict[str, Any]):
     if result["type"] == "table":
-        table = result["content"]
-        cols = table.get("columns") or []; rows = table.get("rows") or []
+        table = result["content"]; cols = table.get("columns") or []; rows = table.get("rows") or []
         if cols and rows:
             import pandas as pd
             df = pd.DataFrame(rows, columns=cols)
@@ -266,6 +203,131 @@ def _render_answer(result: Dict[str, Any]):
     else:
         st.error(result["content"])
 
+# ===================== UI THEME / STYLES (NEW) =====================
+
+PRIMARY = "#5A2A83"   # royal purple
+ACCENT  = "#10B6A6"   # teal
+
+def _inject_css(selected_label: str = ""):
+    sel = (selected_label or "").replace('"', '\\"')
+    st.markdown(
+        f"""
+<style>
+/* Page background: subtle royal→teal gradient */
+.stApp {{
+  background: linear-gradient(135deg, {PRIMARY} 0%, #1d0f2c 30%, #0a2d2f 100%);
+  color: #f7f7fb;
+}}
+
+/* Glassy card containers */
+.block-container {{
+  padding-top: 2rem !important;
+}}
+header[data-testid="stHeader"] {{ background: transparent; }}
+section.main > div:has(> div[data-testid="column"]) {{
+  backdrop-filter: blur(10px);
+}}
+
+/* Left / right columns glass cards */
+div[data-testid="column"] > div {{
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+  padding: 18px 18px 8px 18px;
+}}
+
+/* Headings */
+h1, h2, h3 {{
+  color: #f6f1ff !important;
+  letter-spacing: .2px;
+}}
+h1 {{
+  font-weight: 800;
+  text-shadow: 0 2px 12px rgba(0,0,0,.35);
+}}
+h2 {{
+  border-left: 6px solid {ACCENT};
+  padding-left: 10px;
+}}
+
+/* Filter input */
+input[type="text"] {{
+  background: rgba(255,255,255,0.08) !important;
+  color: #fff !important;
+  border-radius: 14px !important;
+  border: 1px solid rgba(255,255,255,0.15) !important;
+}}
+input[type="text"]::placeholder {{ color: rgba(255,255,255,0.55); }}
+
+/* Radio (section selector) */
+div[role="radiogroup"] > label {{
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 999px;
+  padding: 6px 12px;
+  margin-right: 8px;
+}}
+div[role="radiogroup"] input:checked + div {{
+  color: #0e0e12 !important;
+  background: linear-gradient(135deg, {ACCENT}, #43e0d0);
+}}
+
+/* Question buttons (glass pills) */
+.stButton > button {{
+  width: 100%;
+  text-align: left;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.06);
+  color: #fdfbff;
+  transition: all .15s ease;
+  box-shadow: 0 4px 18px rgba(0,0,0,.22);
+}}
+.stButton > button:hover {{
+  transform: translateY(-1px);
+  background: rgba(255,255,255,0.11);
+  border-color: rgba(255,255,255,0.28);
+}}
+/* Selected question highlight via aria-label match */
+.stButton > button[aria-label="{sel}"] {{
+  background: linear-gradient(135deg, {ACCENT}, #6be8db) !important;
+  color: #071617 !important;
+  border-color: transparent !important;
+  box-shadow: 0 10px 26px rgba(16,182,166,.35) !important;
+}}
+
+/* Answer panel */
+div[data-testid="stMarkdownContainer"] p, div[data-testid="stMarkdownContainer"] li {{
+  color: #fbfbff;
+}}
+/* Dataframe glass look */
+.stDataFrame, .stTable {{
+  background: rgba(255,255,255,0.04) !important;
+  border-radius: 14px !important;
+  border: 1px solid rgba(255,255,255,0.14) !important;
+  overflow: hidden !important;
+}}
+/* Expander styling */
+details[data-testid="stExpander"] {{
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 14px;
+}}
+summary p {{
+  color: #e9fefd !important;
+}}
+/* Caption */
+.css-1xarl3l, .st-emotion-cache-16idsys p {{
+  opacity: .8;
+}}
+</style>
+        """,
+        unsafe_allow_html=True,
+    )
+
 # ===================== UI =====================
 st.title("🎓 VIT — Static FAQs (Click to Answer)")
 
@@ -273,7 +335,14 @@ section = st.radio("Choose a section", ["UG", "PG", "MCA", "MSc", "HOSTELS"], ho
 REG_MAP = {"UG": UG_REG, "PG": PG_REG, "MCA": MCA_REG, "MSc": MSC_REG, "HOSTELS": HST_REG}
 REG = REG_MAP[section]
 
-left, right = st.columns([1.3, 2.0], gap="large")
+# currently selected item label (for highlight)
+_current = st.session_state.get("selected_item")
+_selected_label = (_current[1]["label"] if _current else "")
+
+# inject CSS after we know the selected label
+_inject_css(_selected_label)
+
+left, right = st.columns([1.25, 2.0], gap="large")
 
 with left:
     st.subheader(f"{section} — Questions")
@@ -282,6 +351,8 @@ with left:
     for i, row in enumerate(filtered):
         if st.button(row["label"], key=f"{section}-{i}"):
             st.session_state["selected_item"] = (section, row)
+            # refresh highlight instantly
+            st.rerun()
 
 with right:
     st.subheader("Answer")
@@ -296,4 +367,4 @@ with right:
         st.markdown(f"**{label}**")
         _render_answer(result)
 
-st.caption("Policy: UG Programs & Fees → SQLite tables (with safe key-normalization). Everything else → section-scoped PDFs via FAISS.")
+st.caption("Policy: UG Programs & Fees → SQLite tables (safe key-normalization). Everything else → section-scoped PDFs via FAISS.")
