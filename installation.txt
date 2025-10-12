@@ -1,3 +1,412 @@
-PG: Attendance rules & exam pattern overview
+# streamlit_app.py
+# VIT FAQs — Static click-to-answer UI
+# Sections: UG, PG, MCA, MSc, HOSTELS
+# Routing:
+#  - UG/PG/MCA/MSc: ONLY "Programs" and "Fees (Indian)" use SQLite; everything else uses FAISS (PDFs).
+#  - HOSTELS: all questions go to FAISS.
 
-Answer (from your PDFs): How To Apply ? - Candidate should apply through online. - There is NO printed OMR application form, candidates are requested to apply only through Online Steps to be followed - Enter into New User page and register yourself with required information - Verify your registered email id and mobile number for the password received from VIT. (Keep this email id and password till the completion of the admissions) - Fill the application form Admission process: - Submission of VITREE Application through VIT website https://vit.ac.in - PG qualifying degree confirmation - Furnishing the link for exam slot and center booking to the candidates - Admit card generation by the candidates - VIT Research Entrance Exam - Interview will be conducted for those who appeared the Entrance Exam (hybrid/online mode) - Intimation of selection process - Guide selection / Tuition fee payment Selected candidates will have to pay the full fees. - Candidates who fail to pay the full fees before deadline, will not be considered for admission. How To Apply ? Candidate should apply through online. Steps to be followed - Enter into New User page and register yourself with required information - Verify your registered email id and mobile number for the password received from VIT Steps to be followed - Candidates can apply through online at https://vit.ac.in through Netbanking/Debit card/Credit card/Paytm mode.
+import pathlib
+from typing import Dict, Any, List, Tuple
+
+import streamlit as st
+
+# ---- backend helpers (must exist) ----
+from app.sql_router import (
+    sql_programs,        # Programs table accessor
+    sql_academic_fees,   # Fees table accessor
+)
+from app.utils.fallback_rag import faiss_answer_or_summary
+
+# ---- config ----
+FAISS_INDEX_DIR = pathlib.Path("Data/index/faiss")
+# If you later build separate collections (e.g., vit_pg, vit_mca...), put them here.
+FAISS_COLLECTIONS = {
+    "UG":  "vit_faq_vellore",
+    "PG":  "vit_faq_vellore",   # change once you build a PG index
+    "MCA": "vit_faq_vellore",   # change once you build an MCA index
+    "MSc": "vit_faq_vellore",   # change once you build an MSc index
+    "HOSTELS": "vit_faq_vellore",
+}
+
+st.set_page_config(page_title="VIT FAQs — Click to Answer", layout="wide")
+
+# ===================== UG — 40 questions (existing policy preserved) =====================
+UG_REG: List[Dict[str, Any]] = [
+    # ---- SQL (Programs) ----
+    {"label": "What UG programs and specializations are offered?",
+     "handler": "programs", "filters": {"level_like": "UG"}},
+    {"label": "Which B.Tech specializations are available at each campus?",
+     "handler": "programs", "filters": {"level_like": "UG", "program_like": "B.Tech"}},
+    {"label": "What non–B.Tech UG programs are offered (BBA/B.Com/BCA etc.)?",
+     "handler": "programs", "filters": {"level_like": "UG", "program_like": "BBA B.Com BCA"}},
+
+    # ---- FAISS (PDFs) ----
+    {"label": "UG eligibility: minimum marks and required subjects", "handler": "faiss_summary", "filters": {}},
+    {"label": "Is Mathematics mandatory for specific B.Tech programs?", "handler": "faiss_summary", "filters": {}},
+    {"label": "Are NIOS/correspondence students eligible for UG?", "handler": "faiss_summary", "filters": {}},
+    {"label": "Eligibility for NRI/OCI/PIO applicants (UG)", "handler": "faiss_summary", "filters": {}},
+
+    {"label": "Documents to submit for UG admission and reporting", "handler": "faiss_summary", "filters": {}},
+    {"label": "Where to download affidavits and fitness forms?", "handler": "faiss_summary", "filters": {}},
+    {"label": "Photo/signature/document upload specifications", "handler": "faiss_summary", "filters": {}},
+
+    # ---- SQL (Fees — Indian only, per your request) ----
+    {"label": "UG tuition fee (Indian category) for AY 2025–26",
+     "handler": "fees", "filters": {"level_like": "UG", "category": "Indian", "ay": "2025-26"}},
+
+    # ---- FAISS (PDFs) ----
+    {"label": "Is there a refundable caution deposit for UG?", "handler": "faiss_summary", "filters": {}},
+    {"label": "Scholarships/waivers available for UG students", "handler": "faiss_summary", "filters": {}},
+
+    {"label": "Step-by-step UG application process (Indian/NRI/Foreign)", "handler": "faiss_summary", "filters": {}},
+    {"label": "Important admission dates and deadlines for UG", "handler": "faiss_summary", "filters": {}},
+    {"label": "How is the merit list prepared and tie-break rules?", "handler": "faiss_summary", "filters": {}},
+    {"label": "Counselling and seat allotment process (rounds and sliding)", "handler": "faiss_summary", "filters": {}},
+    {"label": "Branch locking and later branch-change policy", "handler": "faiss_summary", "filters": {}},
+
+    {"label": "Who is treated as NRI vs Foreign applicant?", "handler": "faiss_summary", "filters": {}},
+    {"label": "NRI application portal & fee payment instructions", "handler": "faiss_summary", "filters": {}},
+    {"label": "Foreign nationals/OCI/PIO application steps & fees", "handler": "faiss_summary", "filters": {}},
+
+    # HOSTEL & CONTACTS → FAISS (as decided; no hostel SQL here)
+    {"label": "First-year hostel fee (Indian) AY 2025–26", "handler": "faiss_summary", "filters": {}},
+    {"label": "First-year hostel fee (NRI/Foreign) AY 2025–26", "handler": "faiss_summary", "filters": {}},
+    {"label": "Senior hostel fee overview AY 2025–26", "handler": "faiss_summary", "filters": {}},
+    {"label": "Hostel block landlines and key contacts", "handler": "faiss_summary", "filters": {}},
+
+    {"label": "Extra documents for NRI/Foreign students at reporting", "handler": "faiss_summary", "filters": {}},
+    {"label": "AIU equivalence and accepted international boards", "handler": "faiss_summary", "filters": {}},
+
+    {"label": "Mode and schedule of tuition/hostel fee payment", "handler": "faiss_summary", "filters": {}},
+    {"label": "Refund policy if I withdraw before/after registration", "handler": "faiss_summary", "filters": {}},
+
+    {"label": "When to pay balance tuition/hostel after provisional admission?", "handler": "faiss_summary", "filters": {}},
+    {"label": "How to check application status and download letters?", "handler": "faiss_summary", "filters": {}},
+    {"label": "How to correct mistakes in the application after submission?", "handler": "faiss_summary", "filters": {}},
+    {"label": "Uploading pending 12th/board marks and verification process", "handler": "faiss_summary", "filters": {}},
+
+    {"label": "Medium of instruction and availability of bridge courses", "handler": "faiss_summary", "filters": {}},
+    {"label": "Attendance, exams and grading policy (UG) overview", "handler": "faiss_summary", "filters": {}},
+
+    {"label": "Internships and industry-linked projects during UG", "handler": "faiss_summary", "filters": {}},
+    {"label": "Recent UG placement highlights & top recruiters", "handler": "faiss_summary", "filters": {}},
+
+    {"label": "Whom to contact for UG admissions help (email/phone)?", "handler": "faiss_summary", "filters": {}},
+]
+
+# ===================== Build 40-question registries for PG / MCA / MSc =====================
+
+COMMON_FAISS_TOPICS = [
+    "Eligibility: qualifying degree and minimum marks",
+    "Age limit / attempts policy",
+    "Documents to upload during application",
+    "Photo/signature/document specifications",
+    "Application steps (start to submit)",
+    "Editing the application after submission",
+    "Application fee & payment modes",
+    "Important dates and deadlines",
+    "Merit list preparation & tie-break rules",
+    "Counselling flow and seat allotment",
+    "Campus/branch change policy after allotment",
+    "Scholarships / fee waivers overview",
+    "Refund policy (tuition) before/after registration",
+    "Refund policy (hostel) before/after occupation",
+    "When to pay balance tuition/hostel after provisional admission",
+    "How to check application status & download letters",
+    "Reporting-day document verification",
+    "Category certificates & format requirements",
+    "AIU equivalence / accepted international boards",
+    "Medium of instruction & bridge courses",
+    "Attendance rules & exam pattern overview",
+    "Grading policy & CGPA conversion",
+    "Internship requirements & industry projects",
+    "Career/placement highlights & eligibility for placements",
+    "Credit transfer / lateral entry availability",
+    "Backlogs & readmission rules",
+    "Hostel: allotment basics and mess options",
+    "Hostel: discipline & visitors policy",
+    "Anti-ragging compliance & undertakings",
+    "Medical fitness / insurance requirements",
+    "Disability accommodations & support",
+    "Sports/NSS/NCC opportunities",
+    "Clubs, chapters, and hackathons",
+    "Transport/parking passes & rules",
+    "VTOP essentials & login help",
+    "Helpline email/phone & office hours",
+]
+
+def _first_n(items: List[str], n: int) -> List[str]:
+    return items[:n] if len(items) >= n else items + [""] * (n - len(items))
+
+def build_academic_registry(level_label: str) -> List[Dict[str, Any]]:
+    """
+    Build 40 questions for PG / MCA / MSc.
+    SQL for: Programs (3) + Fees(1: Indian).  The rest are FAISS.
+    """
+    REG: List[Dict[str, Any]] = []
+    # 1) SQL: Programs
+    REG.append({"label": f"What {level_label} programs and specializations are offered?",
+                "handler": "programs", "filters": {"level_like": level_label}})
+    REG.append({"label": f"Which core specializations are available at each campus ({level_label})?",
+                "handler": "programs", "filters": {"level_like": level_label, "program_like": "M.Tech M.Sc MBA MCA MA"}})
+    REG.append({"label": f"What non-core {level_label} programs are offered?",
+                "handler": "programs", "filters": {"level_like": level_label, "program_like": "MBA M.Sc MCA MA"}})
+
+    # 2) SQL: Fees (Indian only; NRI/Foreign removed as requested)
+    REG.append({"label": f"{level_label} tuition fee (Indian category) for AY 2025–26",
+                "handler": "fees",
+                "filters": {"level_like": level_label, "category": "Indian", "ay": "2025-26"}})
+
+    # 3) Fill up to 40 with FAISS topics tailored to level
+    faiss_labels = [f"{level_label}: {base}" for base in COMMON_FAISS_TOPICS]
+    # Ensure exactly 40 total
+    needed = 40 - len(REG)
+    for lbl in _first_n(faiss_labels, needed):
+        REG.append({"label": lbl, "handler": "faiss_summary", "filters": {}})
+    return REG
+
+PG_REG  = build_academic_registry("PG")
+MCA_REG = build_academic_registry("MCA")
+MSC_REG = build_academic_registry("MSc")
+
+# ===================== HOSTELS — 40 (FAISS-only) =====================
+HOSTEL_TOPICS_40 = [
+    "First-year hostel fee overview (Men)",
+    "First-year hostel fee overview (Ladies)",
+    "Senior hostel fee overview",
+    "Admission fee, hostel fee and caution deposit — definitions",
+    "Refund policy before academic start",
+    "Refund policy within first 4 months",
+    "Refund policy after 4 months",
+    "Refund timelines and bank details update",
+    "Room types and current tariffs",
+    "AC vs Non-AC room options",
+    "Mess types (Veg/Non-Veg/Special) and charges",
+    "Mess change policy & cycle",
+    "Block-wise amenities and photos",
+    "Laundry services and estimated costs",
+    "Wi-Fi availability and limits",
+    "Electric appliances allowed / not allowed",
+    "Late entry / overnight outpass rules",
+    "Visitors policy and timings",
+    "Hostel discipline & conduct rules",
+    "Ragging complaint channels and support",
+    "Medical emergencies & campus clinic",
+    "Security measures & surveillance",
+    "Study rooms / reading halls availability",
+    "Gym & sports facilities access",
+    "Common rooms / TV rooms guidelines",
+    "Quiet hours policy",
+    "Laundry pickup points & timings",
+    "Housekeeping frequency and scope",
+    "Water dispensers & RO points",
+    "Power backup and outage handling",
+    "Check-in day process & documents",
+    "Room key / access card policy",
+    "Room change / upgradation policy",
+    "Damage charges and penalties",
+    "End-of-year vacating procedure",
+    "Storage during vacation / summer",
+    "Prohibited items list",
+    "Local transport & airport pickup info",
+    "Helpline contacts (Men’s/Ladies hostels)",
+    "Complaint/feedback escalation",
+]
+HST_REG = [{"label": t, "handler": "faiss_summary", "filters": {}} for t in HOSTEL_TOPICS_40]
+
+# ===================== helpers (key-mapping + SQL backoff) =====================
+def _md_table(table: Dict[str, Any]) -> str:
+    if not table or not table.get("columns") or not table.get("rows"):
+        return "_No results._"
+    cols = table["columns"]; rows = table["rows"]
+    lines = [" | ".join(cols), " | ".join(["---"] * len(cols))]
+    for r in rows:
+        lines.append(" | ".join("" if x is None else str(x) for x in r))
+    return "\n".join(lines)
+
+def _normalize_for_programs(filters: Dict[str, Any]) -> Dict[str, Any]:
+    f = dict(filters or {})
+    lvl = f.get("level", f.get("level_like", "UG"))
+    f["level"] = lvl
+    f["level_like"] = lvl
+    f["LEVEL"] = lvl
+    prog_like = f.get("program_like", f.get("prog_like", "%"))
+    f["program_like"] = prog_like
+    f["prog_like"] = prog_like
+    f.setdefault("prog_is_degree", True)
+    f.setdefault("prog_level_like", lvl)
+    return f
+
+def _normalize_for_fees(filters: Dict[str, Any]) -> Dict[str, Any]:
+    f = dict(filters or {})
+    lvl = f.get("level", f.get("level_like", "UG"))
+    f["level"] = lvl
+    f["level_like"] = lvl
+    f["LEVEL"] = lvl
+    cat = f.get("category", f.get("fee_category"))
+    if cat is not None:
+        f["category"] = cat
+        f["fee_category"] = cat
+        f["CATEGORY"] = cat
+    ay = f.get("ay", f.get("academic_year", "2025-26"))
+    f["ay"] = ay
+    f["academic_year"] = ay
+    f["AY"] = ay
+    prog_like = f.get("program_like", f.get("prog_like", "%"))
+    f["program_like"] = prog_like
+    f["prog_like"] = prog_like
+    f.setdefault("prog_is_degree", True)
+    f.setdefault("prog_level_like", lvl)
+    return f
+
+def _sql_programs(filters: Dict[str, Any]) -> Tuple[bool, Dict[str, Any], str]:
+    def _to_table(out):
+        return out["table"] if isinstance(out, dict) and "table" in out else out
+    try:
+        f1 = _normalize_for_programs(filters)
+        t1 = _to_table(sql_programs(f1, ""))
+        if t1 and t1.get("columns") and t1.get("rows"): return True, t1, ""
+        f2 = {"level": f1["level"], "level_like": f1["level_like"], "prog_is_degree": True,
+              "program_like": "%", "prog_like": "%"}
+        t2 = _to_table(sql_programs(f2, ""))
+        if t2 and t2.get("rows"): return True, t2, ""
+        f3 = {"prog_is_degree": True, "program_like": "%", "prog_like": "%"}
+        t3 = _to_table(sql_programs(f3, ""))
+        if t3 and t3.get("rows"): return True, t3, ""
+        return False, {}, "no_rows"
+    except KeyError as e:
+        return False, {}, f"keyerror:{e}"
+    except Exception as e:
+        return False, {}, f"exception:{e}"
+
+def _sql_fees(filters: Dict[str, Any]) -> Tuple[bool, Dict[str, Any], str]:
+    def _to_table(out):
+        return out["table"] if isinstance(out, dict) and "table" in out else out
+    try:
+        base = _normalize_for_fees(filters)
+        ay  = base.get("ay", "2025-26"); AY  = base.get("AY", ay)
+        cat = base.get("category");       CAT = base.get("CATEGORY", cat)
+        lvl = base.get("level", "UG");    LVL = base.get("LEVEL",   lvl)
+
+        t1 = _to_table(sql_academic_fees(base, ""))
+        if t1 and t1.get("columns") and t1.get("rows"): return True, t1, ""
+
+        f2 = {
+            "level": lvl, "level_like": lvl, "LEVEL": LVL,
+            "ay": ay, "AY": AY,
+            "program_like": "%", "prog_like": "%",
+            "prog_is_degree": True, "prog_level_like": lvl,
+        }
+        if cat is not None:
+            f2["category"] = cat; f2["fee_category"] = cat; f2["CATEGORY"] = CAT
+        t2 = _to_table(sql_academic_fees(f2, ""))
+        if t2 and t2.get("rows"): return True, t2, ""
+
+        f3 = {
+            "level": lvl, "level_like": lvl, "LEVEL": LVL,
+            "ay": ay, "AY": AY,
+            "program_like": "%", "prog_like": "%",
+            "prog_is_degree": True
+        }
+        if cat is not None:
+            f3["category"] = cat; f3["fee_category"] = cat; f3["CATEGORY"] = CAT
+        t3 = _to_table(sql_academic_fees(f3, ""))
+        if t3 and t3.get("rows"): return True, t3, ""
+
+        return False, {}, "no_rows"
+    except KeyError as e:
+        return False, {}, f"keyerror:{e}"
+    except Exception as e:
+        return False, {}, f"exception:{e}"
+
+# ---- FAISS query hints to reduce repetition for non-UG sections ----
+SECTION_HINTS = {
+    "PG":  "PG postgraduate VITMEE M.Tech M.Sc MBA MCA exam pattern syllabus attendance rules regulations handbook",
+    "MCA": "MCA masters PG computer applications exam pattern syllabus attendance rules regulations handbook",
+    "MSc": "MSc masters science exam pattern syllabus attendance rules regulations handbook",
+    "HOSTELS": "VIT hostels rules fee refund mess accommodation men's ladies"
+}
+
+def _dispatch(handler: str, filters: Dict[str, Any], section: str, label: str) -> Dict[str, Any]:
+    """
+    Academic sections policy:
+      - SQL ONLY for handler in {'programs','fees'}.
+      - Everything else -> FAISS (PDFs).
+    HOSTELS: all FAISS.
+    """
+    if handler == "programs":
+        ok, table, err = _sql_programs(filters)
+        return {"type": "table" if ok else "error",
+                "content": table if ok else f"SQL(programs) → {err}"}
+
+    if handler == "fees":
+        ok, table, err = _sql_fees(filters)
+        return {"type": "table" if ok else "error",
+                "content": table if ok else f"SQL(fees) → {err}"}
+
+    # FAISS for everything else
+    try:
+        collection = FAISS_COLLECTIONS.get(section, FAISS_COLLECTIONS["UG"])
+        # Add section + hints to combat "same generic chunk" issue.
+        hint = SECTION_HINTS.get(section, "")
+        query = f"{section} — {label}. {hint}".strip()
+
+        prompt = (
+            f"{query}\n\n"
+            "Instruction: Answer ONLY from the VIT admissions PDFs that were indexed. "
+            f"Focus on the {section} context if applicable. Use bullets if helpful. "
+            "Avoid repeating generic 'how to apply' steps unless the question explicitly asks for it."
+        )
+        md = faiss_answer_or_summary(FAISS_INDEX_DIR, collection, prompt)
+        return {"type": "md", "content": md or "_No context found in PDFs._"}
+    except Exception as e:
+        return {"type": "error", "content": f"FAISS error: {e}"}
+
+def _render_answer(result: Dict[str, Any]):
+    if result["type"] == "table":
+        table = result["content"]
+        cols = table.get("columns") or []; rows = table.get("rows") or []
+        if cols and rows:
+            import pandas as pd
+            df = pd.DataFrame(rows, columns=cols)
+            st.dataframe(df, use_container_width=True, hide_index=True)
+            with st.expander("Copy as Markdown"):
+                st.code(_md_table(table), language="markdown")
+        else:
+            st.warning("No rows.")
+    elif result["type"] == "md":
+        st.markdown(result["content"])
+    else:
+        st.error(result["content"])
+
+# ===================== UI =====================
+st.title("🎓 VIT — Static FAQs (Click to Answer)")
+
+section = st.radio("Choose a section", ["UG", "PG", "MCA", "MSc", "HOSTELS"], horizontal=True)
+REG_MAP = {"UG": UG_REG, "PG": PG_REG, "MCA": MCA_REG, "MSc": MSC_REG, "HOSTELS": HST_REG}
+REG = REG_MAP[section]
+
+left, right = st.columns([1.3, 2.0], gap="large")
+
+with left:
+    st.subheader(f"{section} — Questions")
+    qf = st.text_input("Filter", placeholder="type to filter…").strip().lower()
+    filtered = [r for r in REG if (qf in r["label"].lower())] if qf else REG
+    for i, row in enumerate(filtered):
+        if st.button(row["label"], key=f"{section}-{i}"):
+            st.session_state["selected_item"] = (section, row)
+
+with right:
+    st.subheader("Answer")
+    sel = st.session_state.get("selected_item")
+    if not sel:
+        st.info("Click a question on the left.")
+    else:
+        sec, item = sel
+        label = item["label"]; handler = item["handler"]; filters = item.get("filters") or {}
+        with st.spinner("Fetching…"):
+            result = _dispatch(handler, filters, sec, label)
+        st.markdown(f"**{label}**")
+        _render_answer(result)
+
+st.caption("Routing: Programs & Fees (Indian) → SQLite tables; everything else → PDFs via FAISS. HOSTELS = FAISS-only.")
