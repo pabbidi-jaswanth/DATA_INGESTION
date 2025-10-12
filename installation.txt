@@ -1,5 +1,131 @@
-(.venv) (base) PS C:\Users\T8543\Downloads\project-2> python ETL/build_faiss_collections.py
-Traceback (most recent call last):
-  File "C:\Users\T8543\Downloads\project-2\ETL\build_faiss_collections.py", line 12, in <module>
-    from app.utils.embeddings import get_encoder_for_build
-ModuleNotFoundError: No module named 'app'
+# ETL/build_faiss_collections.py
+# Build 5 FAISS collections with metadata (UG/PG/MCA/MSc/HOSTELS).
+# Offline-safe: falls back to TF-IDF if SentenceTransformer can't be downloaded.
+# Input PDFs expected under Data/Raw/ACADEMICS and Data/Raw/HOSTEL
+
+import sys
+import re
+import json
+import pathlib
+from typing import List, Dict
+
+# -------- ensure project root is on sys.path so "app.*" imports work ----------
+ROOT = pathlib.Path(__file__).resolve().parents[1]   # project-2/
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+# -----------------------------------------------------------------------------
+
+import pdfplumber
+import numpy as np
+import faiss
+
+from app.utils.embeddings import get_encoder_for_build
+
+RAW_ACAD = ROOT / "Data" / "Raw" / "ACADEMICS"
+RAW_HOST = ROOT / "Data" / "Raw" / "HOSTEL"
+OUT_DIR  = ROOT / "Data" / "index" / "faiss"
+
+# Map PDFs → section
+SECTION_MAP = {
+    "UG":      ["UG", "UG ", "UNDERGRAD", "VITEEE", "NRI", "FOREIGN"],
+    "PG":      ["PG", "M.TECH", "MBA", "VITMEE", "VITREE"],
+    "MCA":     ["MCA"],
+    "MSc":     ["M.SC", "MSC", "SCIENCE"],
+    "HOSTELS": ["HOSTEL", "HOSTELS", "LADIES", "MENS", "MEN'S"],
+}
+
+CHUNK_SIZE = 900
+CHUNK_OVERLAP = 150
+
+def read_pdf_text(pdf_path: pathlib.Path) -> str:
+    parts = []
+    with pdfplumber.open(str(pdf_path)) as pdf:
+        for p in pdf.pages:
+            t = p.extract_text() or ""
+            parts.append(t)
+    return "\n".join(parts)
+
+def clean_text(t: str) -> str:
+    # simple OCR cleanup: collapse hyphen linebreaks, fix multi-spaces, normalize dash
+    t = re.sub(r"(\w)-\n(\w)", r"\1\2", t)
+    t = re.sub(r"\n+", "\n", t)
+    t = t.replace("–", "-").replace("—", "-")
+    t = re.sub(r"[ \t]+", " ", t)
+    return t.strip()
+
+def chunk_text(t: str, size=CHUNK_SIZE, overlap=CHUNK_OVERLAP) -> List[str]:
+    tokens = t.split()
+    chunks = []
+    i = 0
+    while i < len(tokens):
+        j = min(len(tokens), i + size)
+        chunk = " ".join(tokens[i:j])
+        chunks.append(chunk)
+        i = j - overlap
+        if i < 0:
+            i = 0
+        if j == len(tokens):
+            break
+    return [c for c in chunks if c.strip()]
+
+def decide_section(doc_name: str) -> str:
+    upper = doc_name.upper()
+    for sec, keys in SECTION_MAP.items():
+        if any(k in upper for k in keys):
+            return sec
+    return "UG"
+
+def collect_docs() -> List[Dict]:
+    docs = []
+    for base in [RAW_ACAD, RAW_HOST]:
+        if not base.exists():
+            continue
+        for p in base.glob("**/*.pdf"):
+            section = decide_section(p.name)
+            docs.append({"path": p, "section": section})
+    return docs
+
+def build_one_collection(section: str, docs: List[Dict], encoder, used_fallback: bool):
+    texts, metas = [], []
+    for d in docs:
+        text = clean_text(read_pdf_text(d["path"]))
+        for ch in chunk_text(text):
+            texts.append(ch)
+            metas.append({"section": section, "doc_name": d["path"].name})
+
+    out_dir = OUT_DIR / f"{'vit_'+section.lower()}"
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    if not texts:
+        print(f"[{section}] No texts; skipping.")
+        return
+
+    # If TF-IDF fallback is used, we must fit and save the vectorizer for this collection
+    if not getattr(encoder, "is_transformer", False):
+        encoder.fit(texts)
+        encoder.save(out_dir)  # persists vectorizer.pkl for this collection
+
+    embs = encoder.encode(texts)  # (n, d) float32, normalized in encoder
+    index = faiss.IndexFlatIP(embs.shape[1])  # cosine if normalized
+    index.add(embs.astype(np.float32))
+
+    faiss.write_index(index, str(out_dir / "index.faiss"))
+    (out_dir / "texts.json").write_text(json.dumps(texts, ensure_ascii=False), encoding="utf-8")
+    (out_dir / "metas.json").write_text(json.dumps(metas, ensure_ascii=False), encoding="utf-8")
+
+    print(f"[{section}] built: {len(texts)} chunks → {out_dir} | encoder={'TF-IDF' if used_fallback else 'ST'}")
+
+def main():
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
+    docs = collect_docs()
+    by_sec = {"UG": [], "PG": [], "MCA": [], "MSc": [], "HOSTELS": []}
+    for d in docs:
+        by_sec[d["section"]].append(d)
+
+    encoder, used_fallback = get_encoder_for_build(prefer_transformer=True)
+
+    for sec in by_sec:
+        build_one_collection(sec, by_sec[sec], encoder, used_fallback)
+
+if __name__ == "__main__":
+    main()
