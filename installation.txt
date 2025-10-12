@@ -1,68 +1,76 @@
-# app/utils/embeddings.py
-# Single, offline TF-IDF embedding backend.
-# We persist a vectorizer per collection directory and always load it at query time.
 
-from __future__ import annotations
+# app/utils/fallback_rag.py
+# Section-aware FAISS retrieval that uses TF-IDF only (vectorizer.pkl must exist).
 
-import pathlib
-import pickle
-from typing import List
+import json, pathlib
 import numpy as np
+import faiss
 
+from backend.utils.embeddings import get_encoder_for_query
 
-class TFIDFEncoder:
-    def __init__(self, vectorizer=None):
-        self.vectorizer = vectorizer  # fitted TfidfVectorizer
+def _paths(base_dir: pathlib.Path, collection: str):
+    d = base_dir / collection
+    return d, d / "index.faiss", d / "texts.json", d / "metas.json"
 
-    @property
-    def is_transformer(self) -> bool:
-        return False
+def _mmr_select(embs, query_vec, k=6, lambda_div=0.65):
+    sims = np.dot(embs, query_vec)
+    selected = []
+    candidates = list(range(len(sims)))
+    while candidates and len(selected) < k:
+        if not selected:
+            idx = int(np.argmax(sims[candidates]))
+            selected.append(candidates[idx])
+            candidates.pop(idx)
+        else:
+            q_scores = sims[candidates]
+            div_scores = []
+            for c in candidates:
+                div_scores.append(max([float(np.dot(embs[c], embs[s])) for s in selected]))
+            div_scores = np.array(div_scores)
+            mmr = lambda_div * q_scores - (1 - lambda_div) * div_scores
+            idx = int(np.argmax(mmr))
+            selected.append(candidates[idx])
+            candidates.pop(idx)
+    return selected
 
-    def fit(self, texts: List[str]) -> None:
-        from sklearn.feature_extraction.text import TfidfVectorizer
-        self.vectorizer = TfidfVectorizer(
-            lowercase=True,
-            stop_words="english",
-            max_features=50000,
-            ngram_range=(1, 2),
-        )
-        self.vectorizer.fit(texts)
+def faiss_answer_or_summary(base_dir, collection, query: str, top_k: int = 10) -> str:
+    base_dir = pathlib.Path(base_dir)
+    col_dir, fa, ft, fm = _paths(base_dir, collection)
+    if not fa.exists():
+        return f"_No FAISS index at {fa}. Build indexes first._"
+    if not (col_dir / "vectorizer.pkl").exists():
+        return f"_No TF-IDF vectorizer at {col_dir/'vectorizer.pkl'}. Build indexes first._"
 
-    def encode(self, texts: List[str]) -> np.ndarray:
-        if self.vectorizer is None:
-            raise RuntimeError("TF-IDF encoder not fitted.")
-        X = self.vectorizer.transform(texts)
-        X = X.astype(np.float32).toarray()
-        norms = np.linalg.norm(X, axis=1, keepdims=True) + 1e-12
-        X = X / norms
-        return X
+    index = faiss.read_index(str(fa))
+    texts = json.loads(pathlib.Path(ft).read_text(encoding="utf-8"))
+    metas = json.loads(pathlib.Path(fm).read_text(encoding="utf-8"))
 
-    def save(self, dest_dir: pathlib.Path) -> None:
-        dest_dir.mkdir(parents=True, exist_ok=True)
-        with open(dest_dir / "vectorizer.pkl", "wb") as f:
-            pickle.dump(self.vectorizer, f)
+    encoder = get_encoder_for_query(col_dir)  # TF-IDF vectorizer
 
-    @staticmethod
-    def load(dest_dir: pathlib.Path) -> "TFIDFEncoder":
-        p = dest_dir / "vectorizer.pkl"
-        if not p.exists():
-            raise FileNotFoundError(
-                f"TF-IDF vectorizer not found at {p}. Build indexes first."
-            )
-        with open(p, "rb") as f:
-            vec = pickle.load(f)
-        return TFIDFEncoder(vectorizer=vec)
+    # Encode query
+    q = encoder.encode([query])[0].astype(np.float32)  # (d,)
 
+    # ANN search
+    D, I = index.search(q.reshape(1, -1), top_k)
+    I = I[0].tolist()
+    if not I:
+        return "_No similar passages found._"
 
-def get_encoder_for_build():
-    """
-    Build-time: always TF-IDF (offline).
-    """
-    return TFIDFEncoder()
+    # pool & MMR rerank
+    pool = I + [i for i in range(len(texts)) if i not in I][:top_k]
+    pool_texts = [texts[i] for i in pool]
+    pool_embs = encoder.encode(pool_texts)
+    norms = np.linalg.norm(pool_embs, axis=1, keepdims=True) + 1e-12
+    pool_embs = pool_embs / norms
 
+    q_norm = q / (np.linalg.norm(q) + 1e-12)
+    sel_idx = _mmr_select(pool_embs, q_norm, k=min(6, len(pool)))
+    chosen = [pool[i] for i in sel_idx]
 
-def get_encoder_for_query(collection_dir: pathlib.Path):
-    """
-    Query-time: always load TF-IDF vectorizer from the collection dir.
-    """
-    return TFIDFEncoder.load(collection_dir)
+    out_lines = []
+    for i in chosen:
+        t = texts[i]
+        m = metas[i]
+        doc = m.get("doc_name", "source")
+        out_lines.append(f"- **{doc}**: {t[:1000]}{'...' if len(t)>1000 else ''}")
+    return "\n".join(out_lines)
