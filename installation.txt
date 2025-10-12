@@ -1,476 +1,328 @@
-When to pay balance tuition/hostel after provisional admission?
+# streamlit_app.py
+# VIT FAQs — Static click-to-answer UI
+# Sections: UG, PG, MCA, MSc, HOSTELS
+# UG policy: ONLY "Programs" and "Fees" use SQLite; everything else uses FAISS (PDFs).
 
-UG NRI PROCESS.pdf: NRI UG Programmes Offered: VIT-VELLORE: • B.Tech. Biotechnology • B.Tech. Chemical Engineering • B.Tech. Civil Engineering • B.Tech. Computer Science and Engineering • B.Tech. Computer Science and Engineering (Artificial Intelligence and Machine Learning) • B.Tech. Computer Science and Engineering (Artificial Intelligence and Data Engineering) • B.Tech. Computer Science and Engineering (Bioinformatics) • B.Tech. Computer Science and Engineering (Cyber Security) • B.Tech. Computer Science and Engineering and Business Systems(in collaboration with TCS) • B.Tech. Computer Science and Engineering (Data Science) • B.Tech. Electrical and Electronics Engineering • B.Tech. Electrical and Computer Science Engineering • B.Tech. Electronics and Communication Engineering • B.Tech. Electronics and Instrumentation Engineering • B.Tech. Electronics and Communication Engineering (Biomedical Engineering) • B.Tech. Electronics Engineering (VLSI Design and Technology) • B.Tech. Health Sciences and Techno...
-UG DOCUMENTS DOWNLOAD.pdf: UG - Downloads • Affidavit to be signed separately by Student, Parent & Hostel on Rs.200/- nonjudicial Stamp Paper Undertaking Affidavit by Student Affidavit by Parent Hostel Affidavit Certificate of physical fitness
-FEE STRUCTURE INTERNATIONAL ADMISSIONS.pdf: FEE STRUCTURE INTERNATIONAL ADMISSIONS: International Undergraduate Admissions B.Tech (2025-2026) Tuition Fees (Per Annum) Caution Deposit (Refundable) (One time 
-100
-p
-a
-y
-m
-e
-n
-t
-)
-T
-o
-t
-a
-l
-f
-e
-e
-s
-t
-o
-b
-e
-p
-a
-i
-d
-f
-o
-r
-t
-h
-e
-f
-i
-r
-s
-t
-y
-e
-a
-r
-100payment)Totalfeestobepaidforthefirstyear9100 B.Tech Programmes (2025-2026) Integrated Programmes Integrated M.Tech. (5 Years) (20242025) Tuition Fee (Per 
-5
-,
-500
-A
-n
-n
-u
-m
-)
-C
-a
-u
-t
-i
-o
-n
-D
-e
-p
-o
-s
-i
-t
-5,500Annum)CautionDeposit100 Total Fee in USD 
-5600
-I
-n
-t
-e
-g
-r
-a
-t
-e
-d
-M
-.
-S
-c
-.
-(
-5
-Y
-e
-a
-r
-s
-)
-(
-20242025
-)
-T
-u
-i
-t
-i
-o
-n
-F
-e
-e
-(
-P
-e
-r
-5600IntegratedM.Sc.(5Years)(20242025)TuitionFee(Per3,450 Annum) Caution Deposit 
-50
-T
-o
-t
-a
-l
-F
-e
-e
-i
-n
-U
-S
-D
-50TotalFeeinUSD3,500 International UG Science Programmes FOR BCA / B.Sc (Computer Science)/ B.Com / BBA Tuition Fee (Per 
-3
-,
-450
-A
-n
-n
-u
-m
-)
-C
-a
-u
-t
-i
-o
-n
-D
-e
-p
-o
-s
-i
-t
-3,450Annum)CautionDeposit50 Total Fee (Per Annum) 
-3
-,
-500
-B
-.
-S
-c
-.
-M
-u
-l
-t
-i
-m
-e
-d
-i
-a
-a
-n
-d
-A
-n
-i
-m
-a
-t
-i
-o
-n
-T
-u
-i
-t
-i
-o
-n
-F
-e
-e
-(
-P
-e
-r
-A
-n
-n
-u
-m
-)
-3,500B.Sc.MultimediaandAnimationTuitionFee(PerAnnum)4,250 Caution Deposit 
-50
-T
-o
-t
-a
-l
-F
-e
-e
-(
-P
-e
-r
-A
-n
-n
-u
-m
-)
-50TotalFee(PerAnnum)4,300 International Research Based Programmes Ph. D / Direct Ph. D (2024-2025) RESEARCH PROGRAM NRI/ FOREIGN CATEGORY Tuition Fees (Per USD Annum) 1000 Thesis Fee (One time) INR 10000 IRS
-Document Submission.pdf: Document Submission Document Submission at the time of Admission The following documents in original should be submitted at the time of reporting to the Institute: Original Documents: • XII Mark statements of all attempts of qualifying examination • Transfer Certificate / School leaving Certificate • Migration Certificate (if issued by the board) • Recent passport size colour photos - 4 Nos. • Student Profile • Affidavit by the Student ( (Signed & Notarized): • Affidavit by the Parent (Signed & Notarized) • Hostel Affidavit (Signed & Notarized) • Physical Fitness (Certified by authorized Physician) • Undertaking form (Signed by Student & Parent) Additional Documents required from NRI/Foreign students: • Passport Copy (Student & Parent) • Employer Certificate (original) • Sponsorship letter (original) Copy of documents (1 set): • Copy of Provisional Admission Letter • Age proof (Birth certificate / Passport Copy) • X & XII mark sheet • Transfer Certificate/School Leaving Certificate • M...
-UG FOREIGN FAQ.pdf: from the school is to be produced. ➔ Note: ➔ Applicants must provide their qualifying mark statement from the respective board for verification during admission to confirm its authenticity. ➔ Any applicant who presents fraudulent or invalid documentation will face legal consequences, and their provisional admission will be revoked without refund. FOREIGN FAQS: 1. Who is considered a "Foreign" nationals for admissions? Any foreign national holding a valid foreign passport is eligible to apply under this category. For Nepal and Bhutan nationals , passport is not mandatory What documents are required to prove foreign nationality? You'll need to provide a copy of your valid passport or National ID as proof of your foreign nationality. National ID (For Nepal and Bhutan Candidates) as proof of your foreign nationality. Is there an entrance exam for Foreign admissions? We offer direct admission to all programmes for Foreign students based on their eligibility requirements. However OCI/PIO can...
-UG Programmes Offered.pdf: Programmes Offered - UG Admissions: Engineering Programmes: B.Tech - Aerospace Engineering • Offered Location: VIT-Bhopal B.Tech - Biotechnology • Offered Location: Vellore B.Tech - Bioengineering • Offered Location: VIT-Bhopal B.Tech - Chemical Engineering • Offered Location: Vellore B.Tech - Civil Engineering • Offered Location: Vellore, Chennai B.Tech - Civil Engineering (In Collaboration with L & T) • Offered Location: Vellore, Chennai B.Tech - Computer Science and Engineering • Offered Location: Vellore, Chennai, VIT-AP, VIT-Bhopal B.Tech - Computer Science and Engineering (Bioinformatics) • Offered Location: Vellore B.Tech - Computer Science and Engineering and Business Systems(in collaboration with TCS) • Offered Location: Vellore B.Tech - Computer Science and Engineering (Blockchain) • Offered Location: VIT-AP B.Tech - Computer Science and Engineering (Software Engineering) • Offered Location: VIT-AP B.Tech - Computer Science and Engineering (Data Science) • Offered Location: V...
+import pathlib
+from typing import Dict, Any, List, Tuple
+import re
+import copy
 
+import streamlit as st
 
-
-
-How to correct mistakes in the application after submission?
-
-UG NRI PROCESS.pdf: NRI UG Programmes Offered: VIT-VELLORE: • B.Tech. Biotechnology • B.Tech. Chemical Engineering • B.Tech. Civil Engineering • B.Tech. Computer Science and Engineering • B.Tech. Computer Science and Engineering (Artificial Intelligence and Machine Learning) • B.Tech. Computer Science and Engineering (Artificial Intelligence and Data Engineering) • B.Tech. Computer Science and Engineering (Bioinformatics) • B.Tech. Computer Science and Engineering (Cyber Security) • B.Tech. Computer Science and Engineering and Business Systems(in collaboration with TCS) • B.Tech. Computer Science and Engineering (Data Science) • B.Tech. Electrical and Electronics Engineering • B.Tech. Electrical and Computer Science Engineering • B.Tech. Electronics and Communication Engineering • B.Tech. Electronics and Instrumentation Engineering • B.Tech. Electronics and Communication Engineering (Biomedical Engineering) • B.Tech. Electronics Engineering (VLSI Design and Technology) • B.Tech. Health Sciences and Techno...
-Document Submission.pdf: Document Submission Document Submission at the time of Admission The following documents in original should be submitted at the time of reporting to the Institute: Original Documents: • XII Mark statements of all attempts of qualifying examination • Transfer Certificate / School leaving Certificate • Migration Certificate (if issued by the board) • Recent passport size colour photos - 4 Nos. • Student Profile • Affidavit by the Student ( (Signed & Notarized): • Affidavit by the Parent (Signed & Notarized) • Hostel Affidavit (Signed & Notarized) • Physical Fitness (Certified by authorized Physician) • Undertaking form (Signed by Student & Parent) Additional Documents required from NRI/Foreign students: • Passport Copy (Student & Parent) • Employer Certificate (original) • Sponsorship letter (original) Copy of documents (1 set): • Copy of Provisional Admission Letter • Age proof (Birth certificate / Passport Copy) • X & XII mark sheet • Transfer Certificate/School Leaving Certificate • M...
-Academic Fee.pdf: time payment) INR 5,000 Total fees to be paid for the first year INR 95,000 ➔ The Candidates who have completed their Higher Secondary Education in Vellore, Ranipet, Tirupattur, Tiruvannamalai districts are eligible for scholarship of Rs. 10000/- under GVSD Programme. B.Com. Business Process Services, B.Com. Banking And Capital Markets & B.Com. Financial Technology - Vellore: B.Com. (Business Process Services) Tuition Fees (Per Annum) INR 90,000 Caution Deposit (Refundable) (One time INR 5,000 payment) Total fees to be paid for the first year INR 95,000 B.Com. (Banking And Capital Markets) Tuition Fees (Per Annum) INR 1,27,000 Caution Deposit (Refundable) (One time payment) INR 5,000 Total fees to be paid for the first year INR 1,32,000 B.Com. (Financial Technology) Tuition Fees (Per Annum) INR 1,27,000 Caution Deposit (Refundable) (One time payment) INR 5,000 Total fees to be paid for the first year INR 1,32,000 ➔ The Candidates who have completed their Higher Secondary Education in V...
-UG Programmes Offered.pdf: Programmes Offered - UG Admissions: Engineering Programmes: B.Tech - Aerospace Engineering • Offered Location: VIT-Bhopal B.Tech - Biotechnology • Offered Location: Vellore B.Tech - Bioengineering • Offered Location: VIT-Bhopal B.Tech - Chemical Engineering • Offered Location: Vellore B.Tech - Civil Engineering • Offered Location: Vellore, Chennai B.Tech - Civil Engineering (In Collaboration with L & T) • Offered Location: Vellore, Chennai B.Tech - Computer Science and Engineering • Offered Location: Vellore, Chennai, VIT-AP, VIT-Bhopal B.Tech - Computer Science and Engineering (Bioinformatics) • Offered Location: Vellore B.Tech - Computer Science and Engineering and Business Systems(in collaboration with TCS) • Offered Location: Vellore B.Tech - Computer Science and Engineering (Blockchain) • Offered Location: VIT-AP B.Tech - Computer Science and Engineering (Software Engineering) • Offered Location: VIT-AP B.Tech - Computer Science and Engineering (Data Science) • Offered Location: V...
-UG FOREIGN FAQ.pdf: from the school is to be produced. ➔ Note: ➔ Applicants must provide their qualifying mark statement from the respective board for verification during admission to confirm its authenticity. ➔ Any applicant who presents fraudulent or invalid documentation will face legal consequences, and their provisional admission will be revoked without refund. FOREIGN FAQS: 1. Who is considered a "Foreign" nationals for admissions? Any foreign national holding a valid foreign passport is eligible to apply under this category. For Nepal and Bhutan nationals , passport is not mandatory What documents are required to prove foreign nationality? You'll need to provide a copy of your valid passport or National ID as proof of your foreign nationality. National ID (For Nepal and Bhutan Candidates) as proof of your foreign nationality. Is there an entrance exam for Foreign admissions? We offer direct admission to all programmes for Foreign students based on their eligibility requirements. However OCI/PIO can...
-UG DOCUMENTS DOWNLOAD.pdf: UG - Downloads • Affidavit to be signed separately by Student, Parent & Hostel on Rs.200/- nonjudicial Stamp Paper Undertaking Affidavit by Student Affidavit by Parent Hostel Affidavit Certificate of physical fitness
-
-
-Senior hostel fee overview AY 2025–26
-
-FEE STRUCTURE INTERNATIONAL ADMISSIONS.pdf: FEE STRUCTURE INTERNATIONAL ADMISSIONS: International Undergraduate Admissions B.Tech (2025-2026) Tuition Fees (Per Annum) Caution Deposit (Refundable) (One time 
-100
-p
-a
-y
-m
-e
-n
-t
+# ---- your backend helpers (must exist) ----
+from app.sql_router import (
+    sql_programs,        # Programs table accessor
+    sql_academic_fees,   # Fees table accessor
 )
-T
-o
-t
-a
-l
-f
-e
-e
-s
-t
-o
-b
-e
-p
-a
-i
-d
-f
-o
-r
-t
-h
-e
-f
-i
-r
-s
-t
-y
-e
-a
-r
-100payment)Totalfeestobepaidforthefirstyear9100 B.Tech Programmes (2025-2026) Integrated Programmes Integrated M.Tech. (5 Years) (20242025) Tuition Fee (Per 
-5
-,
-500
-A
-n
-n
-u
-m
-)
-C
-a
-u
-t
-i
-o
-n
-D
-e
-p
-o
-s
-i
-t
-5,500Annum)CautionDeposit100 Total Fee in USD 
-5600
-I
-n
-t
-e
-g
-r
-a
-t
-e
-d
-M
-.
-S
-c
-.
-(
-5
-Y
-e
-a
-r
-s
-)
-(
-20242025
-)
-T
-u
-i
-t
-i
-o
-n
-F
-e
-e
-(
-P
-e
-r
-5600IntegratedM.Sc.(5Years)(20242025)TuitionFee(Per3,450 Annum) Caution Deposit 
-50
-T
-o
-t
-a
-l
-F
-e
-e
-i
-n
-U
-S
-D
-50TotalFeeinUSD3,500 International UG Science Programmes FOR BCA / B.Sc (Computer Science)/ B.Com / BBA Tuition Fee (Per 
-3
-,
-450
-A
-n
-n
-u
-m
-)
-C
-a
-u
-t
-i
-o
-n
-D
-e
-p
-o
-s
-i
-t
-3,450Annum)CautionDeposit50 Total Fee (Per Annum) 
-3
-,
-500
-B
-.
-S
-c
-.
-M
-u
-l
-t
-i
-m
-e
-d
-i
-a
-a
-n
-d
-A
-n
-i
-m
-a
-t
-i
-o
-n
-T
-u
-i
-t
-i
-o
-n
-F
-e
-e
-(
-P
-e
-r
-A
-n
-n
-u
-m
-)
-3,500B.Sc.MultimediaandAnimationTuitionFee(PerAnnum)4,250 Caution Deposit 
-50
-T
-o
-t
-a
-l
-F
-e
-e
-(
-P
-e
-r
-A
-n
-n
-u
-m
-)
-50TotalFee(PerAnnum)4,300 International Research Based Programmes Ph. D / Direct Ph. D (2024-2025) RESEARCH PROGRAM NRI/ FOREIGN CATEGORY Tuition Fees (Per USD Annum) 1000 Thesis Fee (One time) INR 10000 IRS
-UG DOCUMENTS DOWNLOAD.pdf: UG - Downloads • Affidavit to be signed separately by Student, Parent & Hostel on Rs.200/- nonjudicial Stamp Paper Undertaking Affidavit by Student Affidavit by Parent Hostel Affidavit Certificate of physical fitness
-UG FOREIGN Program_Process.pdf: UG FOREIGN Programmes Offered VIT VELLORE: • B.Tech. Biotechnology • B.Tech. Chemical Engineering • B.Tech. Civil Engineering • B.Tech. Computer Science and Engineering • B.Tech. Computer Science and Engineering (Artificial Intelligence and Machine Learning) • B.Tech. Computer Science and Engineering (Artificial Intelligence and Data Engineering) • B.Tech. Computer Science and Engineering (Bioinformatics) • B.Tech. Computer Science and Engineering (Cyber Security) • B.Tech. Computer Science and Engineering and Business Systems(in collaboration with TCS) • B.Tech. Computer Science and Engineering (Data Science) • B.Tech. Electrical and Electronics Engineering • B.Tech. Electrical and Computer Science Engineering • B.Tech. Electronics and Communication Engineering • B.Tech. Electronics and Instrumentation Engineering • B.Tech. Electronics and Communication Engineering (Biomedical Engineering) • B.Tech. Electronics Engineering (VLSI Design and Technology) • B.Tech. Health Sciences and Tec...
-UG Programmes Offered.pdf: Programmes Offered - UG Admissions: Engineering Programmes: B.Tech - Aerospace Engineering • Offered Location: VIT-Bhopal B.Tech - Biotechnology • Offered Location: Vellore B.Tech - Bioengineering • Offered Location: VIT-Bhopal B.Tech - Chemical Engineering • Offered Location: Vellore B.Tech - Civil Engineering • Offered Location: Vellore, Chennai B.Tech - Civil Engineering (In Collaboration with L & T) • Offered Location: Vellore, Chennai B.Tech - Computer Science and Engineering • Offered Location: Vellore, Chennai, VIT-AP, VIT-Bhopal B.Tech - Computer Science and Engineering (Bioinformatics) • Offered Location: Vellore B.Tech - Computer Science and Engineering and Business Systems(in collaboration with TCS) • Offered Location: Vellore B.Tech - Computer Science and Engineering (Blockchain) • Offered Location: VIT-AP B.Tech - Computer Science and Engineering (Software Engineering) • Offered Location: VIT-AP B.Tech - Computer Science and Engineering (Data Science) • Offered Location: V...
-Document Submission.pdf: Document Submission Document Submission at the time of Admission The following documents in original should be submitted at the time of reporting to the Institute: Original Documents: • XII Mark statements of all attempts of qualifying examination • Transfer Certificate / School leaving Certificate • Migration Certificate (if issued by the board) • Recent passport size colour photos - 4 Nos. • Student Profile • Affidavit by the Student ( (Signed & Notarized): • Affidavit by the Parent (Signed & Notarized) • Hostel Affidavit (Signed & Notarized) • Physical Fitness (Certified by authorized Physician) • Undertaking form (Signed by Student & Parent) Additional Documents required from NRI/Foreign students: • Passport Copy (Student & Parent) • Employer Certificate (original) • Sponsorship letter (original) Copy of documents (1 set): • Copy of Provisional Admission Letter • Age proof (Birth certificate / Passport Copy) • X & XII mark sheet • Transfer Certificate/School Leaving Certificate • M...
-UG NRI_FAQS.pdf: UG NRI: What are the basic academic requirements? You'll need to have completed 12 years of schooling (equivalent to the 10+2 system in India) with Physics, Chemistry, and Mathematics / Biology (Biotechnology) as core subjects. A minimum aggregate of 60% in PCM or PCB, as per the case may be. What if my qualifying exam is from a foreign board? We accept equivalent qualifications from recognized International boards like the GCE, International Baccalaureate, and High School Graduation from US/Canadian institutions provided Equivalent certificate from AIU, if passed from Universities/Boards other than India. Kindly refer the link for more details: https://vit.ac.in/admissions/international/btech-eligibilityandprocedure Who is considered an NRI for admission? Children of Indian citizens’ parents working abroad are considered under the NRI category. Can a relative sponsor my admission? NRI sponsorship to be provided only by your parent (father or mother). Sponsorship from relatives or frie...
+from app.utils.fallback_rag import faiss_answer_or_summary
 
+# ---- config ----
+FAISS_INDEX_DIR = pathlib.Path("Data/index/faiss")
 
-Refund policy if I withdraw before/after registration
+# Per-section FAISS collections (already built by your ETL script)
+FAISS_COLLECTIONS = {
+    "UG": "vit_ug",
+    "PG": "vit_pg",
+    "MCA": "vit_pg",      # your MCA PDFs are inside PG; switch to vit_mca if you build it later
+    "MSc": "vit_pg",      # same note; switch to vit_msc if you build it later
+    "HOSTELS": "vit_hostels",
+}
 
-UG NRI PROCESS.pdf: NRI UG Programmes Offered: VIT-VELLORE: • B.Tech. Biotechnology • B.Tech. Chemical Engineering • B.Tech. Civil Engineering • B.Tech. Computer Science and Engineering • B.Tech. Computer Science and Engineering (Artificial Intelligence and Machine Learning) • B.Tech. Computer Science and Engineering (Artificial Intelligence and Data Engineering) • B.Tech. Computer Science and Engineering (Bioinformatics) • B.Tech. Computer Science and Engineering (Cyber Security) • B.Tech. Computer Science and Engineering and Business Systems(in collaboration with TCS) • B.Tech. Computer Science and Engineering (Data Science) • B.Tech. Electrical and Electronics Engineering • B.Tech. Electrical and Computer Science Engineering • B.Tech. Electronics and Communication Engineering • B.Tech. Electronics and Instrumentation Engineering • B.Tech. Electronics and Communication Engineering (Biomedical Engineering) • B.Tech. Electronics Engineering (VLSI Design and Technology) • B.Tech. Health Sciences and Techno...
-UG DOCUMENTS DOWNLOAD.pdf: UG - Downloads • Affidavit to be signed separately by Student, Parent & Hostel on Rs.200/- nonjudicial Stamp Paper Undertaking Affidavit by Student Affidavit by Parent Hostel Affidavit Certificate of physical fitness
-Academic Fee.pdf: time payment) INR 5,000 Total fees to be paid for the first year INR 95,000 ➔ The Candidates who have completed their Higher Secondary Education in Vellore, Ranipet, Tirupattur, Tiruvannamalai districts are eligible for scholarship of Rs. 10000/- under GVSD Programme. B.Com. Business Process Services, B.Com. Banking And Capital Markets & B.Com. Financial Technology - Vellore: B.Com. (Business Process Services) Tuition Fees (Per Annum) INR 90,000 Caution Deposit (Refundable) (One time INR 5,000 payment) Total fees to be paid for the first year INR 95,000 B.Com. (Banking And Capital Markets) Tuition Fees (Per Annum) INR 1,27,000 Caution Deposit (Refundable) (One time payment) INR 5,000 Total fees to be paid for the first year INR 1,32,000 B.Com. (Financial Technology) Tuition Fees (Per Annum) INR 1,27,000 Caution Deposit (Refundable) (One time payment) INR 5,000 Total fees to be paid for the first year INR 1,32,000 ➔ The Candidates who have completed their Higher Secondary Education in V...
-UG Programmes Offered.pdf: Programmes Offered - UG Admissions: Engineering Programmes: B.Tech - Aerospace Engineering • Offered Location: VIT-Bhopal B.Tech - Biotechnology • Offered Location: Vellore B.Tech - Bioengineering • Offered Location: VIT-Bhopal B.Tech - Chemical Engineering • Offered Location: Vellore B.Tech - Civil Engineering • Offered Location: Vellore, Chennai B.Tech - Civil Engineering (In Collaboration with L & T) • Offered Location: Vellore, Chennai B.Tech - Computer Science and Engineering • Offered Location: Vellore, Chennai, VIT-AP, VIT-Bhopal B.Tech - Computer Science and Engineering (Bioinformatics) • Offered Location: Vellore B.Tech - Computer Science and Engineering and Business Systems(in collaboration with TCS) • Offered Location: Vellore B.Tech - Computer Science and Engineering (Blockchain) • Offered Location: VIT-AP B.Tech - Computer Science and Engineering (Software Engineering) • Offered Location: VIT-AP B.Tech - Computer Science and Engineering (Data Science) • Offered Location: V...
-Document Submission.pdf: Document Submission Document Submission at the time of Admission The following documents in original should be submitted at the time of reporting to the Institute: Original Documents: • XII Mark statements of all attempts of qualifying examination • Transfer Certificate / School leaving Certificate • Migration Certificate (if issued by the board) • Recent passport size colour photos - 4 Nos. • Student Profile • Affidavit by the Student ( (Signed & Notarized): • Affidavit by the Parent (Signed & Notarized) • Hostel Affidavit (Signed & Notarized) • Physical Fitness (Certified by authorized Physician) • Undertaking form (Signed by Student & Parent) Additional Documents required from NRI/Foreign students: • Passport Copy (Student & Parent) • Employer Certificate (original) • Sponsorship letter (original) Copy of documents (1 set): • Copy of Provisional Admission Letter • Age proof (Birth certificate / Passport Copy) • X & XII mark sheet • Transfer Certificate/School Leaving Certificate • M...
-UG FOREIGN FAQ.pdf: from the school is to be produced. ➔ Note: ➔ Applicants must provide their qualifying mark statement from the respective board for verification during admission to confirm its authenticity. ➔ Any applicant who presents fraudulent or invalid documentation will face legal consequences, and their provisional admission will be revoked without refund. FOREIGN FAQS: 1. Who is considered a "Foreign" nationals for admissions? Any foreign national holding a valid foreign passport is eligible to apply under this category. For Nepal and Bhutan nationals , passport is not mandatory What documents are required to prove foreign nationality? You'll need to provide a copy of your valid passport or National ID as proof of your foreign nationality. National ID (For Nepal and Bhutan Candidates) as proof of your foreign nationality. Is there an entrance exam for Foreign admissions? We offer direct admission to all programmes for Foreign students based on their eligibility requirements. However OCI/PIO can...
+st.set_page_config(page_title="VIT FAQs — Click to Answer", layout="wide")
+
+# ===================== UG — questions =====================
+UG_REG: List[Dict[str, Any]] = [
+    # ---- SQL (Programs) ----
+    {"label": "What UG programs and specializations are offered?",
+     "handler": "programs", "filters": {"level_like": "UG"}},
+    {"label": "Which B.Tech specializations are available at each campus?",
+     "handler": "programs", "filters": {"level_like": "UG", "program_like": "B.Tech"}},
+    {"label": "What non–B.Tech UG programs are offered (BBA/B.Com/BCA etc.)?",
+     "handler": "programs", "filters": {"level_like": "UG", "program_like": "BBA B.Com BCA"}},
+
+    # ---- FAISS (PDFs) ----
+    {"label": "UG eligibility: minimum marks and required subjects", "handler": "faiss_summary", "filters": {}},
+    {"label": "Is Mathematics mandatory for specific B.Tech programs?", "handler": "faiss_summary", "filters": {}},
+    {"label": "Are NIOS/correspondence students eligible for UG?", "handler": "faiss_summary", "filters": {}},
+    {"label": "Eligibility for NRI/OCI/PIO applicants (UG)", "handler": "faiss_summary", "filters": {}},
+
+    {"label": "Documents to submit for UG admission and reporting", "handler": "faiss_summary", "filters": {}},
+    {"label": "Where to download affidavits and fitness forms?", "handler": "faiss_summary", "filters": {}},
+    {"label": "Photo/signature/document upload specifications", "handler": "faiss_summary", "filters": {}},
+
+    # ---- SQL (Fees) ----
+    {"label": "UG tuition fee (Indian category) for AY 2025–26",
+     "handler": "fees", "filters": {"level_like": "UG", "category": "Indian", "ay": "2025-26"}},
+    # (Per your call earlier, we removed UG NRI/Foreign fee buttons if those rows aren’t reliable in DB)
+
+    # ---- FAISS (PDFs) ----
+    {"label": "Is there a refundable caution deposit for UG?", "handler": "faiss_summary", "filters": {}},
+    {"label": "Scholarships/waivers available for UG students", "handler": "faiss_summary", "filters": {}},
+
+    {"label": "Step-by-step UG application process (Indian/NRI/Foreign)", "handler": "faiss_summary", "filters": {}},
+    {"label": "Important admission dates and deadlines for UG", "handler": "faiss_summary", "filters": {}},
+    {"label": "How is the merit list prepared and tie-break rules?", "handler": "faiss_summary", "filters": {}},
+    {"label": "Counselling and seat allotment process (rounds and sliding)", "handler": "faiss_summary", "filters": {}},
+    {"label": "Branch locking and later branch-change policy", "handler": "faiss_summary", "filters": {}},
+
+    {"label": "Who is treated as NRI vs Foreign applicant?", "handler": "faiss_summary", "filters": {}},
+    {"label": "NRI application portal & fee payment instructions", "handler": "faiss_summary", "filters": {}},
+    {"label": "Foreign nationals/OCI/PIO application steps & fees", "handler": "faiss_summary", "filters": {}},
+
+    # HOSTEL & CONTACTS → FAISS
+    {"label": "First-year hostel fee (Indian) AY 2025–26", "handler": "faiss_summary", "filters": {}},
+    {"label": "First-year hostel fee (NRI/Foreign) AY 2025–26", "handler": "faiss_summary", "filters": {}},
+    {"label": "Senior hostel fee overview AY 2025–26", "handler": "faiss_summary", "filters": {}},
+    {"label": "Hostel block landlines and key contacts", "handler": "faiss_summary", "filters": {}},
+
+    {"label": "Extra documents for NRI/Foreign students at reporting", "handler": "faiss_summary", "filters": {}},
+    {"label": "AIU equivalence and accepted international boards", "handler": "faiss_summary", "filters": {}},
+
+    {"label": "Mode and schedule of tuition/hostel fee payment", "handler": "faiss_summary", "filters": {}},
+    {"label": "Refund policy if I withdraw before/after registration", "handler": "faiss_summary", "filters": {}},
+
+    {"label": "When to pay balance tuition/hostel after provisional admission?", "handler": "faiss_summary", "filters": {}},
+    {"label": "How to check application status and download letters?", "handler": "faiss_summary", "filters": {}},
+    {"label": "How to correct mistakes in the application after submission?", "handler": "faiss_summary", "filters": {}},
+    {"label": "Uploading pending 12th/board marks and verification process", "handler": "faiss_summary", "filters": {}},
+
+    {"label": "Medium of instruction and availability of bridge courses", "handler": "faiss_summary", "filters": {}},
+    {"label": "Attendance, exams and grading policy (UG) overview", "handler": "faiss_summary", "filters": {}},
+
+    {"label": "Internships and industry-linked projects during UG", "handler": "faiss_summary", "filters": {}},
+    {"label": "Recent UG placement highlights & top recruiters", "handler": "faiss_summary", "filters": {}},
+
+    {"label": "Whom to contact for UG admissions help (email/phone)?", "handler": "faiss_summary", "filters": {}},
+]
+
+# ======== Simple placeholder registries for other sections (FAISS only) ========
+PG_REG = [
+    {"label": "PG eligibility and degree requirements", "handler": "faiss_summary", "filters": {}},
+    {"label": "VITMEE/VITREE application steps and schedule", "handler": "faiss_summary", "filters": {}},
+    {"label": "PG documents to submit and reporting checklist", "handler": "faiss_summary", "filters": {}},
+    {"label": "PG counselling / seat allotment overview", "handler": "faiss_summary", "filters": {}},
+]
+
+MCA_REG = [
+    {"label": "MCA eligibility: qualifying degree and marks", "handler": "faiss_summary", "filters": {}},
+    {"label": "MCA application process & important dates", "handler": "faiss_summary", "filters": {}},
+    {"label": "MCA syllabus/structure overview", "handler": "faiss_summary", "filters": {}},
+    {"label": "MCA placements & top recruiters (recent)", "handler": "faiss_summary", "filters": {}},
+]
+
+MSC_REG = [
+    {"label": "M.Sc programmes & specializations", "handler": "faiss_summary", "filters": {}},
+    {"label": "M.Sc eligibility and subject prerequisites", "handler": "faiss_summary", "filters": {}},
+    {"label": "M.Sc application process & timeline", "handler": "faiss_summary", "filters": {}},
+    {"label": "M.Sc evaluation/attendance pattern", "handler": "faiss_summary", "filters": {}},
+]
+
+HST_REG = [
+    {"label": "Hostel fee heads and refund policy (overview)", "handler": "faiss_summary", "filters": {}},
+    {"label": "First-year hostel process & check-in documents", "handler": "faiss_summary", "filters": {}},
+    {"label": "Hostel contact numbers & block landlines", "handler": "faiss_summary", "filters": {}},
+    {"label": "Mess options and general rules", "handler": "faiss_summary", "filters": {}},
+]
+
+# ===================== helpers (key-mapping + SQL backoff) =====================
+def _md_table(table: Dict[str, Any]) -> str:
+    if not table or not table.get("columns") or not table.get("rows"):
+        return "_No results._"
+    cols = table["columns"]; rows = table["rows"]
+    lines = [" | ".join(cols), " | ".join(["---"] * len(cols))]
+    for r in rows:
+        lines.append(" | ".join("" if x is None else str(x) for x in r))
+    return "\n".join(lines)
+
+def _normalize_for_programs(filters: Dict[str, Any]) -> Dict[str, Any]:
+    f = dict(filters or {})
+    lvl = f.get("level", f.get("level_like", "UG"))
+    f["level"] = lvl
+    f["level_like"] = lvl
+    prog_like = f.get("program_like", f.get("prog_like"))
+    if prog_like is not None:
+        f["program_like"] = prog_like
+        f["prog_like"] = prog_like
+    f.setdefault("prog_is_degree", True)
+    f.setdefault("prog_level_like", lvl)
+    return f
+
+def _normalize_for_fees(filters: Dict[str, Any]) -> Dict[str, Any]:
+    f = dict(filters or {})
+    # normalize level
+    lvl = f.get("level", f.get("level_like", "UG"))
+    f["level"] = lvl
+    f["level_like"] = lvl
+    # normalize category (Foreign → International)
+    cat = f.get("category", f.get("fee_category"))
+    if cat is not None:
+        cat_norm = str(cat).strip()
+        if cat_norm.lower() == "foreign":
+            cat_norm = "International"
+        f["category"] = cat_norm
+        f["fee_category"] = cat_norm
+    # normalize AY (dash variants, accept 'AY')
+    ay = f.get("ay", f.get("AY", f.get("academic_year", "2025-26")))
+    ay = str(ay).replace("–", "-").replace("—", "-")
+    f["ay"] = ay
+    f["AY"] = ay
+    f["academic_year"] = ay
+    # optional program filter
+    prog_like = f.get("program_like", f.get("prog_like"))
+    if prog_like is not None:
+        f["program_like"] = prog_like
+        f["prog_like"] = prog_like
+    # some routers expect this even in fees path
+    f.setdefault("prog_is_degree", True)
+    return f
+
+def _keyerror_field(ex: Exception) -> str:
+    # extract offending key from KeyError('key') or KeyError("key")
+    m = re.search(r"KeyError:?[^\w]*'([^']+)'", repr(ex))
+    return m.group(1) if m else ""
+
+def _call_with_key_backoff(fn, base_filters: Dict[str, Any], *args, **kwargs):
+    """
+    Calls a SQL router function with filters. If it raises KeyError('k'),
+    drop that key from the filters and retry. Limit a few retries.
+    """
+    filt = copy.deepcopy(base_filters)
+    tried = set()
+    for _ in range(6):  # up to 6 removals
+        try:
+            return fn(filt, *args, **kwargs)
+        except KeyError as e:
+            k = _keyerror_field(e)
+            if not k or k in tried or k not in filt:
+                raise
+            tried.add(k)
+            filt.pop(k, None)
+    # final attempt without any filters if all else fails
+    return fn({}, *args, **kwargs)
+
+def _sql_programs(filters: Dict[str, Any]) -> Tuple[bool, Dict[str, Any], str]:
+    def _to_table(out):
+        return out["table"] if isinstance(out, dict) and "table" in out else out
+    try:
+        f1 = _normalize_for_programs(filters)
+        t1 = _to_table(_call_with_key_backoff(sql_programs, f1, ""))
+        if t1 and t1.get("columns") and t1.get("rows"):
+            return True, t1, ""
+        # backoff: only level
+        f2 = {"level": "UG", "level_like": "UG", "prog_is_degree": True}
+        t2 = _to_table(_call_with_key_backoff(sql_programs, f2, ""))
+        if t2 and t2.get("rows"):
+            return True, t2, ""
+        # last try: empty
+        t3 = _to_table(_call_with_key_backoff(sql_programs, {"prog_is_degree": True}, ""))
+        if t3 and t3.get("rows"):
+            return True, t3, ""
+        return False, {}, "no_rows"
+    except KeyError as e:
+        return False, {}, f"keyerror:{e}"
+    except Exception as e:
+        return False, {}, f"exception:{e}"
+
+def _sql_fees(filters: Dict[str, Any]) -> Tuple[bool, Dict[str, Any], str]:
+    def _to_table(out):
+        return out["table"] if isinstance(out, dict) and "table" in out else out
+    try:
+        f1 = _normalize_for_fees(filters)
+        t1 = _to_table(_call_with_key_backoff(sql_academic_fees, f1, ""))
+        if t1 and t1.get("columns") and t1.get("rows"):
+            return True, t1, ""
+        # backoff: only level
+        f2 = {"level": "UG", "level_like": "UG"}
+        t2 = _to_table(_call_with_key_backoff(sql_academic_fees, f2, ""))
+        if t2 and t2.get("rows"):
+            return True, t2, ""
+        # last try: empty
+        t3 = _to_table(_call_with_key_backoff(sql_academic_fees, {}, ""))
+        if t3 and t3.get("rows"):
+            return True, t3, ""
+        return False, {}, "no_rows"
+    except KeyError as e:
+        return False, {}, f"keyerror:{e}"
+    except Exception as e:
+        return False, {}, f"exception:{e}"
+
+def _dispatch(handler: str, filters: Dict[str, Any], fallback_query: str, collection: str) -> Dict[str, Any]:
+    """
+    Policy:
+      - SQL ONLY for handler in {'programs','fees'}.
+      - Everything else -> FAISS (PDFs), against the collection for the current section.
+    """
+    if handler == "programs":
+        ok, table, err = _sql_programs(filters)
+        return {"type": "table" if ok else "error",
+                "content": table if ok else f"SQL(programs) → {err}"}
+
+    if handler == "fees":
+        ok, table, err = _sql_fees(filters)
+        return {"type": "table" if ok else "error",
+                "content": table if ok else f"SQL(fees) → {err}"}
+
+    # FAISS for everything else
+    try:
+        # Slightly contextualize the query with the section label to steer retrieval
+        q = f"[{collection}] {fallback_query}"
+        md = faiss_answer_or_summary(FAISS_INDEX_DIR, collection, q, top_k=10)
+        return {"type": "md", "content": md or "_No context found in PDFs._"}
+    except Exception as e:
+        return {"type": "error", "content": f"FAISS error: {e}"}
+
+def _render_answer(result: Dict[str, Any]):
+    if result["type"] == "table":
+        table = result["content"]
+        cols = table.get("columns") or []; rows = table.get("rows") or []
+        if cols and rows:
+            import pandas as pd
+            df = pd.DataFrame(rows, columns=cols)
+            st.dataframe(df, use_container_width=True, hide_index=True)
+            with st.expander("Copy as Markdown"):
+                st.code(_md_table(table), language="markdown")
+        else:
+            st.warning("No rows.")
+    elif result["type"] == "md":
+        st.markdown(result["content"])
+    else:
+        st.error(result["content"])
+
+# ===================== UI =====================
+st.title("🎓 VIT — Static FAQs (Click to Answer)")
+
+section = st.radio("Choose a section", ["UG", "PG", "MCA", "MSc", "HOSTELS"], horizontal=True)
+REG_MAP = {"UG": UG_REG, "PG": PG_REG, "MCA": MCA_REG, "MSc": MSC_REG, "HOSTELS": HST_REG}
+REG = REG_MAP[section]
+
+left, right = st.columns([1.3, 2.0], gap="large")
+
+with left:
+    st.subheader(f"{section} — Questions")
+    qf = st.text_input("Filter", placeholder="type to filter…").strip().lower()
+    filtered = [r for r in REG if (qf in r["label"].lower())] if qf else REG
+    for i, row in enumerate(filtered):
+        if st.button(row["label"], key=f"{section}-{i}"):
+            st.session_state["selected_item"] = (section, row)
+
+with right:
+    st.subheader("Answer")
+    sel = st.session_state.get("selected_item")
+    if not sel:
+        st.info("Click a question on the left.")
+    else:
+        cur_section, item = sel
+        label   = item["label"]
+        handler = item["handler"]
+        filters = item.get("filters") or {}
+        with st.spinner("Fetching…"):
+            result = _dispatch(handler, filters, label, FAISS_COLLECTIONS[cur_section])
+        st.markdown(f"**{label}**")
+        _render_answer(result)
+
+st.caption(
+    "Routing: UG Programs & Fees → SQLite tables (with key-backoff); all other answers → section-specific PDFs via FAISS "
+    f"(UG→{FAISS_COLLECTIONS['UG']}, PG→{FAISS_COLLECTIONS['PG']}, MCA→{FAISS_COLLECTIONS['MCA']}, "
+    f"MSc→{FAISS_COLLECTIONS['MSc']}, HOSTELS→{FAISS_COLLECTIONS['HOSTELS']})."
+)
