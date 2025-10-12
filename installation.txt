@@ -7,18 +7,8 @@ import json, pathlib, pickle
 from typing import List
 import numpy as np
 
-# Try FAISS, but don't crash if it's not there (Streamlit Cloud often lacks it)
-try:
-    import faiss  # type: ignore
-    HAVE_FAISS = True
-except Exception:
-    faiss = None  # type: ignore
-    HAVE_FAISS = False
-
-from scipy.sparse import load_npz, csr_matrix  # TF-IDF fallback
+from scipy.sparse import load_npz  # TF-IDF fallback
 from sklearn.feature_extraction.text import TfidfVectorizer
-
-# ---------------- paths ----------------
 
 def _paths(base_dir: pathlib.Path, collection: str):
     d = base_dir / collection
@@ -31,8 +21,6 @@ def _paths(base_dir: pathlib.Path, collection: str):
         "tfidf_mat": d / "tfidf_matrix.npz",
     }
 
-# ---------------- helpers ----------------
-
 def _mmr_select(embs: np.ndarray, query_vec: np.ndarray, k=6, lambda_div=0.65):
     # embs and query_vec are L2-normalized
     sims = embs @ query_vec
@@ -40,88 +28,86 @@ def _mmr_select(embs: np.ndarray, query_vec: np.ndarray, k=6, lambda_div=0.65):
     candidates = list(range(len(sims)))
     while candidates and len(selected) < k:
         if not selected:
-            best_local_idx = int(np.argmax(sims[candidates]))
-            selected.append(candidates.pop(best_local_idx))
+            best_local = int(np.argmax(sims[candidates]))
+            selected.append(candidates.pop(best_local))
         else:
             q_scores = sims[candidates]
-            # max similarity to already selected (diversity)
             div_scores = []
             for c in candidates:
+                # max sim to already selected (encourage diversity)
                 div_scores.append(float(np.max(embs[c] @ embs[selected].T)))
             div_scores = np.asarray(div_scores)
             mmr = lambda_div * q_scores - (1 - lambda_div) * div_scores
-            best_local_idx = int(np.argmax(mmr))
-            selected.append(candidates.pop(best_local_idx))
+            best_local = int(np.argmax(mmr))
+            selected.append(candidates.pop(best_local))
     return selected
 
 def _format_snippets(texts, metas, indices: List[int]) -> str:
-    out_lines = []
+    lines = []
     for i in indices:
         t = texts[i]
         m = metas[i]
         doc = m.get("doc_name", "source")
-        out_lines.append(f"- **{doc}**: {t[:1000]}{'...' if len(t) > 1000 else ''}")
-    return "\n".join(out_lines)
+        lines.append(f"- **{doc}**: {t[:1000]}{'...' if len(t) > 1000 else ''}")
+    return "\n".join(lines)
 
-# ---------------- main API ----------------
+def _try_import_faiss():
+    try:
+        import faiss  # type: ignore
+        return faiss
+    except Exception:
+        return None
 
 def faiss_answer_or_summary(base_dir, collection, query: str, top_k: int = 10) -> str:
     """
-    Returns a bulleted list of the top snippets with doc names.
-    Tries FAISS first (if present), else TF-IDF cosine search.
+    Returns a bulleted list of top snippets with doc names.
+    Tries FAISS first (if available + index exists), else TF-IDF cosine search.
     """
     base_dir = pathlib.Path(base_dir)
     p = _paths(base_dir, collection)
 
-    # Load corpora
+    if not p["texts"].exists() or not p["metas"].exists():
+        return ""
+
     texts = json.loads(p["texts"].read_text(encoding="utf-8"))
     metas = json.loads(p["metas"].read_text(encoding="utf-8"))
 
-    # -------- Route 1: FAISS (if available and index present) --------
-    if HAVE_FAISS and p["faiss"].exists():
-        index = faiss.read_index(str(p["faiss"]))
-        # We don't have ST query encoder in Cloud; FAISS index was built with TF-IDF
-        # so use the TF-IDF vectorizer to encode the query to the same space if files exist.
-        if p["tfidf_vec"].exists():
+    # ---------- Route 1: FAISS (optional) ----------
+    faiss = _try_import_faiss()
+    if faiss is not None and p["faiss"].exists() and p["tfidf_vec"].exists():
+        try:
+            index = faiss.read_index(str(p["faiss"]))
             with open(p["tfidf_vec"], "rb") as f:
                 vectorizer: TfidfVectorizer = pickle.load(f)
-            q = vectorizer.transform([query]).astype(np.float32)
-            # faiss expects a dense (n,d) float32 array
-            q_dense = q.toarray().astype(np.float32)
+            q_dense = vectorizer.transform([query]).toarray().astype(np.float32)  # (1, d)
             D, I = index.search(q_dense, top_k)
             idxs = [int(i) for i in I[0] if i >= 0]
-            if not idxs:
-                return ""
-            # small diversity pass using the TF-IDF space
-            # build a pool around I plus a few extras
-            pool = idxs + [i for i in range(min(len(texts), top_k * 2)) if i not in idxs]
-            # encode pool the same way (TF-IDF dense)
-            mat = load_npz(p["tfidf_mat"]).astype(np.float32) if p["tfidf_mat"].exists() else None
-            if mat is not None:
-                pool_mat = mat[pool].toarray()
-                # L2 normalize
-                pool_mat /= (np.linalg.norm(pool_mat, axis=1, keepdims=True) + 1e-12)
-                q_norm = q_dense / (np.linalg.norm(q_dense) + 1e-12)
-                sel_local = _mmr_select(pool_mat, q_norm.reshape(-1), k=min(6, len(pool)))
-                chosen = [pool[i] for i in sel_local]
-                return _format_snippets(texts, metas, chosen)
-            else:
-                return _format_snippets(texts, metas, idxs[:6])
+            if idxs:
+                # Diversity pass in TF-IDF space if matrix exists
+                if p["tfidf_mat"].exists():
+                    mat = load_npz(p["tfidf_mat"]).astype(np.float32)  # (N, d) CSR
+                    pool = idxs + [i for i in range(min(len(texts), top_k * 2)) if i not in idxs]
+                    pool_mat = mat[pool].toarray()
+                    pool_mat /= (np.linalg.norm(pool_mat, axis=1, keepdims=True) + 1e-12)
+                    qn = q_dense / (np.linalg.norm(q_dense) + 1e-12)
+                    sel_local = _mmr_select(pool_mat, qn.reshape(-1), k=min(6, len(pool)))
+                    chosen = [pool[i] for i in sel_local]
+                    return _format_snippets(texts, metas, chosen)
+                else:
+                    return _format_snippets(texts, metas, idxs[:6])
+        except Exception:
+            # fall through to TF-IDF
+            pass
 
-    # -------- Route 2: TF-IDF fallback (no FAISS) --------
+    # ---------- Route 2: TF-IDF fallback ----------
     if not p["tfidf_vec"].exists() or not p["tfidf_mat"].exists():
-        # Nothing to search
         return ""
-
     with open(p["tfidf_vec"], "rb") as f:
         vectorizer: TfidfVectorizer = pickle.load(f)
-    mat = load_npz(p["tfidf_mat"])  # (N, d) sparse CSR
+    mat = load_npz(p["tfidf_mat"])  # (N, d) CSR
 
     qv = vectorizer.transform([query])  # (1, d) CSR
-    # cosine scores = (q · X) because vectors are L2-normed in build step; if not,
-    # this is still fine as TF-IDF cosine up to scale.
-    scores = (qv @ mat.T).toarray()[0]  # (N,)
-
+    scores = (qv @ mat.T).toarray()[0]  # cosine-ish ranking
     if scores.size == 0:
         return ""
 
