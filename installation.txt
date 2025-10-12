@@ -1,6 +1,180 @@
-(.venv) (base) PS C:\Users\T8543\Downloads\project-2> python -m ETL.build_faiss_collections
-[UG] built: 4 chunks → C:\Users\T8543\Downloads\project-2\Data\index\faiss\vit_ug | encoder=TF-IDF
-[PG] No texts; skipping.
-[MCA] No texts; skipping.
-[MSc] No texts; skipping.
-[HOSTELS] built: 7 chunks → C:\Users\T8543\Downloads\project-2\Data\index\faiss\vit_hostels | encoder=TF-IDF
+# ETL/build_faiss_collections.py
+# Build 5 FAISS collections with metadata (UG/PG/MCA/MSc/HOSTELS).
+# Offline-safe: TF-IDF ONLY. No Hugging Face / transformers.
+# Classifies by directory path first, then filename. Prints mapping.
+
+import sys
+import re
+import json
+import pathlib
+from typing import List, Dict, Tuple
+
+# -------- ensure project root is on sys.path ----------
+ROOT = pathlib.Path(__file__).resolve().parents[1]   # project-2/
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+# ------------------------------------------------------
+
+import pdfplumber
+import numpy as np
+import faiss
+
+from app.utils.embeddings import get_encoder_for_build
+
+RAW_ACAD = ROOT / "Data" / "Raw" / "ACADEMICS"
+RAW_HOST = ROOT / "Data" / "Raw" / "HOSTEL"
+OUT_DIR  = ROOT / "Data" / "index" / "faiss"
+
+# Folder-based mapping (preferred)
+FOLDER_HINTS = {
+    "UG": ["UG"],
+    "PG": ["PG"],
+    "MCA": ["MCA"],
+    "MSc": ["MSC", "M.SC"],
+    "HOSTELS": ["HOSTEL", "HOSTELS"],
+}
+
+# Fallback filename-based mapping (if folder didn’t tell us)
+FILENAME_HINTS = {
+    "UG":      ["UG", "UNDERGRAD", "VITEEE", "NRI", "FOREIGN"],
+    "PG":      ["PG", "M.TECH", "MBA", "VITMEE", "VITREE"],
+    "MCA":     ["MCA"],
+    "MSc":     ["M.SC", "MSC", "SCIENCE"],
+    "HOSTELS": ["HOSTEL", "HOSTELS", "LADIES", "MENS", "MEN'S"],
+}
+
+CHUNK_SIZE = 900
+CHUNK_OVERLAP = 150
+
+def read_pdf_text(pdf_path: pathlib.Path) -> str:
+    parts = []
+    with pdfplumber.open(str(pdf_path)) as pdf:
+        for p in pdf.pages:
+            t = p.extract_text() or ""
+            parts.append(t)
+    return "\n".join(parts)
+
+def clean_text(t: str) -> str:
+    # OCR clean-up: collapse hyphen linebreaks, normalize dashes/spaces
+    t = re.sub(r"(\w)-\n(\w)", r"\1\2", t)
+    t = re.sub(r"\n+", "\n", t)
+    t = t.replace("–", "-").replace("—", "-")
+    t = re.sub(r"[ \t]+", " ", t)
+    return t.strip()
+
+def chunk_text(t: str, size=CHUNK_SIZE, overlap=CHUNK_OVERLAP) -> List[str]:
+    tokens = t.split()
+    chunks = []
+    i = 0
+    while i < len(tokens):
+        j = min(len(tokens), i + size)
+        chunk = " ".join(tokens[i:j])
+        chunks.append(chunk)
+        i = j - overlap
+        if i < 0:
+            i = 0
+        if j == len(tokens):
+            break
+    return [c for c in chunks if c.strip()]
+
+def section_from_path(p: pathlib.Path) -> str | None:
+    """
+    Prefer folder-based hints from relative path under Data/Raw.
+    """
+    rel = p.as_posix().upper()
+    # look at path parts after Data/Raw/
+    for sec, hints in FOLDER_HINTS.items():
+        for h in hints:
+            if f"/{h}/" in rel or rel.endswith(f"/{h}.PDF") or rel.endswith(f"/{h}"):
+                return sec
+    return None
+
+def section_from_filename(name: str) -> str | None:
+    upper = name.upper()
+    for sec, keys in FILENAME_HINTS.items():
+        if any(k in upper for k in keys):
+            return sec
+    return None
+
+def decide_section(pdf_path: pathlib.Path) -> str:
+    # 1) try folder-based
+    s = section_from_path(pdf_path)
+    if s:
+        return s
+    # 2) try filename-based
+    s = section_from_filename(pdf_path.name)
+    if s:
+        return s
+    # 3) default to UG
+    return "UG"
+
+def collect_pdfs() -> List[pathlib.Path]:
+    found = []
+    for base in [RAW_ACAD, RAW_HOST]:
+        if base.exists():
+            found.extend(sorted(base.glob("**/*.pdf")))
+    return found
+
+def gather_docs() -> Tuple[Dict[str, List[Dict]], List[Tuple[str, str]]]:
+    """
+    Returns:
+      by_sec: dict section -> list of {path, section}
+      mapping_log: list of (section, relpath) for printing
+    """
+    by_sec = {"UG": [], "PG": [], "MCA": [], "MSc": [], "HOSTELS": []}
+    mapping_log = []
+    pdfs = collect_pdfs()
+    for p in pdfs:
+        sec = decide_section(p)
+        by_sec[sec].append({"path": p, "section": sec})
+        rel = p.relative_to(ROOT).as_posix()
+        mapping_log.append((sec, rel))
+    return by_sec, mapping_log
+
+def build_one_collection(section: str, docs: List[Dict], encoder):
+    texts, metas = [], []
+    for d in docs:
+        text = clean_text(read_pdf_text(d["path"]))
+        for ch in chunk_text(text):
+            texts.append(ch)
+            metas.append({"section": section, "doc_name": d["path"].name})
+
+    out_dir = OUT_DIR / f"{'vit_'+section.lower()}"
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    if not texts:
+        print(f"[{section}] No texts; skipping.")
+        return
+
+    # Fit & persist TF-IDF vectorizer per collection
+    encoder.fit(texts)
+    encoder.save(out_dir)
+
+    embs = encoder.encode(texts)  # normalized float32
+    index = faiss.IndexFlatIP(embs.shape[1])  # cosine if normalized
+    index.add(embs.astype(np.float32))
+
+    faiss.write_index(index, str(out_dir / "index.faiss"))
+    (out_dir / "texts.json").write_text(json.dumps(texts, ensure_ascii=False), encoding="utf-8")
+    (out_dir / "metas.json").write_text(json.dumps(metas, ensure_ascii=False), encoding="utf-8")
+
+    print(f"[{section}] built: {len(texts)} chunks → {out_dir} | encoder=TF-IDF")
+
+def main():
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
+
+    by_sec, mapping_log = gather_docs()
+
+    # Print a mapping table so you can verify classification
+    print("\n=== PDF → Section mapping ===")
+    for sec, rel in mapping_log:
+        print(f"{sec:8s} | {rel}")
+    print("=============================\n")
+
+    encoder = get_encoder_for_build()
+
+    for sec in ["UG", "PG", "MCA", "MSc", "HOSTELS"]:
+        build_one_collection(sec, by_sec[sec], encoder)
+
+if __name__ == "__main__":
+    main()
