@@ -1,1 +1,1 @@
-Successfully built and deployed a full working prototype on Streamlit Cloud. Automated document extraction and FAISS index generation pipeline. Modular backend for future integration with other institutions. Complete understanding of RAG architecture, FAISS vector stores, and data cleaning automation.
+https://vit.ac.in/admissions FAISS Library: https://faiss.ai Streamlit Documentation scikit-learn Documentation Python PDFPlumber Docs
