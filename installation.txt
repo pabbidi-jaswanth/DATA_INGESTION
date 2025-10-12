@@ -1,111 +1,331 @@
-(.venv) (base) PS C:\Users\T8543\Downloads\project-2> python ETL/build_faiss_collections.py
-'(MaxRetryError("HTTPSConnectionPool(host='huggingface.co', port=443): Max retries exceeded with url: /sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json (Caused by SSLError(SSLError(1, '[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1035)')))"), '(Request ID: 5f3bd287-32a4-45b6-aa7c-d937d4bb059a)')' thrown while requesting HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/./modules.json
-Retrying in 1s [Retry 1/5].
-'(MaxRetryError("HTTPSConnectionPool(host='huggingface.co', port=443): Max retries exceeded with url: /sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json (Caused by SSLError(SSLError(1, '[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1035)')))"), '(Request ID: 9775b118-f787-491a-a015-62ebcad48b64)')' thrown while requesting HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/./modules.json
-Retrying in 2s [Retry 2/5].
-'(MaxRetryError("HTTPSConnectionPool(host='huggingface.co', port=443): Max retries exceeded with url: /sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json (Caused by SSLError(SSLError(1, '[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1035)')))"), '(Request ID: 12d38fd1-1764-4186-8977-e103232b090c)')' thrown while requesting HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/./modules.json
-Retrying in 4s [Retry 3/5].
-'(MaxRetryError("HTTPSConnectionPool(host='huggingface.co', port=443): Max retries exceeded with url: /sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json (Caused by SSLError(SSLError(1, '[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1035)')))"), '(Request ID: ac245372-8c44-4954-868b-56e0054a2126)')' thrown while requesting HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/./modules.json
-Retrying in 8s [Retry 4/5].
-'(MaxRetryError("HTTPSConnectionPool(host='huggingface.co', port=443): Max retries exceeded with url: /sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json (Caused by SSLError(SSLError(1, '[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1035)')))"), '(Request ID: 6fa4d94d-bc83-48d0-88d0-748e2ced69c7)')' thrown while requesting HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/./modules.json
-Retrying in 8s [Retry 5/5].
-'(MaxRetryError("HTTPSConnectionPool(host='huggingface.co', port=443): Max retries exceeded with url: /sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json (Caused by SSLError(SSLError(1, '[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1035)')))"), '(Request ID: 17aa4760-3b60-4e30-a22e-10238e1efb7b)')' thrown while requesting HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/./modules.json
-No sentence-transformers model found with name sentence-transformers/all-MiniLM-L6-v2. Creating a new one with mean pooling.
-'(MaxRetryError("HTTPSConnectionPool(host='huggingface.co', port=443): Max retries exceeded with url: /sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json (Caused by SSLError(SSLError(1, '[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1035)')))"), '(Request ID: a0f4ebf4-700f-41ac-9c2a-abc0f7288e58)')' thrown while requesting HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json
-Retrying in 1s [Retry 1/5].
-'(MaxRetryError("HTTPSConnectionPool(host='huggingface.co', port=443): Max retries exceeded with url: /sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json (Caused by SSLError(SSLError(1, '[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1035)')))"), '(Request ID: 7513d2f6-7160-49cc-88df-3751605b6743)')' thrown while requesting HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json
-Retrying in 2s [Retry 2/5].
-'(MaxRetryError("HTTPSConnectionPool(host='huggingface.co', port=443): Max retries exceeded with url: /sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json (Caused by SSLError(SSLError(1, '[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1035)')))"), '(Request ID: 222e39db-96ce-441a-8f0f-e044b6948cea)')' thrown while requesting HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json
-Retrying in 4s [Retry 3/5].
-Traceback (most recent call last):
-  File "C:\Users\T8543\Downloads\project-2\ETL\build_faiss_collections.py", line 116, in <module>
+# app/utils/embeddings.py
+# Unified embedding provider with offline fallback.
+# Tries SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2").
+# If that fails (SSL/proxy/no-internet), falls back to TF-IDF (scikit-learn).
+#
+# For TF-IDF, we must persist the vectorizer per collection directory
+# so that query-time uses the exact same vocabulary.
+
+from __future__ import annotations
+
+import pathlib
+import pickle
+from typing import List, Optional, Tuple
+
+import numpy as np
+
+_EMB_DIM = 384  # for MiniLM if available
+
+class _STEncoder:
+    def __init__(self):
+        from sentence_transformers import SentenceTransformer
+        self.model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
+
+    @property
+    def is_transformer(self) -> bool:
+        return True
+
+    def fit(self, texts: List[str]) -> None:
+        # No fit needed for ST
+        pass
+
+    def encode(self, texts: List[str]) -> np.ndarray:
+        # normalize embeddings=True returns unit vectors
+        embs = self.model.encode(texts, convert_to_numpy=True, normalize_embeddings=True)
+        return embs.astype(np.float32)
+
+    def save(self, dest_dir: pathlib.Path) -> None:
+        # Nothing to save for ST
+        pass
+
+    @staticmethod
+    def load(dest_dir: pathlib.Path) -> "_STEncoder":
+        # ST is loaded from hub (if available); if not available, load will fail.
+        return _STEncoder()
+
+
+class _TFIDFEncoder:
+    def __init__(self, vectorizer=None):
+        self.vectorizer = vectorizer  # can be None initially
+
+    @property
+    def is_transformer(self) -> bool:
+        return False
+
+    def fit(self, texts: List[str]) -> None:
+        # Fit a TF-IDF vectorizer on texts
+        from sklearn.feature_extraction.text import TfidfVectorizer
+        # reasonable defaults; adjust if needed
+        self.vectorizer = TfidfVectorizer(
+            lowercase=True,
+            stop_words="english",
+            max_features=50000,
+            ngram_range=(1, 2),
+        )
+        self.vectorizer.fit(texts)
+
+    def encode(self, texts: List[str]) -> np.ndarray:
+        if self.vectorizer is None:
+            raise RuntimeError("TF-IDF encoder not fitted.")
+        X = self.vectorizer.transform(texts)
+        # Convert sparse to dense (FAISS needs dense). L2 normalize rows.
+        X = X.astype(np.float32).toarray()
+        norms = np.linalg.norm(X, axis=1, keepdims=True) + 1e-12
+        X = X / norms
+        return X
+
+    def save(self, dest_dir: pathlib.Path) -> None:
+        dest_dir.mkdir(parents=True, exist_ok=True)
+        with open(dest_dir / "vectorizer.pkl", "wb") as f:
+            pickle.dump(self.vectorizer, f)
+
+    @staticmethod
+    def load(dest_dir: pathlib.Path) -> "_TFIDFEncoder":
+        p = dest_dir / "vectorizer.pkl"
+        if not p.exists():
+            raise FileNotFoundError(f"TF-IDF vectorizer not found at {p}")
+        with open(p, "rb") as f:
+            vec = pickle.load(f)
+        return _TFIDFEncoder(vectorizer=vec)
+
+
+def get_encoder_for_build(prefer_transformer: bool = True):
+    """
+    Called at build-time. Try ST first; if it fails (network/SSL), use TF-IDF.
+    Returns an encoder instance and a flag 'used_fallback'.
+    """
+    if prefer_transformer:
+        try:
+            enc = _STEncoder()
+            # quick smoke encode (tiny) to ensure model is ready
+            _ = enc.encode(["ok"])
+            return enc, False
+        except Exception:
+            pass
+    # fallback
+    return _TFIDFEncoder(), True
+
+
+def get_encoder_for_query(collection_dir: pathlib.Path):
+    """
+    Called at query-time. If a TF-IDF vectorizer exists in the collection folder,
+    use TF-IDF; otherwise try ST.
+    """
+    vec_path = collection_dir / "vectorizer.pkl"
+    if vec_path.exists():
+        return _TFIDFEncoder.load(collection_dir)
+    # else try ST
+    try:
+        return _STEncoder()
+    except Exception as e:
+        raise RuntimeError(
+            f"No TF-IDF vectorizer found at {vec_path} and could not load ST model: {e}"
+        )
+
+
+
+
+# ETL/build_faiss_collections.py
+# Build 5 FAISS collections with metadata (UG/PG/MCA/MSc/HOSTELS).
+# Offline-safe: falls back to TF-IDF if SentenceTransformer can't be downloaded.
+# Input PDFs expected under Data/Raw/ACADEMICS and Data/Raw/HOSTEL
+
+import re, json, pathlib
+from typing import List, Dict
+import pdfplumber
+import numpy as np
+import faiss
+
+from app.utils.embeddings import get_encoder_for_build
+
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+RAW_ACAD = ROOT / "Data" / "Raw" / "ACADEMICS"
+RAW_HOST = ROOT / "Data" / "Raw" / "HOSTEL"
+OUT_DIR  = ROOT / "Data" / "index" / "faiss"
+
+# Map PDFs → section
+SECTION_MAP = {
+    "UG":      ["UG", "UG ", "UNDERGRAD", "VITEEE", "NRI", "FOREIGN"],
+    "PG":      ["PG", "M.TECH", "MBA", "VITMEE", "VITREE"],
+    "MCA":     ["MCA"],
+    "MSc":     ["M.SC", "MSC", "SCIENCE"],
+    "HOSTELS": ["HOSTEL", "HOSTELS", "LADIES", "MENS", "MEN'S"],
+}
+
+CHUNK_SIZE = 900
+CHUNK_OVERLAP = 150
+
+def read_pdf_text(pdf_path: pathlib.Path) -> str:
+    parts = []
+    with pdfplumber.open(str(pdf_path)) as pdf:
+        for p in pdf.pages:
+            t = p.extract_text() or ""
+            parts.append(t)
+    return "\n".join(parts)
+
+def clean_text(t: str) -> str:
+    # simple OCR cleanup: collapse hyphen linebreaks, fix multi-spaces, normalize dash
+    t = re.sub(r"(\w)-\n(\w)", r"\1\2", t)
+    t = re.sub(r"\n+", "\n", t)
+    t = t.replace("–", "-").replace("—", "-")
+    t = re.sub(r"[ \t]+", " ", t)
+    return t.strip()
+
+def chunk_text(t: str, size=CHUNK_SIZE, overlap=CHUNK_OVERLAP) -> List[str]:
+    tokens = t.split()
+    chunks = []
+    i = 0
+    while i < len(tokens):
+        j = min(len(tokens), i + size)
+        chunk = " ".join(tokens[i:j])
+        chunks.append(chunk)
+        i = j - overlap
+        if i < 0: i = 0
+        if j == len(tokens): break
+    return [c for c in chunks if c.strip()]
+
+def decide_section(doc_name: str) -> str:
+    upper = doc_name.upper()
+    for sec, keys in SECTION_MAP.items():
+        if any(k in upper for k in keys):
+            return sec
+    return "UG"
+
+def collect_docs() -> List[Dict]:
+    docs = []
+    for base in [RAW_ACAD, RAW_HOST]:
+        if not base.exists(): 
+            continue
+        for p in base.glob("**/*.pdf"):
+            section = decide_section(p.name)
+            docs.append({"path": p, "section": section})
+    return docs
+
+def build_one_collection(section: str, docs: List[Dict], encoder, used_fallback: bool):
+    texts, metas = [], []
+    for d in docs:
+        text = clean_text(read_pdf_text(d["path"]))
+        for ch in chunk_text(text):
+            texts.append(ch)
+            metas.append({"section": section, "doc_name": d["path"].name})
+
+    out_dir = OUT_DIR / f"{'vit_'+section.lower()}"
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    if not texts:
+        print(f"[{section}] No texts; skipping.")
+        return
+
+    # If TF-IDF fallback is used, we must fit the vectorizer on the corpus
+    if not getattr(encoder, "is_transformer", False):
+        encoder.fit(texts)
+        encoder.save(out_dir)  # persist vectorizer.pkl for this collection
+
+    embs = encoder.encode(texts)  # (n, d)
+    # Use Inner Product (cosine if normalized). Ensure float32
+    index = faiss.IndexFlatIP(embs.shape[1])
+    index.add(embs.astype(np.float32))
+
+    faiss.write_index(index, str(out_dir / "index.faiss"))
+    (out_dir / "texts.json").write_text(json.dumps(texts, ensure_ascii=False), encoding="utf-8")
+    (out_dir / "metas.json").write_text(json.dumps(metas, ensure_ascii=False), encoding="utf-8")
+
+    print(f"[{section}] built: {len(texts)} chunks → {out_dir} | encoder={'TF-IDF' if used_fallback else 'ST'}")
+
+def main():
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
+    docs = collect_docs()
+    by_sec = {"UG":[], "PG":[], "MCA":[], "MSc":[], "HOSTELS":[]}
+    for d in docs:
+        by_sec[d["section"]].append(d)
+
+    encoder, used_fallback = get_encoder_for_build(prefer_transformer=True)
+
+    for sec in by_sec:
+        build_one_collection(sec, by_sec[sec], encoder, used_fallback)
+
+if __name__ == "__main__":
     main()
-    ~~~~^^
-  File "C:\Users\T8543\Downloads\project-2\ETL\build_faiss_collections.py", line 111, in main
-    model = SentenceTransformer(MODEL_NAME)
-  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\sentence_transformers\SentenceTransformer.py", line 339, in __init__
-    modules = self._load_auto_model(
-        model_name_or_path,
-    ...<8 lines>...
-        has_modules=has_modules,
-    )
-  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\sentence_transformers\SentenceTransformer.py", line 2112, in _load_auto_model
-    transformer_model = Transformer(
-        model_name_or_path,
-    ...<4 lines>...
-        backend=self.backend,
-    )
-  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\sentence_transformers\models\Transformer.py", line 87, in __init__
-    config, is_peft_model = self._load_config(model_name_or_path, cache_dir, backend, config_args)
-                            ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\sentence_transformers\models\Transformer.py", line 138, in _load_config
-    find_adapter_config_file(
-    ~~~~~~~~~~~~~~~~~~~~~~~~^
-        model_name_or_path,
-        ^^^^^^^^^^^^^^^^^^^
-    ...<3 lines>...
-        local_files_only=config_args.get("local_files_only", False),
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    )
-    ^
-  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\transformers\utils\peft_utils.py", line 88, in find_adapter_config_file
-    adapter_cached_filename = cached_file(
-        model_id,
-    ...<12 lines>...
-        _raise_exceptions_for_connection_errors=False,
-    )
-  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\transformers\utils\hub.py", line 322, in cached_file   
-    file = cached_files(path_or_repo_id=path_or_repo_id, filenames=[filename], **kwargs)
-  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\transformers\utils\hub.py", line 479, in cached_files  
-    hf_hub_download(
-    ~~~~~~~~~~~~~~~^
-        path_or_repo_id,
-        ^^^^^^^^^^^^^^^^
-    ...<10 lines>...
-        local_files_only=local_files_only,
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    )
-    ^
-  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\huggingface_hub\utils\_validators.py", line 114, in _inner_fn
-    return fn(*args, **kwargs)
-  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\huggingface_hub\file_download.py", line 1010, in hf_hub_download
-    return _hf_hub_download_to_cache_dir(
-        # Destination
-    ...<14 lines>...
-        force_download=force_download,
-    )
-  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\huggingface_hub\file_download.py", line 1073, in _hf_hub_download_to_cache_dir
-    (url_to_download, etag, commit_hash, expected_size, xet_file_data, head_call_error) = _get_metadata_or_catch_error(   
-                                                                                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^   
-        repo_id=repo_id,
-        ^^^^^^^^^^^^^^^^
-    ...<10 lines>...
-        relative_filename=relative_filename,
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    )
-    ^
-  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\huggingface_hub\file_download.py", line 1546, in _get_metadata_or_catch_error
-    metadata = get_hf_file_metadata(
-        url=url, proxies=proxies, timeout=etag_timeout, headers=headers, token=token, endpoint=endpoint
-    )
-  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\huggingface_hub\utils\_validators.py", line 114, in _inner_fn
-    return fn(*args, **kwargs)
-  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\huggingface_hub\file_download.py", line 1463, in get_hf_file_metadata
-    r = _request_wrapper(
-        method="HEAD",
-    ...<5 lines>...
-        timeout=timeout,
-    )
-  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\huggingface_hub\file_download.py", line 286, in _request_wrapper
-    response = _request_wrapper(
-        method=method,
-    ...<2 lines>...
-        **params,
-    )
-  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\huggingface_hub\file_download.py", line 309, in _request_wrapper
-    response = http_backoff(method=method, url=url, **params)
-  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\huggingface_hub\utils\_http.py", line 331, in http_backoff
-    time.sleep(sleep_time)
-    ~~~~~~~~~~^^^^^^^^^^^^
-KeyboardInterrupt
-(.venv) (base) PS C:\Users\T8543\Downloads\project-2> 
+
+
+
+
+
+# app/utils/fallback_rag.py
+# Section-aware FAISS retrieval that works with either:
+# - SentenceTransformer embeddings, or
+# - TF-IDF fallback (if vectorizer.pkl exists in the collection folder).
+
+import json, pathlib
+from typing import List
+import numpy as np
+import faiss
+
+from app.utils.embeddings import get_encoder_for_query
+
+def _paths(base_dir: pathlib.Path, collection: str):
+    d = base_dir / collection
+    return d, d / "index.faiss", d / "texts.json", d / "metas.json"
+
+def _mmr_select(embs, query_vec, k=6, lambda_div=0.65):
+    # cosine already; embs and query_vec assumed normalized
+    sims = np.dot(embs, query_vec)
+    selected = []
+    candidates = list(range(len(sims)))
+    while candidates and len(selected) < k:
+        if not selected:
+            idx = int(np.argmax(sims[candidates]))
+            selected.append(candidates[idx])
+            candidates.pop(idx)
+        else:
+            q_scores = sims[candidates]
+            div_scores = []
+            for c in candidates:
+                div_scores.append(max([float(np.dot(embs[c], embs[s])) for s in selected]))
+            div_scores = np.array(div_scores)
+            mmr = lambda_div * q_scores - (1 - lambda_div) * div_scores
+            idx = int(np.argmax(mmr))
+            selected.append(candidates[idx])
+            candidates.pop(idx)
+    return selected
+
+def faiss_answer_or_summary(base_dir, collection, query: str, top_k: int = 10) -> str:
+    base_dir = pathlib.Path(base_dir)
+    col_dir, fa, ft, fm = _paths(base_dir, collection)
+    index = faiss.read_index(str(fa))
+    texts = json.loads(pathlib.Path(ft).read_text(encoding="utf-8"))
+    metas = json.loads(pathlib.Path(fm).read_text(encoding="utf-8"))
+
+    encoder = get_encoder_for_query(col_dir)  # will load TF-IDF if present, else ST
+
+    # Encode query
+    q = encoder.encode([query])[0]  # (d,)
+    q = q.astype(np.float32)
+
+    D, I = index.search(q.reshape(1, -1), top_k)
+    I = I[0].tolist()
+    if not I:
+        return ""
+
+    # re-rank with a small MMR on a pool
+    pool = I + [i for i in range(len(texts)) if i not in I][:top_k]
+    pool_texts = [texts[i] for i in pool]
+    pool_embs = encoder.encode(pool_texts)
+    # ensure L2-normalized (should already be)
+    norms = np.linalg.norm(pool_embs, axis=1, keepdims=True) + 1e-12
+    pool_embs = pool_embs / norms
+
+    q_norm = q / (np.linalg.norm(q) + 1e-12)
+    sel_idx = _mmr_select(pool_embs, q_norm, k=min(6, len(pool)))
+    chosen = [pool[i] for i in sel_idx]
+
+    out_lines = []
+    for i in chosen:
+        t = texts[i]
+        m = metas[i]
+        doc = m.get("doc_name", "source")
+        out_lines.append(f"- **{doc}**: {t[:1000]}{'...' if len(t)>1000 else ''}")
+    return "\n".join(out_lines)
+
+
+
