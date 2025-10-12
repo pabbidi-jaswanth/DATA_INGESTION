@@ -1,68 +1,130 @@
-# app/utils/embeddings.py
-# Single, offline TF-IDF embedding backend.
-# We persist a vectorizer per collection directory and always load it at query time.
+# ETL/build_faiss_collections.py
+# Build 5 FAISS collections with metadata (UG/PG/MCA/MSc/HOSTELS).
+# Offline-safe: TF-IDF ONLY. No Hugging Face / transformers.
+# Input PDFs expected under Data/Raw/ACADEMICS and Data/Raw/HOSTEL
 
-from __future__ import annotations
-
+import sys
+import re
+import json
 import pathlib
-import pickle
-from typing import List
+from typing import List, Dict
+
+# -------- ensure project root is on sys.path ----------
+ROOT = pathlib.Path(__file__).resolve().parents[1]   # project-2/
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+# ------------------------------------------------------
+
+import pdfplumber
 import numpy as np
+import faiss
 
+from app.utils.embeddings import get_encoder_for_build
 
-class TFIDFEncoder:
-    def __init__(self, vectorizer=None):
-        self.vectorizer = vectorizer  # fitted TfidfVectorizer
+RAW_ACAD = ROOT / "Data" / "Raw" / "ACADEMICS"
+RAW_HOST = ROOT / "Data" / "Raw" / "HOSTEL"
+OUT_DIR  = ROOT / "Data" / "index" / "faiss"
 
-    @property
-    def is_transformer(self) -> bool:
-        return False
+# Map PDFs → section
+SECTION_MAP = {
+    "UG":      ["UG", "UG ", "UNDERGRAD", "VITEEE", "NRI", "FOREIGN"],
+    "PG":      ["PG", "M.TECH", "MBA", "VITMEE", "VITREE"],
+    "MCA":     ["MCA"],
+    "MSc":     ["M.SC", "MSC", "SCIENCE"],
+    "HOSTELS": ["HOSTEL", "HOSTELS", "LADIES", "MENS", "MEN'S"],
+}
 
-    def fit(self, texts: List[str]) -> None:
-        from sklearn.feature_extraction.text import TfidfVectorizer
-        self.vectorizer = TfidfVectorizer(
-            lowercase=True,
-            stop_words="english",
-            max_features=50000,
-            ngram_range=(1, 2),
-        )
-        self.vectorizer.fit(texts)
+CHUNK_SIZE = 900
+CHUNK_OVERLAP = 150
 
-    def encode(self, texts: List[str]) -> np.ndarray:
-        if self.vectorizer is None:
-            raise RuntimeError("TF-IDF encoder not fitted.")
-        X = self.vectorizer.transform(texts)
-        X = X.astype(np.float32).toarray()
-        norms = np.linalg.norm(X, axis=1, keepdims=True) + 1e-12
-        X = X / norms
-        return X
+def read_pdf_text(pdf_path: pathlib.Path) -> str:
+    parts = []
+    with pdfplumber.open(str(pdf_path)) as pdf:
+        for p in pdf.pages:
+            t = p.extract_text() or ""
+            parts.append(t)
+    return "\n".join(parts)
 
-    def save(self, dest_dir: pathlib.Path) -> None:
-        dest_dir.mkdir(parents=True, exist_ok=True)
-        with open(dest_dir / "vectorizer.pkl", "wb") as f:
-            pickle.dump(self.vectorizer, f)
+def clean_text(t: str) -> str:
+    # simple OCR cleanup: collapse hyphen linebreaks, fix multi-spaces, normalize dash
+    t = re.sub(r"(\w)-\n(\w)", r"\1\2", t)
+    t = re.sub(r"\n+", "\n", t)
+    t = t.replace("–", "-").replace("—", "-")
+    t = re.sub(r"[ \t]+", " ", t)
+    return t.strip()
 
-    @staticmethod
-    def load(dest_dir: pathlib.Path) -> "TFIDFEncoder":
-        p = dest_dir / "vectorizer.pkl"
-        if not p.exists():
-            raise FileNotFoundError(
-                f"TF-IDF vectorizer not found at {p}. Build indexes first."
-            )
-        with open(p, "rb") as f:
-            vec = pickle.load(f)
-        return TFIDFEncoder(vectorizer=vec)
+def chunk_text(t: str, size=CHUNK_SIZE, overlap=CHUNK_OVERLAP) -> List[str]:
+    tokens = t.split()
+    chunks = []
+    i = 0
+    while i < len(tokens):
+        j = min(len(tokens), i + size)
+        chunk = " ".join(tokens[i:j])
+        chunks.append(chunk)
+        i = j - overlap
+        if i < 0:
+            i = 0
+        if j == len(tokens):
+            break
+    return [c for c in chunks if c.strip()]
 
+def decide_section(doc_name: str) -> str:
+    upper = doc_name.upper()
+    for sec, keys in SECTION_MAP.items():
+        if any(k in upper for k in keys):
+            return sec
+    return "UG"
 
-def get_encoder_for_build():
-    """
-    Build-time: always TF-IDF (offline).
-    """
-    return TFIDFEncoder()
+def collect_docs() -> List[Dict]:
+    docs = []
+    for base in [RAW_ACAD, RAW_HOST]:
+        if not base.exists():
+            continue
+        for p in base.glob("**/*.pdf"):
+            section = decide_section(p.name)
+            docs.append({"path": p, "section": section})
+    return docs
 
+def build_one_collection(section: str, docs: List[Dict], encoder):
+    texts, metas = [], []
+    for d in docs:
+        text = clean_text(read_pdf_text(d["path"]))
+        for ch in chunk_text(text):
+            texts.append(ch)
+            metas.append({"section": section, "doc_name": d["path"].name})
 
-def get_encoder_for_query(collection_dir: pathlib.Path):
-    """
-    Query-time: always load TF-IDF vectorizer from the collection dir.
-    """
-    return TFIDFEncoder.load(collection_dir)
+    out_dir = OUT_DIR / f"{'vit_'+section.lower()}"
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    if not texts:
+        print(f"[{section}] No texts; skipping.")
+        return
+
+    # Fit & persist TF-IDF vectorizer per collection
+    encoder.fit(texts)
+    encoder.save(out_dir)
+
+    embs = encoder.encode(texts)  # (n, d) normalized float32
+    index = faiss.IndexFlatIP(embs.shape[1])  # cosine if normalized
+    index.add(embs.astype(np.float32))
+
+    faiss.write_index(index, str(out_dir / "index.faiss"))
+    (out_dir / "texts.json").write_text(json.dumps(texts, ensure_ascii=False), encoding="utf-8")
+    (out_dir / "metas.json").write_text(json.dumps(metas, ensure_ascii=False), encoding="utf-8")
+
+    print(f"[{section}] built: {len(texts)} chunks → {out_dir} | encoder=TF-IDF")
+
+def main():
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
+    docs = collect_docs()
+    by_sec = {"UG": [], "PG": [], "MCA": [], "MSc": [], "HOSTELS": []}
+    for d in docs:
+        by_sec[d["section"]].append(d)
+
+    encoder = get_encoder_for_build()
+
+    for sec in by_sec:
+        build_one_collection(sec, by_sec[sec], encoder)
+
+if __name__ == "__main__":
+    main()
