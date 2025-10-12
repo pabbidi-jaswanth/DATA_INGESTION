@@ -1,593 +1,111 @@
-# ETL/build_faiss_collections.py
-# Build 5 FAISS collections with metadata (UG/PG/MCA/MSc/HOSTELS).
-# Requires: sentence-transformers, faiss-cpu, pdfplumber (or pypdf)
-# Input PDFs expected under Data/Raw/ACADEMICS and Data/Raw/HOSTEL
-
-import os, re, json, pathlib
-from typing import List, Dict
-import pdfplumber
-from sentence_transformers import SentenceTransformer
-import numpy as np
-import faiss
-
-ROOT = pathlib.Path(__file__).resolve().parents[1]
-RAW_ACAD = ROOT / "Data" / "Raw" / "ACADEMICS"
-RAW_HOST = ROOT / "Data" / "Raw" / "HOSTEL"
-OUT_DIR  = ROOT / "Data" / "index" / "faiss"
-
-# Map PDFs → section
-SECTION_MAP = {
-    "UG":      ["UG", "UG ", "UNDERGRAD", "VITEEE", "NRI", "FOREIGN"],
-    "PG":      ["PG", "M.Tech", "MBA", "VITMEE", "VITREE"],
-    "MCA":     ["MCA"],
-    "MSc":     ["M.Sc", "MSc", "Science"],
-    "HOSTELS": ["HOSTEL", "HOSTELS", "LADIES", "MENS", "MEN'S"],
-}
-
-MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
-EMB_DIM = 384
-CHUNK_SIZE = 900
-CHUNK_OVERLAP = 150
-
-def read_pdf_text(pdf_path: pathlib.Path) -> str:
-    parts = []
-    with pdfplumber.open(str(pdf_path)) as pdf:
-        for p in pdf.pages:
-            t = p.extract_text() or ""
-            parts.append(t)
-    return "\n".join(parts)
-
-def clean_text(t: str) -> str:
-    # simple OCR cleanup: collapse hyphen linebreaks, fix multi-spaces, normalize dash
-    t = re.sub(r"(\w)-\n(\w)", r"\1\2", t)
-    t = re.sub(r"\n+", "\n", t)
-    t = t.replace("–", "-").replace("—", "-")
-    t = re.sub(r"[ \t]+", " ", t)
-    return t.strip()
-
-def chunk_text(t: str, size=CHUNK_SIZE, overlap=CHUNK_OVERLAP) -> List[str]:
-    tokens = t.split()
-    chunks = []
-    i = 0
-    while i < len(tokens):
-        j = min(len(tokens), i + size)
-        chunk = " ".join(tokens[i:j])
-        chunks.append(chunk)
-        i = j - overlap
-        if i < 0: i = 0
-        if j == len(tokens): break
-    return [c for c in chunks if c.strip()]
-
-def decide_section(doc_name: str) -> str:
-    upper = doc_name.upper()
-    for sec, keys in SECTION_MAP.items():
-        if any(k in upper for k in keys):
-            return sec
-    # default bucket: UG
-    return "UG"
-
-def collect_docs() -> List[Dict]:
-    docs = []
-    for base in [RAW_ACAD, RAW_HOST]:
-        if not base.exists(): 
-            continue
-        for p in base.glob("**/*.pdf"):
-            section = decide_section(p.name)
-            docs.append({"path": p, "section": section})
-    return docs
-
-def build_one_collection(section: str, docs: List[Dict], model: SentenceTransformer):
-    # gather chunks + metadata
-    texts, metas = [], []
-    for d in docs:
-        text = clean_text(read_pdf_text(d["path"]))
-        for ch in chunk_text(text):
-            texts.append(ch)
-            metas.append({"section": section, "doc_name": d["path"].name})
-    if not texts:
-        print(f"[{section}] No texts; skipping.")
-        return
-
-    # encode
-    embs = model.encode(texts, convert_to_numpy=True, normalize_embeddings=True)
-    index = faiss.IndexFlatIP(EMB_DIM)
-    index.add(embs.astype(np.float32))
-
-    out_dir = OUT_DIR / f"{'vit_'+section.lower()}"
-    out_dir.mkdir(parents=True, exist_ok=True)
-    faiss.write_index(index, str(out_dir / "index.faiss"))
-    with open(out_dir / "texts.json", "w", encoding="utf-8") as f:
-        json.dump(texts, f, ensure_ascii=False)
-    with open(out_dir / "metas.json", "w", encoding="utf-8") as f:
-        json.dump(metas, f, ensure_ascii=False)
-    print(f"[{section}] built: {len(texts)} chunks → {out_dir}")
-
-def main():
-    OUT_DIR.mkdir(parents=True, exist_ok=True)
-    docs = collect_docs()
-    by_sec = {"UG":[], "PG":[], "MCA":[], "MSc":[], "HOSTELS":[]}
-    for d in docs:
-        by_sec[d["section"]].append(d)
-    model = SentenceTransformer(MODEL_NAME)
-    for sec in by_sec:
-        build_one_collection(sec, by_sec[sec], model)
-
-if __name__ == "__main__":
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> python ETL/build_faiss_collections.py
+'(MaxRetryError("HTTPSConnectionPool(host='huggingface.co', port=443): Max retries exceeded with url: /sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json (Caused by SSLError(SSLError(1, '[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1035)')))"), '(Request ID: 5f3bd287-32a4-45b6-aa7c-d937d4bb059a)')' thrown while requesting HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/./modules.json
+Retrying in 1s [Retry 1/5].
+'(MaxRetryError("HTTPSConnectionPool(host='huggingface.co', port=443): Max retries exceeded with url: /sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json (Caused by SSLError(SSLError(1, '[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1035)')))"), '(Request ID: 9775b118-f787-491a-a015-62ebcad48b64)')' thrown while requesting HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/./modules.json
+Retrying in 2s [Retry 2/5].
+'(MaxRetryError("HTTPSConnectionPool(host='huggingface.co', port=443): Max retries exceeded with url: /sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json (Caused by SSLError(SSLError(1, '[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1035)')))"), '(Request ID: 12d38fd1-1764-4186-8977-e103232b090c)')' thrown while requesting HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/./modules.json
+Retrying in 4s [Retry 3/5].
+'(MaxRetryError("HTTPSConnectionPool(host='huggingface.co', port=443): Max retries exceeded with url: /sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json (Caused by SSLError(SSLError(1, '[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1035)')))"), '(Request ID: ac245372-8c44-4954-868b-56e0054a2126)')' thrown while requesting HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/./modules.json
+Retrying in 8s [Retry 4/5].
+'(MaxRetryError("HTTPSConnectionPool(host='huggingface.co', port=443): Max retries exceeded with url: /sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json (Caused by SSLError(SSLError(1, '[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1035)')))"), '(Request ID: 6fa4d94d-bc83-48d0-88d0-748e2ced69c7)')' thrown while requesting HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/./modules.json
+Retrying in 8s [Retry 5/5].
+'(MaxRetryError("HTTPSConnectionPool(host='huggingface.co', port=443): Max retries exceeded with url: /sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json (Caused by SSLError(SSLError(1, '[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1035)')))"), '(Request ID: 17aa4760-3b60-4e30-a22e-10238e1efb7b)')' thrown while requesting HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/./modules.json
+No sentence-transformers model found with name sentence-transformers/all-MiniLM-L6-v2. Creating a new one with mean pooling.
+'(MaxRetryError("HTTPSConnectionPool(host='huggingface.co', port=443): Max retries exceeded with url: /sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json (Caused by SSLError(SSLError(1, '[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1035)')))"), '(Request ID: a0f4ebf4-700f-41ac-9c2a-abc0f7288e58)')' thrown while requesting HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json
+Retrying in 1s [Retry 1/5].
+'(MaxRetryError("HTTPSConnectionPool(host='huggingface.co', port=443): Max retries exceeded with url: /sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json (Caused by SSLError(SSLError(1, '[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1035)')))"), '(Request ID: 7513d2f6-7160-49cc-88df-3751605b6743)')' thrown while requesting HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json
+Retrying in 2s [Retry 2/5].
+'(MaxRetryError("HTTPSConnectionPool(host='huggingface.co', port=443): Max retries exceeded with url: /sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json (Caused by SSLError(SSLError(1, '[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1035)')))"), '(Request ID: 222e39db-96ce-441a-8f0f-e044b6948cea)')' thrown while requesting HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json
+Retrying in 4s [Retry 3/5].
+Traceback (most recent call last):
+  File "C:\Users\T8543\Downloads\project-2\ETL\build_faiss_collections.py", line 116, in <module>
     main()
-
-
-
-
-
-# app/utils/aliases.py
-# Normalizers for level/category/AY/program filters
-
-import re
-
-def norm_dash(s: str) -> str:
-    return s.replace("–", "-").replace("—", "-")
-
-def norm_space_case(s: str) -> str:
-    return re.sub(r"\s+", " ", s).strip()
-
-def normalize_level(v: str) -> str:
-    if not v: return "UG"
-    v = norm_space_case(v).upper()
-    if v in {"UNDERGRAD", "UNDERGRADUATE"}: return "UG"
-    return v
-
-def normalize_category(v: str) -> str:
-    if not v: return "Indian"
-    v = norm_space_case(v).casefold()
-    if v in {"foreign", "international"}: return "International"
-    if v in {"nri", "n.r.i"}: return "NRI"
-    if v in {"indian", "domestic"}: return "Indian"
-    return v.capitalize()
-
-def normalize_ay(v: str) -> str:
-    if not v: return "2025-26"
-    v = norm_dash(norm_space_case(v))
-    # normalize e.g., "AY 2025–26" → "2025-26"
-    v = v.replace("AY ", "")
-    return v
-
-def normalize_prog_like(v: str) -> str:
-    if not v: return "%"
-    return norm_space_case(v)
-
-def dict_normalize_program_params(d: dict) -> dict:
-    f = dict(d or {})
-    lvl = normalize_level(f.get("level") or f.get("level_like") or "UG")
-    f["level"] = f["level_like"] = lvl
-    pl = normalize_prog_like(f.get("program_like") or f.get("prog_like") or "%")
-    f["program_like"] = f["prog_like"] = pl
-    f.setdefault("prog_is_degree", True)
-    f.setdefault("prog_level_like", lvl)
-    return f
-
-def dict_normalize_fee_params(d: dict) -> dict:
-    f = dict(d or {})
-    lvl = normalize_level(f.get("level") or f.get("level_like") or "UG")
-    f["level"] = f["level_like"] = f["LEVEL"] = lvl
-    ay  = normalize_ay(f.get("ay") or f.get("AY") or f.get("academic_year") or "2025-26")
-    f["ay"] = f["AY"] = f["academic_year"] = ay
-    cat = normalize_category(f.get("category") or f.get("fee_category") or f.get("CATEGORY") or "Indian")
-    f["category"] = f["fee_category"] = f["CATEGORY"] = cat
-    pl = normalize_prog_like(f.get("program_like") or f.get("prog_like") or "%")
-    f["program_like"] = f["prog_like"] = pl
-    f.setdefault("prog_is_degree", True)
-    f.setdefault("prog_level_like", lvl)
-    return f
-
-
-
-
-
-# app/sql_router.py
-# SQL helpers with normalization to avoid KeyErrors and value mismatches.
-
-import sqlite3
-import pathlib
-from typing import Dict, Any
-
-from app.utils.aliases import (
-    dict_normalize_program_params,
-    dict_normalize_fee_params,
-)
-
-DB_PATH = pathlib.Path("Data/sql/vit_vellore.db")
-
-def _conn():
-    return sqlite3.connect(str(DB_PATH))
-
-def _like(val: str) -> str:
-    return "%" if not val or val == "%" else f"%{val}%"
-
-def sql_programs(filters: Dict[str, Any], _: str = "") -> Dict[str, Any]:
-    f = dict_normalize_program_params(filters)
-    q = """
-      SELECT campus, level, program, specialization
-      FROM ug_programs
-      WHERE level = :level
-        AND (program LIKE :prog OR specialization LIKE :prog)
-      ORDER BY campus, program, specialization
-    """
-    params = {
-        "level": f["level"],
-        "prog": _like(f["program_like"]),
-    }
-    with _conn() as con:
-        cur = con.execute(q, params)
-        rows = cur.fetchall()
-        cols = [c[0] for c in cur.description]
-    return {"table": {"columns": cols, "rows": rows}}
-
-def sql_academic_fees(filters: Dict[str, Any], _: str = "") -> Dict[str, Any]:
-    f = dict_normalize_fee_params(filters)
-    # table name and columns must match your SQLite schema
-    # expected columns: level, academic_year, category, campus, program, tuition_fee, caution_deposit, total_first_year
-    q = """
-      SELECT campus, level, academic_year, category, program, tuition_fee, caution_deposit, total_first_year
-      FROM ug_fees
-      WHERE level = :level
-        AND academic_year = :ay
-        AND category = :cat
-        AND (program LIKE :prog)
-      ORDER BY campus, program
-    """
-    params = {
-        "level": f["level"],
-        "ay": f["academic_year"],
-        "cat": f["category"],
-        "prog": _like(f["program_like"]),
-    }
-    with _conn() as con:
-        cur = con.execute(q, params)
-        rows = cur.fetchall()
-        cols = [c[0] for c in cur.description]
-    return {"table": {"columns": cols, "rows": rows}}
-
-
-
-
-
-# app/utils/fallback_rag.py
-# Load a specific FAISS collection and do section-aware retrieval.
-# No external reranker here; we do simple MMR-like diversity on cosine scores.
-
-import json, pathlib
-from typing import List, Dict
-import numpy as np
-import faiss
-from sentence_transformers import SentenceTransformer
-
-_MODEL = None
-
-def _load_model():
-    global _MODEL
-    if _MODEL is None:
-        _MODEL = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
-    return _MODEL
-
-def _paths(base_dir: pathlib.Path, collection: str):
-    d = base_dir / collection
-    return d / "index.faiss", d / "texts.json", d / "metas.json"
-
-def _mmr_select(embs, query_vec, k=6, lambda_div=0.65):
-    # cosine already; embs assumed normalized
-    sims = np.dot(embs, query_vec)
-    selected = []
-    candidates = list(range(len(sims)))
-    while candidates and len(selected) < k:
-        if not selected:
-            idx = int(np.argmax(sims[candidates]))
-            selected.append(candidates[idx])
-            candidates.pop(idx)
-        else:
-            # balance similarity to query and dissimilarity to already selected
-            q_scores = sims[candidates]
-            div_scores = []
-            for c in candidates:
-                div_scores.append(max([float(np.dot(embs[c], embs[s])) for s in selected]))
-            div_scores = np.array(div_scores)
-            mmr = lambda_div * q_scores - (1 - lambda_div) * div_scores
-            idx = int(np.argmax(mmr))
-            selected.append(candidates[idx])
-            candidates.pop(idx)
-    return selected
-
-def faiss_answer_or_summary(base_dir, collection, query: str, top_k: int = 10) -> str:
-    base_dir = pathlib.Path(base_dir)
-    fa, ft, fm = _paths(base_dir, collection)
-    index = faiss.read_index(str(fa))
-    texts = json.loads(pathlib.Path(ft).read_text(encoding="utf-8"))
-    metas = json.loads(pathlib.Path(fm).read_text(encoding="utf-8"))
-
-    model = _load_model()
-    q = model.encode([query], convert_to_numpy=True, normalize_embeddings=True)[0]
-
-    # raw search
-    D, I = index.search(q.reshape(1, -1).astype(np.float32), top_k)
-    I = I[0].tolist()
-    if not I: 
-        return ""
-
-    # MMR-like reselect from a slightly larger pool
-    pool = I + [i for i in range(len(texts)) if i not in I][:top_k]
-    pool_embs = model.encode([texts[i] for i in pool], convert_to_numpy=True, normalize_embeddings=True)
-    sel_idx = _mmr_select(pool_embs, q, k=min(6, len(pool)))
-    chosen = [pool[i] for i in sel_idx]
-
-    # stitch bullet summary with provenance
-    out = []
-    for i in chosen:
-        t = texts[i]
-        m = metas[i]
-        doc = m.get("doc_name", "source")
-        out.append(f"- **{doc}**: {t[:1000]}{'...' if len(t)>1000 else ''}")
-    return "\n".join(out)
-
-
-
-
-# streamlit_app.py
-# VIT FAQs — Static click-to-answer UI (sectioned FAISS + normalized SQL)
-
-import pathlib
-from typing import Dict, Any, List, Tuple
-import streamlit as st
-
-from app.sql_router import sql_programs, sql_academic_fees
-from app.utils.fallback_rag import faiss_answer_or_summary
-
-FAISS_INDEX_DIR = pathlib.Path("Data/index/faiss")
-FAISS_COLLECTIONS = {
-    "UG":       "vit_ug",
-    "PG":       "vit_pg",
-    "MCA":      "vit_mca",
-    "MSc":      "vit_msc",
-    "HOSTELS":  "vit_hostels",
-}
-
-st.set_page_config(page_title="VIT FAQs — Click to Answer", layout="wide")
-
-# ---------------- UG registry (same behavior) ----------------
-UG_REG: List[Dict[str, Any]] = [
-    {"label": "What UG programs and specializations are offered?", "handler": "programs", "filters": {"level_like": "UG"}},
-    {"label": "Which B.Tech specializations are available at each campus?", "handler": "programs", "filters": {"level_like": "UG", "program_like": "B.Tech"}},
-    {"label": "What non–B.Tech UG programs are offered (BBA/B.Com/BCA etc.)?", "handler": "programs", "filters": {"level_like": "UG", "program_like": "BBA B.Com BCA"}},
-
-    {"label": "UG eligibility: minimum marks and required subjects", "handler": "faiss_summary", "filters": {}},
-    {"label": "Is Mathematics mandatory for specific B.Tech programs?", "handler": "faiss_summary", "filters": {}},
-    {"label": "Are NIOS/correspondence students eligible for UG?", "handler": "faiss_summary", "filters": {}},
-    {"label": "Eligibility for NRI/OCI/PIO applicants (UG)", "handler": "faiss_summary", "filters": {}},
-
-    {"label": "Documents to submit for UG admission and reporting", "handler": "faiss_summary", "filters": {}},
-    {"label": "Where to download affidavits and fitness forms?", "handler": "faiss_summary", "filters": {}},
-    {"label": "Photo/signature/document upload specifications", "handler": "faiss_summary", "filters": {}},
-
-    {"label": "UG tuition fee (Indian category) for AY 2025–26", "handler": "fees", "filters": {"level_like": "UG", "category": "Indian", "ay": "2025-26"}},
-
-    {"label": "Is there a refundable caution deposit for UG?", "handler": "faiss_summary", "filters": {}},
-    {"label": "Scholarships/waivers available for UG students", "handler": "faiss_summary", "filters": {}},
-    {"label": "Step-by-step UG application process (Indian/NRI/Foreign)", "handler": "faiss_summary", "filters": {}},
-    {"label": "Important admission dates and deadlines for UG", "handler": "faiss_summary", "filters": {}},
-    {"label": "How is the merit list prepared and tie-break rules?", "handler": "faiss_summary", "filters": {}},
-    {"label": "Counselling and seat allotment process (rounds and sliding)", "handler": "faiss_summary", "filters": {}},
-    {"label": "Branch locking and later branch-change policy", "handler": "faiss_summary", "filters": {}},
-    {"label": "Who is treated as NRI vs Foreign applicant?", "handler": "faiss_summary", "filters": {}},
-    {"label": "NRI application portal & fee payment instructions", "handler": "faiss_summary", "filters": {}},
-    {"label": "Foreign nationals/OCI/PIO application steps & fees", "handler": "faiss_summary", "filters": {}},
-    {"label": "First-year hostel fee (Indian) AY 2025–26", "handler": "faiss_summary", "filters": {}},
-    {"label": "First-year hostel fee (NRI/Foreign) AY 2025–26", "handler": "faiss_summary", "filters": {}},
-    {"label": "Senior hostel fee overview AY 2025–26", "handler": "faiss_summary", "filters": {}},
-    {"label": "Hostel block landlines and key contacts", "handler": "faiss_summary", "filters": {}},
-    {"label": "Extra documents for NRI/Foreign students at reporting", "handler": "faiss_summary", "filters": {}},
-    {"label": "AIU equivalence and accepted international boards", "handler": "faiss_summary", "filters": {}},
-    {"label": "Mode and schedule of tuition/hostel fee payment", "handler": "faiss_summary", "filters": {}},
-    {"label": "Refund policy if I withdraw before/after registration", "handler": "faiss_summary", "filters": {}},
-    {"label": "When to pay balance tuition/hostel after provisional admission?", "handler": "faiss_summary", "filters": {}},
-    {"label": "How to check application status and download letters?", "handler": "faiss_summary", "filters": {}},
-    {"label": "How to correct mistakes in the application after submission?", "handler": "faiss_summary", "filters": {}},
-    {"label": "Uploading pending 12th/board marks and verification process", "handler": "faiss_summary", "filters": {}},
-    {"label": "Medium of instruction and availability of bridge courses", "handler": "faiss_summary", "filters": {}},
-    {"label": "Attendance, exams and grading policy (UG) overview", "handler": "faiss_summary", "filters": {}},
-    {"label": "Internships and industry-linked projects during UG", "handler": "faiss_summary", "filters": {}},
-    {"label": "Recent UG placement highlights & top recruiters", "handler": "faiss_summary", "filters": {}},
-    {"label": "Whom to contact for UG admissions help (email/phone)?", "handler": "faiss_summary", "filters": {}},
-]
-
-COMMON_FAISS_TOPICS = [
-    "Eligibility: qualifying degree and minimum marks",
-    "Documents to upload during application",
-    "Application steps (start to submit)",
-    "Editing the application after submission",
-    "Application fee & payment modes",
-    "Important dates and deadlines",
-    "Merit list preparation & tie-break rules",
-    "Counselling flow and seat allotment",
-    "Campus/branch change policy after allotment",
-    "Scholarships / fee waivers overview",
-    "Refund policy (tuition) before/after registration",
-    "Refund policy (hostel) before/after occupation",
-    "When to pay balance tuition/hostel after provisional admission",
-    "How to check application status & download letters",
-    "Reporting-day document verification",
-    "Category certificates & format requirements",
-    "AIU equivalence / accepted international boards",
-    "Medium of instruction & bridge courses",
-    "Attendance rules & exam pattern overview",
-    "Grading policy & CGPA conversion",
-    "Internship requirements & industry projects",
-    "Career/placement highlights & eligibility for placements",
-    "Backlogs & readmission rules",
-    "Hostel basics and mess options",
-    "Hostel discipline & visitors policy",
-    "Medical fitness / insurance requirements",
-    "Disability accommodations & support",
-    "Clubs, chapters, and hackathons",
-    "Transport/parking passes & rules",
-    "Helpline email/phone & office hours",
-]
-
-def _build_reg(level_label: str) -> List[Dict[str, Any]]:
-    reg = [
-        {"label": f"What {level_label} programs and specializations are offered?", "handler": "programs", "filters": {"level_like": level_label}},
-        {"label": f"Which core specializations are available at each campus ({level_label})?", "handler": "programs", "filters": {"level_like": level_label, "program_like": "M.Tech M.Sc MBA MCA MA"}},
-        {"label": f"What non-core {level_label} programs are offered?", "handler": "programs", "filters": {"level_like": level_label, "program_like": "MBA M.Sc MCA MA"}},
-        {"label": f"{level_label} tuition fee (Indian category) for AY 2025–26", "handler": "fees", "filters": {"level_like": level_label, "category": "Indian", "ay": "2025-26"}},
-    ]
-    # fill 40 with FAISS-only
-    needed = 40 - len(reg)
-    for t in COMMON_FAISS_TOPICS[:needed]:
-        reg.append({"label": f"{level_label}: {t}", "handler": "faiss_summary", "filters": {}})
-    return reg
-
-PG_REG  = _build_reg("PG")
-MCA_REG = _build_reg("MCA")
-MSC_REG = _build_reg("MSc")
-
-HOSTEL_TOPICS_40 = [
-    "First-year hostel fee overview (Men)",
-    "First-year hostel fee overview (Ladies)",
-    "Senior hostel fee overview",
-    "Admission fee, hostel fee and caution deposit — definitions",
-    "Refund policy before academic start",
-    "Refund policy within first 4 months",
-    "Refund policy after 4 months",
-    "Refund timelines and bank details update",
-    "Room types and current tariffs",
-    "AC vs Non-AC room options",
-    "Mess types (Veg/Non-Veg/Special) and charges",
-    "Mess change policy & cycle",
-    "Block-wise amenities and photos",
-    "Laundry services and estimated costs",
-    "Wi-Fi availability and limits",
-    "Electric appliances allowed / not allowed",
-    "Late entry / overnight outpass rules",
-    "Visitors policy and timings",
-    "Hostel discipline & conduct rules",
-    "Ragging complaint channels and support",
-    "Medical emergencies & campus clinic",
-    "Security measures & surveillance",
-    "Study rooms / reading halls availability",
-    "Gym & sports facilities access",
-    "Common rooms / TV rooms guidelines",
-    "Quiet hours policy",
-    "Laundry pickup points & timings",
-    "Housekeeping frequency and scope",
-    "Water dispensers & RO points",
-    "Power backup and outage handling",
-    "Check-in day process & documents",
-    "Room key / access card policy",
-    "Room change / upgradation policy",
-    "Damage charges and penalties",
-    "End-of-year vacating procedure",
-    "Storage during vacation / summer",
-    "Prohibited items list",
-    "Local transport & airport pickup info",
-    "Helpline contacts (Men’s/Ladies hostels)",
-    "Complaint/feedback escalation",
-]
-HST_REG = [{"label": t, "handler": "faiss_summary", "filters": {}} for t in HOSTEL_TOPICS_40]
-
-def _md_table(table: Dict[str, Any]) -> str:
-    if not table or not table.get("columns") or not table.get("rows"):
-        return "_No results._"
-    cols = table["columns"]; rows = table["rows"]
-    lines = [" | ".join(cols), " | ".join(["---"] * len(cols))]
-    for r in rows:
-        lines.append(" | ".join("" if x is None else str(x) for x in r))
-    return "\n".join(lines)
-
-def _sql_programs(filters: Dict[str, Any]):
-    try:
-        out = sql_programs(filters, "")
-        tbl = out["table"] if isinstance(out, dict) else out
-        return True, tbl, ""
-    except Exception as e:
-        return False, {}, f"{e}"
-
-def _sql_fees(filters: Dict[str, Any]):
-    try:
-        out = sql_academic_fees(filters, "")
-        tbl = out["table"] if isinstance(out, dict) else out
-        return True, tbl, ""
-    except Exception as e:
-        return False, {}, f"{e}"
-
-SECTION_HINTS = {
-    "UG": "UG undergraduate VITEEE regulations admissions",
-    "PG": "PG postgraduate VITMEE VITREE M.Tech MBA regulations",
-    "MCA":"MCA masters computer applications regulations",
-    "MSc":"MSc masters science regulations",
-    "HOSTELS":"VIT hostels rules fee refund mess men ladies",
-}
-
-def _dispatch(handler: str, filters: Dict[str, Any], section: str, label: str) -> Dict[str, Any]:
-    if handler == "programs":
-        ok, table, err = _sql_programs(filters)
-        return {"type":"table" if ok else "error", "content": table if ok else f"SQL(programs) → {err}"}
-    if handler == "fees":
-        ok, table, err = _sql_fees(filters)
-        return {"type":"table" if ok else "error", "content": table if ok else f"SQL(fees) → {err}"}
-
-    collection = FAISS_COLLECTIONS.get(section, "vit_ug")
-    hint = SECTION_HINTS.get(section, "")
-    query = f"{section} — {label}. {hint}"
-    try:
-        md = faiss_answer_or_summary(FAISS_INDEX_DIR, collection, query, top_k=10)
-        return {"type":"md", "content": md or "_No context found in PDFs._"}
-    except Exception as e:
-        return {"type":"error","content": f"FAISS error: {e}"}
-
-def _render_answer(result: Dict[str, Any]):
-    if result["type"] == "table":
-        table = result["content"]
-        cols = table.get("columns") or []; rows = table.get("rows") or []
-        if cols and rows:
-            import pandas as pd
-            df = pd.DataFrame(rows, columns=cols)
-            st.dataframe(df, use_container_width=True, hide_index=True)
-            with st.expander("Copy as Markdown"):
-                st.code(_md_table(table), language="markdown")
-        else:
-            st.warning("No rows.")
-    elif result["type"] == "md":
-        st.markdown(result["content"])
-    else:
-        st.error(result["content"])
-
-st.title("🎓 VIT — Static FAQs (Click to Answer)")
-
-section = st.radio("Choose a section", ["UG", "PG", "MCA", "MSc", "HOSTELS"], horizontal=True)
-REG_MAP = {"UG": UG_REG, "PG": PG_REG, "MCA": MCA_REG, "MSc": MSC_REG, "HOSTELS": HST_REG}
-REG = REG_MAP[section]
-
-left, right = st.columns([1.3, 2.0], gap="large")
-
-with left:
-    st.subheader(f"{section} — Questions")
-    qf = st.text_input("Filter", placeholder="type to filter…").strip().lower()
-    filtered = [r for r in REG if (qf in r["label"].lower())] if qf else REG
-    for i, row in enumerate(filtered):
-        if st.button(row["label"], key=f"{section}-{i}"):
-            st.session_state["selected_item"] = (section, row)
-
-with right:
-    st.subheader("Answer")
-    sel = st.session_state.get("selected_item")
-    if not sel:
-        st.info("Click a question on the left.")
-    else:
-        sec, item = sel
-        label = item["label"]; handler = item["handler"]; filters = item.get("filters") or {}
-        with st.spinner("Fetching…"):
-            result = _dispatch(handler, filters, sec, label)
-        st.markdown(f"**{label}**")
-        _render_answer(result)
-
-st.caption("Routing: Programs & Fees (Indian) → SQLite tables; everything else → sectioned PDFs via FAISS.")
-
-
-
+    ~~~~^^
+  File "C:\Users\T8543\Downloads\project-2\ETL\build_faiss_collections.py", line 111, in main
+    model = SentenceTransformer(MODEL_NAME)
+  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\sentence_transformers\SentenceTransformer.py", line 339, in __init__
+    modules = self._load_auto_model(
+        model_name_or_path,
+    ...<8 lines>...
+        has_modules=has_modules,
+    )
+  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\sentence_transformers\SentenceTransformer.py", line 2112, in _load_auto_model
+    transformer_model = Transformer(
+        model_name_or_path,
+    ...<4 lines>...
+        backend=self.backend,
+    )
+  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\sentence_transformers\models\Transformer.py", line 87, in __init__
+    config, is_peft_model = self._load_config(model_name_or_path, cache_dir, backend, config_args)
+                            ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\sentence_transformers\models\Transformer.py", line 138, in _load_config
+    find_adapter_config_file(
+    ~~~~~~~~~~~~~~~~~~~~~~~~^
+        model_name_or_path,
+        ^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+        local_files_only=config_args.get("local_files_only", False),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\transformers\utils\peft_utils.py", line 88, in find_adapter_config_file
+    adapter_cached_filename = cached_file(
+        model_id,
+    ...<12 lines>...
+        _raise_exceptions_for_connection_errors=False,
+    )
+  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\transformers\utils\hub.py", line 322, in cached_file   
+    file = cached_files(path_or_repo_id=path_or_repo_id, filenames=[filename], **kwargs)
+  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\transformers\utils\hub.py", line 479, in cached_files  
+    hf_hub_download(
+    ~~~~~~~~~~~~~~~^
+        path_or_repo_id,
+        ^^^^^^^^^^^^^^^^
+    ...<10 lines>...
+        local_files_only=local_files_only,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\huggingface_hub\utils\_validators.py", line 114, in _inner_fn
+    return fn(*args, **kwargs)
+  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\huggingface_hub\file_download.py", line 1010, in hf_hub_download
+    return _hf_hub_download_to_cache_dir(
+        # Destination
+    ...<14 lines>...
+        force_download=force_download,
+    )
+  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\huggingface_hub\file_download.py", line 1073, in _hf_hub_download_to_cache_dir
+    (url_to_download, etag, commit_hash, expected_size, xet_file_data, head_call_error) = _get_metadata_or_catch_error(   
+                                                                                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^   
+        repo_id=repo_id,
+        ^^^^^^^^^^^^^^^^
+    ...<10 lines>...
+        relative_filename=relative_filename,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\huggingface_hub\file_download.py", line 1546, in _get_metadata_or_catch_error
+    metadata = get_hf_file_metadata(
+        url=url, proxies=proxies, timeout=etag_timeout, headers=headers, token=token, endpoint=endpoint
+    )
+  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\huggingface_hub\utils\_validators.py", line 114, in _inner_fn
+    return fn(*args, **kwargs)
+  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\huggingface_hub\file_download.py", line 1463, in get_hf_file_metadata
+    r = _request_wrapper(
+        method="HEAD",
+    ...<5 lines>...
+        timeout=timeout,
+    )
+  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\huggingface_hub\file_download.py", line 286, in _request_wrapper
+    response = _request_wrapper(
+        method=method,
+    ...<2 lines>...
+        **params,
+    )
+  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\huggingface_hub\file_download.py", line 309, in _request_wrapper
+    response = http_backoff(method=method, url=url, **params)
+  File "C:\Users\T8543\Downloads\project-2\.venv\Lib\site-packages\huggingface_hub\utils\_http.py", line 331, in http_backoff
+    time.sleep(sleep_time)
+    ~~~~~~~~~~^^^^^^^^^^^^
+KeyboardInterrupt
+(.venv) (base) PS C:\Users\T8543\Downloads\project-2> 
