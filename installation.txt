@@ -1,130 +1,75 @@
-# ETL/build_faiss_collections.py
-# Build 5 FAISS collections with metadata (UG/PG/MCA/MSc/HOSTELS).
-# Offline-safe: TF-IDF ONLY. No Hugging Face / transformers.
-# Input PDFs expected under Data/Raw/ACADEMICS and Data/Raw/HOSTEL
+# app/utils/fallback_rag.py
+# Section-aware FAISS retrieval that uses TF-IDF only (vectorizer.pkl must exist).
 
-import sys
-import re
-import json
-import pathlib
-from typing import List, Dict
-
-# -------- ensure project root is on sys.path ----------
-ROOT = pathlib.Path(__file__).resolve().parents[1]   # project-2/
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
-# ------------------------------------------------------
-
-import pdfplumber
+import json, pathlib
 import numpy as np
 import faiss
 
-from app.utils.embeddings import get_encoder_for_build
+from app.utils.embeddings import get_encoder_for_query
 
-RAW_ACAD = ROOT / "Data" / "Raw" / "ACADEMICS"
-RAW_HOST = ROOT / "Data" / "Raw" / "HOSTEL"
-OUT_DIR  = ROOT / "Data" / "index" / "faiss"
+def _paths(base_dir: pathlib.Path, collection: str):
+    d = base_dir / collection
+    return d, d / "index.faiss", d / "texts.json", d / "metas.json"
 
-# Map PDFs → section
-SECTION_MAP = {
-    "UG":      ["UG", "UG ", "UNDERGRAD", "VITEEE", "NRI", "FOREIGN"],
-    "PG":      ["PG", "M.TECH", "MBA", "VITMEE", "VITREE"],
-    "MCA":     ["MCA"],
-    "MSc":     ["M.SC", "MSC", "SCIENCE"],
-    "HOSTELS": ["HOSTEL", "HOSTELS", "LADIES", "MENS", "MEN'S"],
-}
+def _mmr_select(embs, query_vec, k=6, lambda_div=0.65):
+    sims = np.dot(embs, query_vec)
+    selected = []
+    candidates = list(range(len(sims)))
+    while candidates and len(selected) < k:
+        if not selected:
+            idx = int(np.argmax(sims[candidates]))
+            selected.append(candidates[idx])
+            candidates.pop(idx)
+        else:
+            q_scores = sims[candidates]
+            div_scores = []
+            for c in candidates:
+                div_scores.append(max([float(np.dot(embs[c], embs[s])) for s in selected]))
+            div_scores = np.array(div_scores)
+            mmr = lambda_div * q_scores - (1 - lambda_div) * div_scores
+            idx = int(np.argmax(mmr))
+            selected.append(candidates[idx])
+            candidates.pop(idx)
+    return selected
 
-CHUNK_SIZE = 900
-CHUNK_OVERLAP = 150
+def faiss_answer_or_summary(base_dir, collection, query: str, top_k: int = 10) -> str:
+    base_dir = pathlib.Path(base_dir)
+    col_dir, fa, ft, fm = _paths(base_dir, collection)
+    if not fa.exists():
+        return f"_No FAISS index at {fa}. Build indexes first._"
+    if not (col_dir / "vectorizer.pkl").exists():
+        return f"_No TF-IDF vectorizer at {col_dir/'vectorizer.pkl'}. Build indexes first._"
 
-def read_pdf_text(pdf_path: pathlib.Path) -> str:
-    parts = []
-    with pdfplumber.open(str(pdf_path)) as pdf:
-        for p in pdf.pages:
-            t = p.extract_text() or ""
-            parts.append(t)
-    return "\n".join(parts)
+    index = faiss.read_index(str(fa))
+    texts = json.loads(pathlib.Path(ft).read_text(encoding="utf-8"))
+    metas = json.loads(pathlib.Path(fm).read_text(encoding="utf-8"))
 
-def clean_text(t: str) -> str:
-    # simple OCR cleanup: collapse hyphen linebreaks, fix multi-spaces, normalize dash
-    t = re.sub(r"(\w)-\n(\w)", r"\1\2", t)
-    t = re.sub(r"\n+", "\n", t)
-    t = t.replace("–", "-").replace("—", "-")
-    t = re.sub(r"[ \t]+", " ", t)
-    return t.strip()
+    encoder = get_encoder_for_query(col_dir)  # TF-IDF vectorizer
 
-def chunk_text(t: str, size=CHUNK_SIZE, overlap=CHUNK_OVERLAP) -> List[str]:
-    tokens = t.split()
-    chunks = []
-    i = 0
-    while i < len(tokens):
-        j = min(len(tokens), i + size)
-        chunk = " ".join(tokens[i:j])
-        chunks.append(chunk)
-        i = j - overlap
-        if i < 0:
-            i = 0
-        if j == len(tokens):
-            break
-    return [c for c in chunks if c.strip()]
+    # Encode query
+    q = encoder.encode([query])[0].astype(np.float32)  # (d,)
 
-def decide_section(doc_name: str) -> str:
-    upper = doc_name.upper()
-    for sec, keys in SECTION_MAP.items():
-        if any(k in upper for k in keys):
-            return sec
-    return "UG"
+    # ANN search
+    D, I = index.search(q.reshape(1, -1), top_k)
+    I = I[0].tolist()
+    if not I:
+        return "_No similar passages found._"
 
-def collect_docs() -> List[Dict]:
-    docs = []
-    for base in [RAW_ACAD, RAW_HOST]:
-        if not base.exists():
-            continue
-        for p in base.glob("**/*.pdf"):
-            section = decide_section(p.name)
-            docs.append({"path": p, "section": section})
-    return docs
+    # pool & MMR rerank
+    pool = I + [i for i in range(len(texts)) if i not in I][:top_k]
+    pool_texts = [texts[i] for i in pool]
+    pool_embs = encoder.encode(pool_texts)
+    norms = np.linalg.norm(pool_embs, axis=1, keepdims=True) + 1e-12
+    pool_embs = pool_embs / norms
 
-def build_one_collection(section: str, docs: List[Dict], encoder):
-    texts, metas = [], []
-    for d in docs:
-        text = clean_text(read_pdf_text(d["path"]))
-        for ch in chunk_text(text):
-            texts.append(ch)
-            metas.append({"section": section, "doc_name": d["path"].name})
+    q_norm = q / (np.linalg.norm(q) + 1e-12)
+    sel_idx = _mmr_select(pool_embs, q_norm, k=min(6, len(pool)))
+    chosen = [pool[i] for i in sel_idx]
 
-    out_dir = OUT_DIR / f"{'vit_'+section.lower()}"
-    out_dir.mkdir(parents=True, exist_ok=True)
-
-    if not texts:
-        print(f"[{section}] No texts; skipping.")
-        return
-
-    # Fit & persist TF-IDF vectorizer per collection
-    encoder.fit(texts)
-    encoder.save(out_dir)
-
-    embs = encoder.encode(texts)  # (n, d) normalized float32
-    index = faiss.IndexFlatIP(embs.shape[1])  # cosine if normalized
-    index.add(embs.astype(np.float32))
-
-    faiss.write_index(index, str(out_dir / "index.faiss"))
-    (out_dir / "texts.json").write_text(json.dumps(texts, ensure_ascii=False), encoding="utf-8")
-    (out_dir / "metas.json").write_text(json.dumps(metas, ensure_ascii=False), encoding="utf-8")
-
-    print(f"[{section}] built: {len(texts)} chunks → {out_dir} | encoder=TF-IDF")
-
-def main():
-    OUT_DIR.mkdir(parents=True, exist_ok=True)
-    docs = collect_docs()
-    by_sec = {"UG": [], "PG": [], "MCA": [], "MSc": [], "HOSTELS": []}
-    for d in docs:
-        by_sec[d["section"]].append(d)
-
-    encoder = get_encoder_for_build()
-
-    for sec in by_sec:
-        build_one_collection(sec, by_sec[sec], encoder)
-
-if __name__ == "__main__":
-    main()
+    out_lines = []
+    for i in chosen:
+        t = texts[i]
+        m = metas[i]
+        doc = m.get("doc_name", "source")
+        out_lines.append(f"- **{doc}**: {t[:1000]}{'...' if len(t)>1000 else ''}")
+    return "\n".join(out_lines)
