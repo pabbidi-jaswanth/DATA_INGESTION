@@ -1,1 +1,193 @@
 https://finalprojetrepo-app8jbrbdrfkxdchxux4m5v.streamlit.app/
+
+
+
+
+What’s going wrong (in plain terms)
+
+One big mixed “knowledge pile”
+All PDFs from UG/PG/MCA/MSc/Hostels were jammed into a single retrieval space (or queried as if they were). Dense retrieval loves the most frequent generic chunks (“How to apply…”) — so many different questions get the same paragraph back. That’s why you see repeated/irrelevant answers.
+
+No robust “context filter”
+Your queries don’t force the retriever to stay inside the right domain (UG vs PG vs Hostels). Without strong metadata filters, the retriever picks whatever is statistically common, not what’s semantically right.
+
+No re-ranking or diversity control
+If you only take the first N nearest chunks, you amplify that “mode collapse” behavior. Without a reranker (or at least MMR), the top results look too similar and answers repeat.
+
+Noisy PDF text
+OCR artifacts (broken numbers, line breaks, hyphens, page headers mixed into text) degrade both recall and precision. Garbage in → garbage out.
+
+SQL contract mismatch
+Your “fees/programs” path is deterministic but brittle: UI passes keys like ay/category/level_like; the router expects AY/fee_category/prog_is_degree or values spelled differently (Foreign vs International, 2025–26 vs 2025-26). Result: KeyError, “no rows”, or the wrong source (PDF) is used instead of SQL.
+
+Monolith UI doing everything
+The Streamlit frontend is doubling as logic, router, data contracts, and rendering. That makes it hard to test and easy to break.
+
+What “scaling” actually means for this app
+
+Think in layers. If you separate these responsibilities, the system becomes predictable, testable, and scalable:
+
+A) Data layer
+
+Document store (your PDFs + metadata): clean extraction, consistent chunking (by headings/sections), and rich metadata: section=UG|PG|MCA|MSc|Hostels, doctype=FAQ|Policy|Fees, year, campus, etc.
+
+Relational store (SQLite → Postgres later) for anything tabular: programs, fee tables (Indian/NRI/International), hostel tariffs. Use canonical columns and views that match your API contract.
+
+B) Indexing layer
+
+Build separate indices per domain or a single index with hard metadata filters.
+Hybrid search = BM25 (keyword) + dense embeddings. Start with BM25 + TF-IDF; add embeddings later if you have infra.
+
+Add a re-ranking step (cross-encoder if you can, otherwise MMR/reciprocal rank fusion). This fixes the “same answer” spiral.
+
+C) Retrieval & routing layer (the “brain”)
+
+A small Router decides: “Is this a table question or a text question?”
+
+If table, hit SQL with normalized params → return a table.
+
+If text, call retriever with section filter + reranker → return short, cited snippets.
+
+Normalization: one function maps any incoming keys/values (Foreign→International, dashes normalized, case trimmed) to your DB schema. This kills the KeyError/“no rows” issues.
+
+D) Generation (optional)
+
+If you add LLM answers, use retrieve-then-read with citations and grounding. No raw generation from scratch.
+
+E) App/API layer
+
+Expose a clean API (FastAPI): /answer (text Q), /table (tabular Q), /search (debug).
+Streamlit (or any UI) just calls the API — it doesn’t carry business logic.
+
+F) Observability & evals
+
+Log query → retrieved chunks → final answer + latency.
+
+Create an eval set (20–50 canonical questions per section). Run regression tests on every change.
+
+Track answer reuse/duplication rate, section-mismatch rate, and SQL miss rate.
+
+Why names/domains repeating caused wrong answers
+
+Dense retrieval is distribution-driven: it picks the most common patterns when signals are weak.
+
+If UG content dominates your index, UG “application steps” will pop up for PG/MCA/MSc unless you hard-filter by section=PG (or query separate collections).
+
+Concrete fixes you can claim (and actually do)
+1) Retrieval that stays in its lane
+
+Keep the split indices: vit_ug, vit_pg, vit_hostels (and MCA/MSc if you want).
+
+On every click/query, prepend a section tag to the query (you already do [UG] …) and select the correct collection.
+
+Add MMR or a reranker so the top 5 aren’t clones.
+
+2) Clean, deterministic SQL
+
+In one place (e.g., normalize_filters()), do:
+
+map keys (AY|ay|academic_year → academic_year)
+
+normalize values (Foreign → International; replace en-dash with hyphen; .strip() and .casefold() if needed)
+
+Create SQL views that match your app’s contract:
+
+view_ug_fees(academic_year, category, program_group, campus, tuition, caution, total).
+
+If your CSV uses International but the UI says Foreign, the mapping handles it — no code elsewhere changes.
+
+Add 3–4 unit tests:
+("UG","2025-26","Indian") → rows>0,
+("UG","2025-26","NRI") → rows>0,
+("UG","2025-26","International") → rows>0.
+
+3) Better PDF ingestion
+
+Re-extract using a parser pipeline: pdfplumber → cleanup (remove headers/footers; fix hyphen line-wrap; collapse broken numbers).
+
+Chunk by headings: split on lines that look like ^[A-Z].+:$ or “###” section headers; avoid blind fixed-token chunks.
+
+Store metas.json with section, doctype, title, page_range.
+
+4) Safer UI logic
+
+Never route fee/program questions to PDFs. If SQL returns empty → show a clear “No rows found for (year, category)” with the normalized values you used (this helps debugging) — don’t silently fall back to PDFs.
+
+Highlight the selected question (you added the glass UI — great), and show the data source chip: “source: vit_pg (TF-IDF)” or “source: SQL:view_ug_fees”.
+
+5) Deployment hygiene
+
+Don’t depend on faiss, scipy, sklearn in Streamlit Cloud. Use your pure-NumPy TF-IDF fallback and pre-commit texts.json/metas.json. Keep requirements.txt minimal.
+
+Move business logic to a FastAPI service if you need scale; keep Streamlit as a thin UI.
+
+How to turn this into a real chatbot (not a 40-button UI)
+
+Narrow the question:
+Use a light classifier (rules or a tiny model) to label the intent: {domain: UG|PG|Hostel, type: tabular|text, topic: fees|programs|eligibility|dates|contact…}.
+
+Route
+
+type=tabular → parameterized SQL with normalized filters → table + source label.
+
+type=text → retrieve from the matching collection with section filter + MMR → show top 2–3 snippets with doc names/page indicators.
+
+(Optional) Answer generation
+
+Concatenate the top snippets and ask an LLM to summarize with citations.
+
+Strict token limit and citation enforcement to avoid hallucinations.
+
+Memory & corrections
+
+If a user says “I meant NRI fees”, re-route with category=NRI immediately and show the table.
+
+Quality loop
+
+Keep an eval set. After each change, run the eval and store the scores (accuracy, section-mismatch, repetition rate). Don’t ship regressions.
+
+The current backend flaw in one sentence
+
+You’re mixing weak retrieval (no filters, no reranking, noisy text) with a brittle SQL contract (key/value mismatch), all inside a UI that’s doing routing — so when any part slips, everything looks “hallucinated”.
+
+A realistic roadmap (you can present this)
+
+Week 1 (Stabilize)
+
+Lock the split indices per section; keep pure-NumPy TF-IDF + MMR; add source chips.
+
+Implement normalize_filters() for SQL; create SQL views; add minimal unit tests.
+
+Remove heavy deps from requirements.txt. Commit texts.json/metas.json.
+
+Week 2 (Quality)
+
+Re-extract PDFs with cleanup & heading-aware chunking.
+
+Add a small reranker (if infra allows) or tune MMR (λ≈0.6–0.7, top_k≈8–12).
+
+Build the eval set (at least 20 Qs per section) + regression script.
+
+Week 3 (Chatbot mode)
+
+Add a router (intent classifier + rules).
+
+Optional: wrap backend in FastAPI; Streamlit becomes a consumer.
+
+Week 4 (Scale & Ops)
+
+Move to a managed vector DB (Weaviate, Pinecone) if needed.
+
+Add logging/metrics dashboards (retrieval hit rate, duplicates, latency).
+
+TL;DR you can say to reviewers
+
+The repeated/wrong answers came from mixed indexing without section filters and no reranking, plus noisy PDF text.
+
+Fees/programs failed due to key/value normalization gaps between UI and SQL.
+
+We fixed it by splitting indices, adding MMR, normalizing filters, and forcing SQL for tables.
+
+To scale into a chatbot: add a router, keep hybrid retrieval with metadata filters + rerank, and strict SQL contracts with tests.
+
+Deployment is now clean (no FAISS/SciPy/Sklearn), using a pure-NumPy TF-IDF fallback and prebuilt JSON corpora.
