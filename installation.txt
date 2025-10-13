@@ -1,1 +1,1 @@
-https://vit.ac.in/admissions FAISS Library: https://faiss.ai Streamlit Documentation scikit-learn Documentation Python PDFPlumber Docs
+https://finalprojetrepo-app8jbrbdrfkxdchxux4m5v.streamlit.app/
